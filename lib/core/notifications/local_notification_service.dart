@@ -1,0 +1,176 @@
+import 'dart:async';
+
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
+
+class LocalNotificationService {
+  LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  static const int _taskOffset = 100000;
+  static const int _eventOffset = 200000;
+
+  static const String _channelId = 'task_event_reminders';
+  static const String _channelName = 'Task and Event Reminders';
+  static const String _channelDescription =
+      'Notifications for task deadlines and calendar events.';
+
+  final FlutterLocalNotificationsPlugin _plugin;
+  bool _initialized = false;
+
+  Future<void> scheduleTaskReminder({
+    required int taskId,
+    required String title,
+    required DateTime dueDate,
+  }) async {
+    final hasExplicitTime = dueDate.hour != 0 || dueDate.minute != 0;
+    final reminderAt = hasExplicitTime
+        ? dueDate
+        : DateTime(
+            dueDate.year,
+            dueDate.month,
+            dueDate.day,
+            9,
+          );
+    await _scheduleAt(
+      id: _taskOffset + taskId,
+      title: 'Task Reminder',
+      body: '$title is due soon.',
+      when: reminderAt,
+    );
+  }
+
+  Future<void> cancelTaskReminder(int taskId) {
+    return _cancelById(_taskOffset + taskId);
+  }
+
+  Future<void> scheduleEventReminder({
+    required int eventId,
+    required String title,
+    required DateTime startAt,
+  }) async {
+    final now = DateTime.now();
+    final fifteenBefore = startAt.subtract(const Duration(minutes: 15));
+    final reminderAt = fifteenBefore.isAfter(now) ? fifteenBefore : startAt;
+    await _scheduleAt(
+      id: _eventOffset + eventId,
+      title: 'Upcoming Event',
+      body: '$title starts soon.',
+      when: reminderAt,
+    );
+  }
+
+  Future<void> cancelEventReminder(int eventId) {
+    return _cancelById(_eventOffset + eventId);
+  }
+
+  Future<void> _scheduleAt({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    if (!when.isAfter(DateTime.now())) {
+      return;
+    }
+    await _ensureInitialized();
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(when, tz.local),
+      notificationDetails: _details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  Future<void> _cancelById(int id) async {
+    await _ensureInitialized();
+    await _plugin.cancel(id: id);
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (_initialized) {
+      return;
+    }
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
+
+    tz_data.initializeTimeZones();
+    try {
+      final zone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(zone.identifier));
+    } catch (_) {
+      tz.setLocalLocation(tz.UTC);
+    }
+
+    const initSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      ),
+      macOS: DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      ),
+      linux: LinuxInitializationSettings(defaultActionName: 'Open'),
+      windows: WindowsInitializationSettings(
+        appName: 'DART-2.0',
+        appUserModelId: 'beltech.dart2.app',
+        guid: 'cd8f4c25-95e8-420f-b74b-c30db7b8e8c9',
+      ),
+    );
+
+    await _plugin.initialize(settings: initSettings);
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    }
+
+    _initialized = true;
+  }
+
+  NotificationDetails get _details {
+    const android = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      silent: false,
+    );
+    const darwin = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    return const NotificationDetails(
+      android: android,
+      iOS: darwin,
+      macOS: darwin,
+    );
+  }
+}

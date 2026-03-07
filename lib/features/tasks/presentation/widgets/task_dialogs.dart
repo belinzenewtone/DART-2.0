@@ -1,0 +1,241 @@
+import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
+import 'package:flutter/material.dart';
+
+class NewTaskInput {
+  const NewTaskInput({
+    required this.title,
+    required this.priority,
+    this.dueDate,
+  });
+
+  final String title;
+  final TaskPriority priority;
+  final DateTime? dueDate;
+}
+
+Future<NewTaskInput?> showAddTaskDialog(BuildContext context) async {
+  return _showTaskDialog(context);
+}
+
+Future<NewTaskInput?> showEditTaskDialog(
+  BuildContext context, {
+  required TaskItem task,
+}) {
+  return _showTaskDialog(context, initialTask: task);
+}
+
+Future<NewTaskInput?> _showTaskDialog(
+  BuildContext context, {
+  TaskItem? initialTask,
+}) async {
+  final titleController = TextEditingController(text: initialTask?.title ?? '');
+  var selectedPriority = initialTask?.priority ?? TaskPriority.medium;
+  DateTime? selectedDate = initialTask?.dueDate;
+
+  return showDialog<NewTaskInput>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                initialTask == null ? 'New Task' : 'Edit Task',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  hintText: 'Title',
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Priority',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: TaskPriority.values.map((priority) {
+                  final option = _priorityOption(priority);
+                  final selected = selectedPriority == priority;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: priority == TaskPriority.low ? 8 : 0,
+                        left: priority == TaskPriority.high ? 8 : 0,
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => setState(() => selectedPriority = priority),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? option.color.withValues(alpha: 0.9)
+                                : option.color.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selected
+                                  ? option.color.withValues(alpha: 0.95)
+                                  : option.color.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            option.label,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: selected
+                                  ? AppColors.textPrimary
+                                  : option.color.withValues(alpha: 0.95),
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+              InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () async {
+                  final picked = await _pickDateTime(context, selectedDate);
+                  if (picked != null) {
+                    setState(() => selectedDate = picked);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceMuted.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: AppColors.border.withValues(alpha: 0.65)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule, color: AppColors.accent),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          selectedDate == null
+                              ? 'Set deadline (date & time)'
+                              : _formatDueLabel(context, selectedDate!),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      if (selectedDate != null)
+                        IconButton(
+                          onPressed: () => setState(() => selectedDate = null),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton(
+                    onPressed: () {
+                      final title = titleController.text.trim();
+                      if (title.isEmpty) {
+                        return;
+                      }
+                      Navigator.of(context).pop(
+                        NewTaskInput(
+                          title: title,
+                          priority: selectedPriority,
+                          dueDate: selectedDate,
+                        ),
+                      );
+                    },
+                    child: Text(initialTask == null ? 'Create' : 'Update'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+Future<DateTime?> _pickDateTime(BuildContext context, DateTime? initial) async {
+  final now = DateTime.now();
+  final pickedDate = await showDatePicker(
+    context: context,
+    firstDate: DateTime(now.year - 1),
+    lastDate: DateTime(now.year + 5),
+    initialDate: initial ?? now,
+  );
+  if (pickedDate == null) {
+    return null;
+  }
+  if (!context.mounted) {
+    return null;
+  }
+  final initialTime = initial == null
+      ? TimeOfDay.fromDateTime(now.add(const Duration(minutes: 30)))
+      : TimeOfDay.fromDateTime(initial);
+  final pickedTime = await showTimePicker(
+    context: context,
+    initialTime: initialTime,
+  );
+  if (pickedTime == null) {
+    return null;
+  }
+  return DateTime(
+    pickedDate.year,
+    pickedDate.month,
+    pickedDate.day,
+    pickedTime.hour,
+    pickedTime.minute,
+  );
+}
+
+String _formatDueLabel(BuildContext context, DateTime dueAt) {
+  final localizations = MaterialLocalizations.of(context);
+  final date = localizations.formatMediumDate(dueAt);
+  final time = localizations.formatTimeOfDay(
+    TimeOfDay.fromDateTime(dueAt),
+    alwaysUse24HourFormat: true,
+  );
+  return '$date at $time';
+}
+
+({String label, Color color}) _priorityOption(TaskPriority priority) {
+  return switch (priority) {
+    TaskPriority.high => (label: 'Urgent', color: AppColors.danger),
+    TaskPriority.medium => (label: 'Important', color: AppColors.warning),
+    TaskPriority.low => (label: 'Neutral', color: AppColors.accent),
+  };
+}

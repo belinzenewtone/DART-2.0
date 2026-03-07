@@ -1,0 +1,42 @@
+name: dart_2_0
+description: Personal management app with clean architecture and glassmorphism UI.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ^0.5.26
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  flutter_secure_storage: ^9.2.4
+  crypto: ^3.0.6
+  local_auth: ^2.3.0
+  fl_chart: ^0.69.2
+  supabase_flutter: ^2.10.4
+  http: ^1.6.0
+  permission_handler: ^12.0.1
+  flutter_sms_inbox: ^1.0.4
+  shared_preferences: ^2.5.4
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_timezone: ^5.0.1
+  package_info_plus: ^8.3.0
+  url_launcher: ^6.3.1
+  ota_update: ^7.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  drift_dev: ^2.20.1
+  build_runner: ^2.4.12
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true

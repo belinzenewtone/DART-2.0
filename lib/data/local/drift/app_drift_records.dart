@@ -1,0 +1,85 @@
+class DriftTransactionRecord {
+  const DriftTransactionRecord({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.amountKes,
+    required this.occurredAt,
+  });
+  final int id;
+  final String title;
+  final String category;
+  final double amountKes;
+  final DateTime occurredAt;
+}
+
+class CategoryTotalRecord {
+  const CategoryTotalRecord({
+    required this.category,
+    required this.totalKes,
+  });
+  final String category;
+  final double totalKes;
+}
+
+class HomeOverviewRecord {
+  const HomeOverviewRecord({
+    required this.todayKes,
+    required this.weekKes,
+    required this.completedCount,
+    required this.pendingCount,
+    required this.upcomingEventsCount,
+    required this.weeklySpendingKes,
+    required this.recentTransactions,
+  });
+  final double todayKes;
+  final double weekKes;
+  final int completedCount;
+  final int pendingCount;
+  final int upcomingEventsCount;
+  final Map<String, double> weeklySpendingKes;
+  final List<DriftTransactionRecord> recentTransactions;
+}
+
+class ExpensesSnapshotRecord {
+  const ExpensesSnapshotRecord({
+    required this.todayKes,
+    required this.weekKes,
+    required this.categories,
+    required this.transactions,
+  });
+  final double todayKes;
+  final double weekKes;
+  final List<CategoryTotalRecord> categories;
+  final List<DriftTransactionRecord> transactions;
+}
+
+class DriftTaskRecord {
+  const DriftTaskRecord({
+    required this.id,
+    required this.title,
+    required this.completed,
+    required this.priority,
+    this.dueDate,
+  });
+  final int id;
+  final String title;
+  final bool completed;
+  final String priority;
+  final DateTime? dueDate;
+}
+
+class DriftEventRecord {
+  const DriftEventRecord({
+    required this.id,
+    required this.title,
+    required this.startAt,
+    this.endAt,
+    this.note,
+  });
+  final int id;
+  final String title;
+  final DateTime startAt;
+  final DateTime? endAt;
+  final String? note;
+}

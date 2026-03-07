@@ -1,0 +1,156 @@
+import 'dart:async';
+
+import 'package:dart_2_0/data/local/drift/app_drift_records.dart';
+import 'package:dart_2_0/data/local/drift/drift_executor_factory.dart';
+import 'package:drift/backends.dart';
+import 'package:drift/drift.dart' show OpeningDetails;
+
+part 'app_drift_store_queries.dart';
+part 'app_drift_store_schema.dart';
+part 'app_drift_store_utils.dart';
+
+class AppDriftStore {
+  AppDriftStore() : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite', inMemory: true);
+
+  AppDriftStore.persistent() : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite');
+
+  final QueryExecutor _db;
+  final StreamController<int> _changes = StreamController<int>.broadcast();
+
+  bool _initialized = false;
+  int _changeSeq = 0;
+
+  QueryExecutor get executor => _db;
+
+  Future<void> ensureInitialized() => _ensureInitialized();
+
+  void emitChange() => _emitChange();
+
+  Future<void> dispose() async {
+    await _changes.close();
+    await _db.close();
+  }
+
+  Stream<HomeOverviewRecord> watchHomeOverview() => _watch(_loadHomeOverview);
+
+  Stream<ExpensesSnapshotRecord> watchExpensesSnapshot() =>
+      _watch(_loadExpensesSnapshot);
+
+  Stream<List<DriftTaskRecord>> watchTasks() => _watch(_loadTasks);
+
+  Stream<List<DriftEventRecord>> watchEventsForDay(DateTime day) =>
+      _watch(() => _loadEventsForDay(day));
+
+  Future<void> addTransaction({
+    required String title,
+    required String category,
+    required double amountKes,
+    DateTime? occurredAt,
+    String source = 'manual',
+    String? sourceHash,
+  }) async {
+    await _ensureInitialized();
+    final timestamp = (occurredAt ?? DateTime.now()).millisecondsSinceEpoch;
+    await _db.runInsert(
+      'INSERT INTO transactions(title, category, amount, occurred_at, source, source_hash) VALUES (?, ?, ?, ?, ?, ?)',
+      [title, category, amountKes, timestamp, source, sourceHash],
+    );
+    _emitChange();
+  }
+
+  Future<void> addTask({
+    required String title,
+    DateTime? dueDate,
+    String priority = 'medium',
+  }) async {
+    await _ensureInitialized();
+    await _db.runInsert(
+      'INSERT INTO tasks(title, completed, due_at, priority) VALUES (?, ?, ?, ?)',
+      [title, 0, dueDate?.millisecondsSinceEpoch, priority],
+    );
+    _emitChange();
+  }
+
+  Future<void> toggleTaskCompletion({
+    required int taskId,
+    required bool completed,
+  }) async {
+    await _ensureInitialized();
+    await _db.runUpdate(
+      'UPDATE tasks SET completed = ? WHERE id = ?',
+      [completed ? 1 : 0, taskId],
+    );
+    _emitChange();
+  }
+
+  Future<void> addEvent({
+    required String title,
+    required DateTime startAt,
+    DateTime? endAt,
+    String? note,
+  }) async {
+    await _ensureInitialized();
+    await _db.runInsert(
+      'INSERT INTO events(title, start_at, end_at, note) VALUES (?, ?, ?, ?)',
+      [
+        title,
+        startAt.millisecondsSinceEpoch,
+        endAt?.millisecondsSinceEpoch,
+        note
+      ],
+    );
+    _emitChange();
+  }
+
+  Stream<T> _watch<T>(Future<T> Function() loader) {
+    return Stream<T>.multi((controller) async {
+      await _ensureInitialized();
+      Future<void> publishSnapshot() async {
+        if (!controller.isClosed) {
+          controller.add(await loader());
+        }
+      }
+
+      final subscription = _changes.stream.listen(
+        (_) async => publishSnapshot(),
+        onError: controller.addError,
+      );
+      await publishSnapshot();
+      controller.onCancel = subscription.cancel;
+    });
+  }
+
+  Future<void> _ensureInitialized() => _AppDriftSchema.ensureInitialized(this);
+
+  Future<HomeOverviewRecord> _loadHomeOverview() =>
+      _AppDriftQueries.loadHomeOverview(this);
+
+  Future<ExpensesSnapshotRecord> _loadExpensesSnapshot() =>
+      _AppDriftQueries.loadExpensesSnapshot(this);
+
+  Future<List<DriftTaskRecord>> _loadTasks() =>
+      _AppDriftQueries.loadTasks(this);
+
+  Future<List<DriftEventRecord>> _loadEventsForDay(DateTime day) =>
+      _AppDriftQueries.loadEventsForDay(this, day);
+
+  Future<int> _countRows(String tableName) =>
+      _AppDriftQueries.countRows(this, tableName);
+
+  void _emitChange() => _AppDriftUtils.emitChange(this);
+
+  int _asInt(Object? value) => _AppDriftUtils.asInt(value);
+
+  double _asDouble(Object? value) => _AppDriftUtils.asDouble(value);
+}
+
+class _StoreQueryExecutorUser implements QueryExecutorUser {
+  const _StoreQueryExecutorUser();
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  Future<void> beforeOpen(
+      QueryExecutor executor, OpeningDetails details) async {}
+}

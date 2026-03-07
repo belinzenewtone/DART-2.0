@@ -1,0 +1,149 @@
+import 'package:dart_2_0/core/di/repository_providers.dart';
+import 'package:dart_2_0/core/navigation/app_shell.dart';
+import 'package:dart_2_0/core/theme/glass_styles.dart';
+import 'package:dart_2_0/features/auth/presentation/providers/account_providers.dart';
+import 'package:dart_2_0/features/auth/presentation/widgets/auth_brand_header.dart';
+import 'package:dart_2_0/features/auth/presentation/widgets/auth_form_card.dart';
+import 'package:dart_2_0/features/auth/presentation/widgets/auth_loading_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(useSupabaseProvider)) {
+      return const AppShell();
+    }
+    final sessionState = ref.watch(accountSessionProvider);
+    return sessionState.when(
+      data: (session) =>
+          session.isAuthenticated ? const AppShell() : const AuthScreen(),
+      loading: () => const AuthLoadingScreen(),
+      error: (_, __) => const AuthScreen(),
+    );
+  }
+}
+
+class AuthScreen extends ConsumerStatefulWidget {
+  const AuthScreen({super.key});
+
+  @override
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends ConsumerState<AuthScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _isSignUp = false;
+  bool _hideSignInPassword = true;
+  bool _hideSignUpPassword = true;
+  bool _hideConfirmPassword = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final writeState = ref.watch(accountAuthControllerProvider);
+    ref.listen<AsyncValue<void>>(accountAuthControllerProvider,
+        (previous, next) {
+      if (next.hasError) {
+        final message = '${next.error}'.replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    });
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: GlassStyles.backgroundGradientFor(Theme.of(context).brightness),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AuthBrandHeader(),
+                    const SizedBox(height: 20),
+                    AuthFormCard(
+                      formKey: _formKey,
+                      isSignUp: _isSignUp,
+                      isLoading: writeState.isLoading,
+                      nameController: _nameController,
+                      phoneController: _phoneController,
+                      emailController: _emailController,
+                      passwordController: _passwordController,
+                      confirmPasswordController: _confirmPasswordController,
+                      hidePassword:
+                          _isSignUp ? _hideSignUpPassword : _hideSignInPassword,
+                      hideConfirmPassword: _hideConfirmPassword,
+                      onTogglePasswordVisibility: () {
+                        setState(() {
+                          if (_isSignUp) {
+                            _hideSignUpPassword = !_hideSignUpPassword;
+                          } else {
+                            _hideSignInPassword = !_hideSignInPassword;
+                          }
+                        });
+                      },
+                      onToggleConfirmPasswordVisibility: () {
+                        setState(() {
+                          _hideConfirmPassword = !_hideConfirmPassword;
+                        });
+                      },
+                      onSubmit: _submit,
+                      onToggleMode: () {
+                        setState(() {
+                          _isSignUp = !_isSignUp;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+    if (_isSignUp) {
+      await ref.read(accountAuthControllerProvider.notifier).signUp(
+            name: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+      return;
+    }
+    await ref.read(accountAuthControllerProvider.notifier).signIn(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+  }
+}
