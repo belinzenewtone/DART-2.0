@@ -21,10 +21,14 @@ create table if not exists public.tasks (
   id bigserial primary key,
   owner_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
+  description text,
   completed boolean not null default false,
   due_at timestamptz,
   priority text not null default 'medium'
 );
+
+alter table public.tasks
+  add column if not exists description text;
 
 create index if not exists idx_tasks_owner_completed
   on public.tasks (owner_id, completed);
@@ -49,8 +53,12 @@ create table if not exists public.user_profile (
   email text not null,
   phone text not null,
   member_since_label text not null,
-  verified boolean not null default false
+  verified boolean not null default false,
+  avatar_url text
 );
+
+alter table public.user_profile
+  add column if not exists avatar_url text;
 
 create table if not exists public.assistant_messages (
   id bigserial primary key,
@@ -129,3 +137,28 @@ create policy "app_updates_public_read"
   for select
   to anon, authenticated
   using (active = true);
+
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update
+  set public = excluded.public;
+
+drop policy if exists "avatars_public_read" on storage.objects;
+create policy "avatars_public_read"
+  on storage.objects
+  for select
+  using (bucket_id = 'avatars');
+
+drop policy if exists "avatars_owner_write" on storage.objects;
+create policy "avatars_owner_write"
+  on storage.objects
+  for all
+  to authenticated
+  using (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  )
+  with check (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
