@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
 import 'package:flutter/material.dart';
 
@@ -68,7 +69,7 @@ Future<ManualExpenseInput?> _showExpenseDialog(
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
-                  labelText: 'Amount (KES)',
+                  labelText: 'Amount (${CurrencyFormatter.defaultSymbol})',
                 ),
               ),
               const SizedBox(height: 12),

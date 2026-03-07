@@ -137,8 +137,10 @@ class ExpensesScreen extends ConsumerWidget {
                       },
                     ),
                     loading: () => const Center(child: LoadingIndicator()),
-                    error: (_, __) =>
-                        const ErrorMessage(label: 'Unable to load expenses'),
+                    error: (_, __) => ErrorMessage(
+                      label: 'Unable to load expenses',
+                      onRetry: () => ref.invalidate(expensesSnapshotProvider),
+                    ),
                   ),
                 ),
               ],

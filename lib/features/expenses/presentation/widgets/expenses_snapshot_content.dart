@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/core/widgets/category_chip.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
@@ -6,7 +7,7 @@ import 'package:dart_2_0/features/expenses/presentation/providers/expenses_provi
 import 'package:dart_2_0/features/expenses/presentation/widgets/transaction_row.dart';
 import 'package:flutter/material.dart';
 
-class ExpensesSnapshotContent extends StatelessWidget {
+class ExpensesSnapshotContent extends StatefulWidget {
   const ExpensesSnapshotContent({
     super.key,
     required this.snapshot,
@@ -25,10 +26,20 @@ class ExpensesSnapshotContent extends StatelessWidget {
   final ValueChanged<ExpenseItem> onDeleteExpense;
 
   @override
+  State<ExpensesSnapshotContent> createState() =>
+      _ExpensesSnapshotContentState();
+}
+
+class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
+  bool _showAllTransactions = false;
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final transactions =
-        _transactionsForFilter(snapshot.transactions, selectedFilter);
+    final transactions = _transactionsForFilter(
+        widget.snapshot.transactions, widget.selectedFilter);
+    final visibleTransactions =
+        _showAllTransactions ? transactions : transactions.take(20).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -37,14 +48,14 @@ class ExpensesSnapshotContent extends StatelessWidget {
             Expanded(
               child: _SummaryCard(
                 title: 'Today',
-                amount: 'KES ${snapshot.todayKes.toStringAsFixed(2)}',
+                amount: CurrencyFormatter.money(widget.snapshot.todayKes),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _SummaryCard(
                 title: 'This Week',
-                amount: 'KES ${snapshot.weekKes.toStringAsFixed(2)}',
+                amount: CurrencyFormatter.money(widget.snapshot.weekKes),
               ),
             ),
           ],
@@ -61,28 +72,43 @@ class ExpensesSnapshotContent extends StatelessWidget {
                 ExpenseFilter.week => 'This Week',
                 ExpenseFilter.month => 'This Month',
               },
-              selected: selectedFilter == filter,
-              onTap: () => onFilterChanged(filter),
+              selected: widget.selectedFilter == filter,
+              onTap: () => widget.onFilterChanged(filter),
             );
           }).toList(),
         ),
         const SizedBox(height: 14),
-        _CategoryCard(categories: snapshot.categories),
+        _CategoryCard(categories: widget.snapshot.categories),
         const SizedBox(height: 16),
         Text('Transactions', style: textTheme.titleMedium),
         const SizedBox(height: 10),
-        for (final tx in transactions.take(20)) ...[
+        for (final tx in visibleTransactions) ...[
           ExpenseTransactionRow(
+            dismissKey: 'expense-${tx.id}',
             title: tx.title,
             subtitle:
                 '${tx.category} · ${tx.occurredAt.month}/${tx.occurredAt.day}, ${tx.occurredAt.hour}:${tx.occurredAt.minute.toString().padLeft(2, '0')}',
-            amount: 'KES ${tx.amountKes.toStringAsFixed(2)}',
-            onEdit: () => onEditExpense(tx),
-            onDelete: () => onDeleteExpense(tx),
-            busy: busy,
+            amount: CurrencyFormatter.money(tx.amountKes),
+            onEdit: () => widget.onEditExpense(tx),
+            onDelete: () => widget.onDeleteExpense(tx),
+            busy: widget.busy,
           ),
           const SizedBox(height: 10),
         ],
+        if (transactions.length > 20)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _showAllTransactions = !_showAllTransactions;
+                });
+              },
+              child: Text(_showAllTransactions
+                  ? 'Show fewer transactions'
+                  : 'Show all transactions (${transactions.length})'),
+            ),
+          ),
       ],
     );
   }
@@ -141,6 +167,8 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final total =
+        categories.fold<double>(0, (sum, item) => sum + item.totalKes);
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +178,8 @@ class _CategoryCard extends StatelessWidget {
           for (final entry in categories.take(8)) ...[
             _CategoryRow(
               name: entry.category,
-              amount: 'KES ${entry.totalKes.toStringAsFixed(2)}',
+              amount: CurrencyFormatter.money(entry.totalKes),
+              ratio: total <= 0 ? 0 : entry.totalKes / total,
             ),
             const SizedBox(height: 10),
           ],
@@ -164,26 +193,89 @@ class _CategoryRow extends StatelessWidget {
   const _CategoryRow({
     required this.name,
     required this.amount,
+    required this.ratio,
   });
 
   final String name;
   final String amount;
+  final double ratio;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final visual = _categoryVisual(name);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 16,
-          backgroundColor: AppColors.accentSoft,
-          child:
-              Icon(Icons.pie_chart_outline, color: AppColors.accent, size: 16),
+          backgroundColor: visual.background,
+          child: Icon(visual.icon, color: visual.foreground, size: 16),
         ),
         const SizedBox(width: 10),
-        Expanded(child: Text(name, style: textTheme.bodyLarge)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: textTheme.bodyLarge),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: SizedBox(
+                  height: 4,
+                  child: LinearProgressIndicator(
+                    value: ratio.clamp(0, 1),
+                    backgroundColor:
+                        AppColors.surfaceMuted.withValues(alpha: 0.7),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(visual.foreground),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
         Text(amount, style: textTheme.bodyLarge),
       ],
     );
   }
+}
+
+({IconData icon, Color foreground, Color background}) _categoryVisual(
+    String category) {
+  final normalized = category.trim().toLowerCase();
+  if (normalized.contains('food')) {
+    return (
+      icon: Icons.restaurant_outlined,
+      foreground: const Color(0xFFFF8C5A),
+      background: const Color(0xFF4B2F2B),
+    );
+  }
+  if (normalized.contains('airtime')) {
+    return (
+      icon: Icons.phone_android_outlined,
+      foreground: const Color(0xFFC66BFF),
+      background: const Color(0xFF3B284F),
+    );
+  }
+  if (normalized.contains('bill')) {
+    return (
+      icon: Icons.receipt_long_outlined,
+      foreground: const Color(0xFFC66BFF),
+      background: const Color(0xFF3C2A4D),
+    );
+  }
+  if (normalized.contains('transport')) {
+    return (
+      icon: Icons.directions_bus_outlined,
+      foreground: const Color(0xFF57B3FF),
+      background: const Color(0xFF233A4F),
+    );
+  }
+  return (
+    icon: Icons.more_horiz,
+    foreground: AppColors.textSecondary,
+    background: AppColors.accentSoft,
+  );
 }
