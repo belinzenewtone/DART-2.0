@@ -26,6 +26,23 @@ class CalendarRepositoryImpl implements CalendarRepository {
   }
 
   @override
+  Stream<List<CalendarEvent>> watchEventsInRange(DateTime start, DateTime end) {
+    return _store.watchEventsInRange(start, end).map(
+          (rows) => rows
+              .map(
+                (row) => CalendarEvent(
+                  id: row.id,
+                  title: row.title,
+                  startAt: row.startAt,
+                  endAt: row.endAt,
+                  note: row.note,
+                ),
+              )
+              .toList(),
+        );
+  }
+
+  @override
   Future<void> addEvent({
     required String title,
     required DateTime startAt,

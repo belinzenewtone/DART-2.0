@@ -58,12 +58,14 @@ class DriftTaskRecord {
   const DriftTaskRecord({
     required this.id,
     required this.title,
+    required this.description,
     required this.completed,
     required this.priority,
     this.dueDate,
   });
   final int id;
   final String title;
+  final String? description;
   final bool completed;
   final String priority;
   final DateTime? dueDate;

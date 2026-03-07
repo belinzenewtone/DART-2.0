@@ -1,10 +1,10 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/widgets/action_button.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
 import 'package:dart_2_0/features/calendar/presentation/providers/calendar_providers.dart';
 import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_events_card.dart';
+import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_month_grid.dart';
 import 'package:dart_2_0/features/calendar/presentation/widgets/event_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +43,7 @@ class CalendarScreen extends ConsumerWidget {
     final visibleMonth = ref.watch(visibleMonthProvider);
     final selectedDay = ref.watch(selectedDayProvider);
     final eventsState = ref.watch(dayEventsProvider);
+    final monthEventDaysState = ref.watch(monthEventDaysProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
 
     ref.listen<AsyncValue<void>>(calendarWriteControllerProvider,
@@ -68,54 +69,67 @@ class CalendarScreen extends ConsumerWidget {
           children: [
             Text('Calendar', style: textTheme.titleLarge),
             const SizedBox(height: 16),
-            GlassCard(
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => _changeMonth(ref, -1),
-                        icon: const Icon(Icons.chevron_left),
-                      ),
-                      Text(title, style: textTheme.titleMedium),
-                      IconButton(
-                        onPressed: () => _changeMonth(ref, 1),
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: _calendarContentMaxWidth,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: _weekDays
-                            .map(
-                              (day) => SizedBox(
-                                width: 30,
-                                child: Text(day,
+            GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity < -120) {
+                  _changeMonth(ref, 1);
+                } else if (velocity > 120) {
+                  _changeMonth(ref, -1);
+                }
+              },
+              child: GlassCard(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () => _changeMonth(ref, -1),
+                          icon: const Icon(Icons.chevron_left),
+                        ),
+                        Text(title, style: textTheme.titleMedium),
+                        IconButton(
+                          onPressed: () => _changeMonth(ref, 1),
+                          icon: const Icon(Icons.chevron_right),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: _calendarContentMaxWidth,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: _weekDays
+                              .map(
+                                (day) => SizedBox(
+                                  width: 30,
+                                  child: Text(
+                                    day,
                                     textAlign: TextAlign.center,
-                                    style: textTheme.bodyMedium),
-                              ),
-                            )
-                            .toList(),
+                                    style: textTheme.bodyMedium,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _CalendarGrid(
-                    visibleMonth: visibleMonth,
-                    selectedDay: selectedDay,
-                    maxWidth: _calendarContentMaxWidth,
-                    onSelect: (day) {
-                      ref.read(selectedDayProvider.notifier).state = day;
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    CalendarMonthGrid(
+                      visibleMonth: visibleMonth,
+                      selectedDay: selectedDay,
+                      eventDays: monthEventDaysState.valueOrNull ?? const {},
+                      maxWidth: _calendarContentMaxWidth,
+                      onSelect: (day) {
+                        ref.read(selectedDayProvider.notifier).state = day;
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -155,8 +169,10 @@ class CalendarScreen extends ConsumerWidget {
                   },
                 ),
                 loading: () => const Center(child: LoadingIndicator()),
-                error: (_, __) =>
-                    const ErrorMessage(label: 'Unable to load events'),
+                error: (_, __) => ErrorMessage(
+                  label: 'Unable to load events',
+                  onRetry: () => ref.invalidate(dayEventsProvider),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -211,104 +227,8 @@ class CalendarScreen extends ConsumerWidget {
       'Thursday',
       'Friday',
       'Saturday',
-      'Sunday'
+      'Sunday',
     ];
     return weekdays[weekday - 1];
-  }
-}
-
-class _CalendarGrid extends StatelessWidget {
-  const _CalendarGrid({
-    required this.visibleMonth,
-    required this.selectedDay,
-    required this.maxWidth,
-    required this.onSelect,
-  });
-
-  final DateTime visibleMonth;
-  final DateTime selectedDay;
-  final double maxWidth;
-  final ValueChanged<DateTime> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final totalDays =
-        DateTime(visibleMonth.year, visibleMonth.month + 1, 0).day;
-    final leadingBlanks =
-        DateTime(visibleMonth.year, visibleMonth.month, 1).weekday - 1;
-    final totalItems = ((leadingBlanks + totalDays + 6) ~/ 7) * 7;
-    final today = DateTime.now();
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: GridView.builder(
-          itemCount: totalItems,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            mainAxisExtent: 42,
-          ),
-          itemBuilder: (context, index) {
-            final day = index - leadingBlanks + 1;
-            if (day < 1 || day > totalDays) {
-              return const SizedBox.shrink();
-            }
-
-            final current = DateTime(visibleMonth.year, visibleMonth.month, day);
-            final isSelected = selectedDay.year == current.year &&
-                selectedDay.month == current.month &&
-                selectedDay.day == current.day;
-            final isToday = today.year == current.year &&
-                today.month == current.month &&
-                today.day == current.day;
-            final dotColor = isSelected ? AppColors.textPrimary : AppColors.accent;
-
-            return Center(
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => onSelect(current),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 240),
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? AppColors.accent : Colors.transparent,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Text(
-                        '$day',
-                        style: textTheme.bodyLarge?.copyWith(
-                          color: isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                      if (isToday)
-                        Positioned(
-                          bottom: 6,
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: dotColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
   }
 }

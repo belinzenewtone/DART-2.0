@@ -5,6 +5,7 @@ abstract class TasksRepository {
 
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
   });
@@ -17,6 +18,7 @@ abstract class TasksRepository {
   Future<void> updateTask({
     required int taskId,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
   });

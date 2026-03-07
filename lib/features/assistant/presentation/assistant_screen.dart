@@ -1,8 +1,10 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
 import 'package:dart_2_0/features/assistant/presentation/providers/assistant_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
@@ -24,6 +26,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final messagesState = ref.watch(assistantMessagesProvider);
     final suggestions = ref.watch(assistantSuggestionsProvider);
     final writeState = ref.watch(assistantWriteControllerProvider);
@@ -68,14 +71,16 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 120 + keyboardInset),
               children: [
                 messagesState.when(
                   data: (messages) => _ConversationList(messages: messages),
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (_, __) =>
-                      const _ErrorCard(label: 'Unable to load assistant'),
+                  error: (_, __) => ErrorMessage(
+                    label: 'Unable to load assistant',
+                    onRetry: () => ref.invalidate(assistantMessagesProvider),
+                  ),
                 ),
                 const SizedBox(height: 18),
                 const Text(
@@ -91,8 +96,10 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+          AnimatedPadding(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12 + keyboardInset),
             child: GlassCard(
               borderRadius: 24,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -195,7 +202,7 @@ class _MessageBubble extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              _displayText(message.text),
+              message.text.trim(),
               style: const TextStyle(
                 fontSize: 16,
                 color: AppColors.textPrimary,
@@ -225,11 +232,21 @@ class _MessageBubble extends StatelessWidget {
             child: GlassCard(
               borderRadius: 20,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Text(
-                _displayText(message.text),
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
+              child: MarkdownBody(
+                data: message.text.trim(),
+                selectable: false,
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
+                  strong: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  listBullet: const TextStyle(color: AppColors.textPrimary),
                 ),
               ),
             ),
@@ -237,10 +254,6 @@ class _MessageBubble extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _displayText(String text) {
-    return text.replaceAll('**', '').trim();
   }
 }
 
@@ -274,25 +287,6 @@ class _PromptGrid extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.danger),
-          const SizedBox(width: 8),
-          Text(label),
-        ],
-      ),
     );
   }
 }

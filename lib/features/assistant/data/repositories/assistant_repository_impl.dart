@@ -1,5 +1,6 @@
 import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
 import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
+import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
 import 'package:dart_2_0/features/assistant/domain/repositories/assistant_repository.dart';
 import 'package:dart_2_0/features/assistant/data/services/assistant_proxy_service.dart';
@@ -80,7 +81,7 @@ class AssistantRepositoryImpl implements AssistantRepository {
     }
 
     if (_containsAny(lower, ['how much', 'spend', 'spent', 'today'])) {
-      return 'Your spending today is KES ${todaySpending.toStringAsFixed(2)}.';
+      return 'Your spending today is ${CurrencyFormatter.money(todaySpending)}.';
     }
     if (_containsAny(lower, ['biggest', 'largest']) &&
         lower.contains('expense')) {
@@ -88,7 +89,7 @@ class AssistantRepositoryImpl implements AssistantRepository {
       if (top == null) {
         return 'No expenses found this month yet.';
       }
-      return 'Your biggest expense category this month is ${top.$1} at KES ${top.$2.toStringAsFixed(2)}.';
+      return 'Your biggest expense category this month is ${top.$1} at ${CurrencyFormatter.money(top.$2)}.';
     }
     if (_containsAny(lower, ['category', 'categories']) &&
         _containsAny(lower, ['spend', 'expense'])) {
@@ -97,7 +98,7 @@ class AssistantRepositoryImpl implements AssistantRepository {
         return 'No categorized spending found for this month.';
       }
       final summary = categories
-          .map((item) => '${item.$1}: KES ${item.$2.toStringAsFixed(2)}')
+          .map((item) => '${item.$1}: ${CurrencyFormatter.money(item.$2)}')
           .join(', ');
       return 'Your spending by category this month: $summary.';
     }
@@ -124,12 +125,12 @@ class AssistantRepositoryImpl implements AssistantRepository {
       final lastWeek =
           await _sumTransactions(previousWeekStart, previousWeekEnd);
       if (thisWeek > lastWeek) {
-        return 'You are spending more than last week by KES ${(thisWeek - lastWeek).toStringAsFixed(2)}.';
+        return 'You are spending more than last week by ${CurrencyFormatter.money(thisWeek - lastWeek)}.';
       }
       if (thisWeek < lastWeek) {
-        return 'You are spending less than last week by KES ${(lastWeek - thisWeek).toStringAsFixed(2)}.';
+        return 'You are spending less than last week by ${CurrencyFormatter.money(lastWeek - thisWeek)}.';
       }
-      return 'Your spending is equal to last week at KES ${thisWeek.toStringAsFixed(2)}.';
+      return 'Your spending is equal to last week at ${CurrencyFormatter.money(thisWeek)}.';
     }
     if (lower.contains('event') ||
         lower.contains('calendar') ||

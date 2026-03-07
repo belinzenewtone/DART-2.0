@@ -42,6 +42,7 @@ class TaskWriteController extends AutoDisposeAsyncNotifier<void> {
 
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
   }) async {
@@ -51,6 +52,7 @@ class TaskWriteController extends AutoDisposeAsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       await repository.addTask(
         title: title,
+        description: description,
         dueDate: dueDate,
         priority: priority,
       );
@@ -96,6 +98,7 @@ class TaskWriteController extends AutoDisposeAsyncNotifier<void> {
   Future<void> updateTask({
     required int taskId,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
   }) async {
@@ -106,6 +109,7 @@ class TaskWriteController extends AutoDisposeAsyncNotifier<void> {
       await repository.updateTask(
         taskId: taskId,
         title: title,
+        description: description,
         dueDate: dueDate,
         priority: priority,
       );

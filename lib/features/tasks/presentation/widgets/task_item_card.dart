@@ -23,6 +23,10 @@ class TaskItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final localizations = MaterialLocalizations.of(context);
+    final priorityColor = _priorityColor(task.priority);
+    final isOverdue = !task.completed &&
+        task.dueDate != null &&
+        task.dueDate!.isBefore(DateTime.now());
     final dueLabel = task.completed
         ? 'Completed'
         : task.dueDate == null
@@ -56,7 +60,18 @@ class TaskItemCard extends StatelessWidget {
       ),
       child: GlassCard(
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: 4,
+              height: 76,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: priorityColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(width: 10),
             IconButton(
               onPressed: busy
                   ? null
@@ -67,7 +82,9 @@ class TaskItemCard extends StatelessWidget {
                 task.completed
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
-                color: task.completed ? AppColors.success : AppColors.textSecondary,
+                color: task.completed
+                    ? AppColors.success
+                    : AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: 12),
@@ -75,24 +92,44 @@ class TaskItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(task.title, style: textTheme.bodyLarge),
-                  const SizedBox(height: 4),
+                  Text(
+                    task.title,
+                    style: textTheme.bodyLarge?.copyWith(
+                      decoration:
+                          task.completed ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  if (task.description != null && task.description!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        task.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
+                      _PriorityBadge(priority: task.priority),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           dueLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodyMedium?.copyWith(
+                          style: textTheme.bodySmall?.copyWith(
                             color: task.completed
                                 ? AppColors.success
-                                : AppColors.textSecondary,
+                                : (isOverdue
+                                    ? AppColors.danger
+                                    : AppColors.textSecondary),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      _PriorityBadge(priority: task.priority),
                     ],
                   ),
                 ],
@@ -111,6 +148,14 @@ class TaskItemCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _priorityColor(TaskPriority priority) {
+  return switch (priority) {
+    TaskPriority.high => AppColors.danger,
+    TaskPriority.medium => AppColors.warning,
+    TaskPriority.low => AppColors.accent,
+  };
 }
 
 class _SwipeBackground extends StatelessWidget {
@@ -146,9 +191,9 @@ class _PriorityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (priority) {
-      TaskPriority.high => ('High', AppColors.danger),
-      TaskPriority.medium => ('Medium', AppColors.warning),
-      TaskPriority.low => ('Low', AppColors.success),
+      TaskPriority.high => ('Urgent', AppColors.danger),
+      TaskPriority.medium => ('Important', AppColors.warning),
+      TaskPriority.low => ('Neutral', AppColors.accent),
     };
 
     return Container(

@@ -12,6 +12,9 @@ import 'package:dart_2_0/features/assistant/data/repositories/assistant_reposito
 import 'package:dart_2_0/features/assistant/data/repositories/supabase_assistant_repository_impl.dart';
 import 'package:dart_2_0/features/assistant/data/services/assistant_proxy_service.dart';
 import 'package:dart_2_0/features/assistant/domain/repositories/assistant_repository.dart';
+import 'package:dart_2_0/features/budget/data/repositories/budget_repository_impl.dart';
+import 'package:dart_2_0/features/budget/data/repositories/supabase_budget_repository_impl.dart';
+import 'package:dart_2_0/features/budget/domain/repositories/budget_repository.dart';
 import 'package:dart_2_0/features/calendar/data/repositories/calendar_repository_impl.dart';
 import 'package:dart_2_0/features/calendar/data/repositories/supabase_calendar_repository_impl.dart';
 import 'package:dart_2_0/features/calendar/domain/repositories/calendar_repository.dart';
@@ -20,12 +23,24 @@ import 'package:dart_2_0/features/expenses/data/repositories/supabase_expenses_r
 import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
+import 'package:dart_2_0/features/export/data/repositories/export_repository_impl.dart';
+import 'package:dart_2_0/features/export/data/repositories/supabase_export_repository_impl.dart';
+import 'package:dart_2_0/features/export/domain/repositories/export_repository.dart';
 import 'package:dart_2_0/features/home/data/repositories/home_repository_impl.dart';
 import 'package:dart_2_0/features/home/data/repositories/supabase_home_repository_impl.dart';
 import 'package:dart_2_0/features/home/domain/repositories/home_repository.dart';
+import 'package:dart_2_0/features/income/data/repositories/income_repository_impl.dart';
+import 'package:dart_2_0/features/income/data/repositories/supabase_income_repository_impl.dart';
+import 'package:dart_2_0/features/income/domain/repositories/income_repository.dart';
 import 'package:dart_2_0/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:dart_2_0/features/profile/data/repositories/supabase_profile_repository_impl.dart';
 import 'package:dart_2_0/features/profile/domain/repositories/profile_repository.dart';
+import 'package:dart_2_0/features/recurring/data/repositories/recurring_repository_impl.dart';
+import 'package:dart_2_0/features/recurring/data/repositories/supabase_recurring_repository_impl.dart';
+import 'package:dart_2_0/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:dart_2_0/features/search/data/repositories/global_search_repository_impl.dart';
+import 'package:dart_2_0/features/search/data/repositories/supabase_global_search_repository_impl.dart';
+import 'package:dart_2_0/features/search/domain/repositories/global_search_repository.dart';
 import 'package:dart_2_0/features/tasks/data/repositories/supabase_tasks_repository_impl.dart';
 import 'package:dart_2_0/features/tasks/data/repositories/tasks_repository_impl.dart';
 import 'package:dart_2_0/features/tasks/domain/repositories/tasks_repository.dart';
@@ -33,9 +48,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final useSupabaseProvider = Provider<bool>(
-  (_) =>
-      SupabaseConfig.isConfigured &&
-      !hasRuntimeEnv('FLUTTER_TEST'),
+  (_) => SupabaseConfig.isConfigured && !hasRuntimeEnv('FLUTTER_TEST'),
 );
 
 final supabaseClientProvider =
@@ -80,6 +93,37 @@ final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
     const MpesaParserService(),
     ref.watch(deviceSmsDataSourceProvider),
   );
+});
+final incomeRepositoryProvider = Provider<IncomeRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseIncomeRepositoryImpl(ref.watch(supabaseClientProvider));
+  }
+  return IncomeRepositoryImpl(ref.watch(appDriftStoreProvider));
+});
+final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseBudgetRepositoryImpl(ref.watch(supabaseClientProvider));
+  }
+  return BudgetRepositoryImpl(ref.watch(appDriftStoreProvider));
+});
+final recurringRepositoryProvider = Provider<RecurringRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseRecurringRepositoryImpl(ref.watch(supabaseClientProvider));
+  }
+  return RecurringRepositoryImpl(ref.watch(appDriftStoreProvider));
+});
+final globalSearchRepositoryProvider = Provider<GlobalSearchRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseGlobalSearchRepositoryImpl(
+        ref.watch(supabaseClientProvider));
+  }
+  return GlobalSearchRepositoryImpl(ref.watch(appDriftStoreProvider));
+});
+final exportRepositoryProvider = Provider<ExportRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseExportRepositoryImpl(ref.watch(supabaseClientProvider));
+  }
+  return ExportRepositoryImpl(ref.watch(appDriftStoreProvider));
 });
 final tasksRepositoryProvider = Provider<TasksRepository>((ref) {
   if (ref.watch(useSupabaseProvider)) {

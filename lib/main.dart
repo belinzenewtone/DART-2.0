@@ -1,7 +1,7 @@
 import 'package:dart_2_0/core/config/supabase_config.dart';
+import 'package:dart_2_0/core/routing/app_router.dart';
 import 'package:dart_2_0/core/theme/app_theme.dart';
 import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
-import 'package:dart_2_0/features/auth/presentation/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,13 +23,14 @@ class PersonalManagementApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(currentThemeModeProvider);
-    return MaterialApp(
+    final router = ref.watch(appRouterProvider);
+    return MaterialApp.router(
       title: 'Personal Management App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const AuthGate(),
+      routerConfig: router,
     );
   }
 }

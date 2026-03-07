@@ -4,6 +4,7 @@ import 'package:dart_2_0/core/widgets/category_chip.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
+import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
 import 'package:dart_2_0/features/tasks/presentation/providers/tasks_providers.dart';
 import 'package:dart_2_0/features/tasks/presentation/widgets/task_item_card.dart';
 import 'package:dart_2_0/features/tasks/presentation/widgets/task_dialogs.dart';
@@ -17,6 +18,7 @@ class TasksScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final tasksState = ref.watch(filteredTasksProvider);
+    final allTasksState = ref.watch(tasksProvider);
     final selectedFilter = ref.watch(taskFilterProvider);
     final writeState = ref.watch(taskWriteControllerProvider);
 
@@ -40,7 +42,10 @@ class TasksScreen extends ConsumerWidget {
           children: [
             Text('Tasks', style: textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text('Track your priorities', style: textTheme.bodyMedium),
+            Text(
+              _buildCountSubtitle(allTasksState),
+              style: textTheme.bodyMedium,
+            ),
             const SizedBox(height: 14),
             Wrap(
               spacing: 8,
@@ -96,6 +101,7 @@ class TasksScreen extends ConsumerWidget {
                             .updateTask(
                               taskId: tasks[index].id,
                               title: input.title,
+                              description: input.description,
                               dueDate: input.dueDate,
                               priority: input.priority,
                             );
@@ -113,8 +119,10 @@ class TasksScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: LoadingIndicator()),
-                error: (_, __) =>
-                    const ErrorMessage(label: 'Unable to load tasks'),
+                error: (_, __) => ErrorMessage(
+                  label: 'Unable to load tasks',
+                  onRetry: () => ref.invalidate(filteredTasksProvider),
+                ),
               ),
             ),
             Align(
@@ -133,6 +141,7 @@ class TasksScreen extends ConsumerWidget {
                             .read(taskWriteControllerProvider.notifier)
                             .addTask(
                               title: input.title,
+                              description: input.description,
                               dueDate: input.dueDate,
                               priority: input.priority,
                             );
@@ -151,5 +160,15 @@ class TasksScreen extends ConsumerWidget {
       TaskFilter.pending => 'Pending',
       TaskFilter.completed => 'Completed',
     };
+  }
+
+  String _buildCountSubtitle(AsyncValue<List<TaskItem>> tasksState) {
+    final tasks = tasksState.valueOrNull;
+    if (tasks == null) {
+      return 'Loading tasks...';
+    }
+    final pending = tasks.where((task) => !task.completed).length;
+    final completed = tasks.where((task) => task.completed).length;
+    return '$pending pending · $completed completed';
   }
 }

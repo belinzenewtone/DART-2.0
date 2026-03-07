@@ -1,10 +1,12 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
+import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/auth/domain/entities/auth_state.dart';
 import 'package:dart_2_0/features/auth/presentation/providers/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -37,17 +39,93 @@ class SettingsScreen extends ConsumerWidget {
               authState.when(
                 data: (state) => _SecurityCard(state: state),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) =>
-                    const _ErrorCard(label: 'Unable to load security settings'),
+                error: (_, __) => ErrorMessage(
+                  label: 'Unable to load security settings',
+                  onRetry: () => ref.invalidate(authProvider),
+                ),
               ),
               const SizedBox(height: 16),
               Text('Appearance', style: textTheme.titleMedium),
               const SizedBox(height: 10),
               const _AppearanceCard(),
+              const SizedBox(height: 16),
+              Text('Data and Tools', style: textTheme.titleMedium),
+              const SizedBox(height: 10),
+              const _ToolsCard(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ToolsCard extends StatelessWidget {
+  const _ToolsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      child: Column(
+        children: [
+          _ToolTile(
+            icon: Icons.savings_outlined,
+            title: 'Budgets',
+            subtitle: 'Set monthly limits per category',
+            onTap: () => context.pushNamed('budget'),
+          ),
+          _ToolTile(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Income',
+            subtitle: 'Track incoming cashflow',
+            onTap: () => context.pushNamed('income'),
+          ),
+          _ToolTile(
+            icon: Icons.autorenew,
+            title: 'Recurring Items',
+            subtitle: 'Automate repeating records',
+            onTap: () => context.pushNamed('recurring'),
+          ),
+          _ToolTile(
+            icon: Icons.search,
+            title: 'Global Search',
+            subtitle: 'Search expenses, tasks, events, and more',
+            onTap: () => context.pushNamed('search'),
+          ),
+          _ToolTile(
+            icon: Icons.file_download_outlined,
+            title: 'Export CSV',
+            subtitle: 'Export your data for backup',
+            onTap: () => context.pushNamed('export'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolTile extends StatelessWidget {
+  const _ToolTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: AppColors.accent),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
@@ -156,25 +234,6 @@ class _AppearanceCard extends ConsumerWidget {
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.danger),
-          const SizedBox(width: 8),
-          Text(label),
         ],
       ),
     );

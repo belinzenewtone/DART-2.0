@@ -14,7 +14,14 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     final start = DateTime(day.year, day.month, day.day);
     final end = start.add(const Duration(days: 1));
     return pollStream(
-      () => _loadForDay(start, end),
+      () => _loadForRange(start, end),
+    );
+  }
+
+  @override
+  Stream<List<CalendarEvent>> watchEventsInRange(DateTime start, DateTime end) {
+    return pollStream(
+      () => _loadForRange(start, end),
     );
   }
 
@@ -66,7 +73,8 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
         .eq('owner_id', userId);
   }
 
-  Future<List<CalendarEvent>> _loadForDay(DateTime start, DateTime end) async {
+  Future<List<CalendarEvent>> _loadForRange(
+      DateTime start, DateTime end) async {
     final userId = _requireUserId();
     final rows = await _client
         .from('events')

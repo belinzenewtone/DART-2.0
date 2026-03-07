@@ -23,6 +23,18 @@ final dayEventsProvider = StreamProvider<List<CalendarEvent>>(
   },
 );
 
+final monthEventDaysProvider = StreamProvider<Set<int>>(
+  (ref) {
+    final visibleMonth = ref.watch(visibleMonthProvider);
+    final monthStart = DateTime(visibleMonth.year, visibleMonth.month, 1);
+    final monthEnd = DateTime(visibleMonth.year, visibleMonth.month + 1, 1);
+    return ref
+        .watch(calendarRepositoryProvider)
+        .watchEventsInRange(monthStart, monthEnd)
+        .map((events) => events.map((event) => event.startAt.day).toSet());
+  },
+);
+
 class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
   @override
   FutureOr<void> build() {}

@@ -16,6 +16,7 @@ import 'package:dart_2_0/features/profile/presentation/profile_screen.dart';
 import 'package:dart_2_0/features/tasks/presentation/tasks_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dart_2_0/features/recurring/data/services/recurring_materializer_service.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -36,6 +37,7 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   late final SmsAutoImportService _autoImportService;
+  late final RecurringMaterializerService _recurringMaterializerService;
   bool _updateChecked = false;
 
   @override
@@ -43,7 +45,10 @@ class _AppShellState extends ConsumerState<AppShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _autoImportService = ref.read(smsAutoImportServiceProvider);
+    _recurringMaterializerService =
+        ref.read(recurringMaterializerServiceProvider);
     unawaited(_startAutoImport());
+    unawaited(_startRecurringMaterialization());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkForAppUpdate());
     });
@@ -53,6 +58,7 @@ class _AppShellState extends ConsumerState<AppShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoImportService.stop();
+    _recurringMaterializerService.stop();
     super.dispose();
   }
 
@@ -60,6 +66,7 @@ class _AppShellState extends ConsumerState<AppShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _syncNow();
+      _materializeRecurringNow();
     }
   }
 
@@ -178,6 +185,14 @@ class _AppShellState extends ConsumerState<AppShell>
 
   Future<void> _syncNow() async {
     await _autoImportService.syncNow();
+  }
+
+  Future<void> _startRecurringMaterialization() async {
+    await _recurringMaterializerService.start();
+  }
+
+  Future<void> _materializeRecurringNow() async {
+    await _recurringMaterializerService.syncNow();
   }
 
   Future<void> _checkForAppUpdate() async {

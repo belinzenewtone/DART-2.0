@@ -1,4 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/utils/currency_formatter.dart';
+import 'package:dart_2_0/core/widgets/beltech_logo.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
@@ -6,6 +8,7 @@ import 'package:dart_2_0/core/widgets/stagger_reveal.dart';
 import 'package:dart_2_0/features/home/domain/entities/home_overview.dart';
 import 'package:dart_2_0/features/home/presentation/providers/home_providers.dart';
 import 'package:dart_2_0/features/home/presentation/widgets/spending_chart.dart';
+import 'package:dart_2_0/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +19,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final overviewState = ref.watch(homeOverviewProvider);
+    final profileState = ref.watch(profileProvider);
+    final firstName = profileState.valueOrNull?.name.trim().split(' ').first;
+    final greeting = _buildGreeting(firstName);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -23,7 +29,15 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Good Evening', style: textTheme.titleLarge),
+            Row(
+              children: [
+                const BeltechLogo(size: 38, borderRadius: 10),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(greeting, style: textTheme.titleLarge),
+                ),
+              ],
+            ),
             const SizedBox(height: 4),
             Text("Here's your day at a glance", style: textTheme.bodyMedium),
             const SizedBox(height: 18),
@@ -32,14 +46,30 @@ class HomeScreen extends ConsumerWidget {
               child: overviewState.when(
                 data: (overview) => _OverviewContent(overview: overview),
                 loading: () => const Center(child: LoadingIndicator()),
-                error: (_, __) =>
-                    const ErrorMessage(label: 'Unable to load dashboard'),
+                error: (_, __) => ErrorMessage(
+                  label: 'Unable to load dashboard',
+                  onRetry: () => ref.invalidate(homeOverviewProvider),
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _buildGreeting(String? firstName) {
+    final hour = DateTime.now().hour;
+    final salutation = switch (hour) {
+      >= 5 && < 12 => 'Good Morning',
+      >= 12 && < 17 => 'Good Afternoon',
+      >= 17 && < 21 => 'Good Evening',
+      _ => 'Good Night',
+    };
+    if (firstName == null || firstName.isEmpty) {
+      return salutation;
+    }
+    return '$salutation, $firstName';
   }
 }
 
@@ -61,7 +91,7 @@ class _OverviewContent extends StatelessWidget {
                 delay: const Duration(milliseconds: 30),
                 child: _SummaryCard(
                   title: 'Today',
-                  amount: 'KES ${overview.todayKes.toStringAsFixed(2)}',
+                  amount: CurrencyFormatter.money(overview.todayKes),
                 ),
               ),
             ),
@@ -71,7 +101,7 @@ class _OverviewContent extends StatelessWidget {
                 delay: const Duration(milliseconds: 80),
                 child: _SummaryCard(
                   title: 'This Week',
-                  amount: 'KES ${overview.weekKes.toStringAsFixed(2)}',
+                  amount: CurrencyFormatter.money(overview.weekKes),
                 ),
               ),
             ),
@@ -112,7 +142,7 @@ class _OverviewContent extends StatelessWidget {
           _TransactionCard(
             title: tx.title,
             category: tx.category,
-            amount: 'KES ${tx.amountKes.toStringAsFixed(2)}',
+            amount: CurrencyFormatter.money(tx.amountKes),
           ),
           const SizedBox(height: 10),
         ],

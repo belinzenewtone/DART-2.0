@@ -15,6 +15,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
   @override
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
   }) {
@@ -22,6 +23,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
     return _client.from('tasks').insert({
       'owner_id': userId,
       'title': title,
+      'description': description,
       'completed': false,
       'due_at': dueDate?.toUtc().toIso8601String(),
       'priority': priority.name,
@@ -45,6 +47,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
   Future<void> updateTask({
     required int taskId,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
   }) {
@@ -53,6 +56,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
         .from('tasks')
         .update({
           'title': title,
+          'description': description,
           'due_at': dueDate?.toUtc().toIso8601String(),
           'priority': priority.name,
         })
@@ -74,7 +78,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
     final userId = _requireUserId();
     final rows = await _client
         .from('tasks')
-        .select('id,title,completed,due_at,priority')
+        .select('id,title,description,completed,due_at,priority')
         .eq('owner_id', userId)
         .order('id', ascending: false);
     final tasks = (rows as List).cast<Map<String, dynamic>>();
@@ -83,6 +87,7 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
           (row) => TaskItem(
             id: parseInt(row['id']),
             title: '${row['title'] ?? ''}',
+            description: row['description'] as String?,
             completed: row['completed'] == true,
             priority: _priorityFrom('${row['priority'] ?? 'medium'}'),
             dueDate:

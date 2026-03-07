@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 class NewTaskInput {
   const NewTaskInput({
     required this.title,
+    required this.description,
     required this.priority,
     this.dueDate,
   });
 
   final String title;
+  final String? description;
   final TaskPriority priority;
   final DateTime? dueDate;
 }
@@ -30,6 +32,8 @@ Future<NewTaskInput?> _showTaskDialog(
   TaskItem? initialTask,
 }) async {
   final titleController = TextEditingController(text: initialTask?.title ?? '');
+  final descriptionController =
+      TextEditingController(text: initialTask?.description ?? '');
   var selectedPriority = initialTask?.priority ?? TaskPriority.medium;
   DateTime? selectedDate = initialTask?.dueDate;
 
@@ -61,6 +65,15 @@ Future<NewTaskInput?> _showTaskDialog(
                 ),
               ),
               const SizedBox(height: 14),
+              TextField(
+                controller: descriptionController,
+                minLines: 2,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'Description (optional)',
+                ),
+              ),
+              const SizedBox(height: 14),
               Text(
                 'Priority',
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -78,7 +91,8 @@ Future<NewTaskInput?> _showTaskDialog(
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
-                        onTap: () => setState(() => selectedPriority = priority),
+                        onTap: () =>
+                            setState(() => selectedPriority = priority),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           curve: Curves.easeOut,
@@ -125,8 +139,8 @@ Future<NewTaskInput?> _showTaskDialog(
                   decoration: BoxDecoration(
                     color: AppColors.surfaceMuted.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: AppColors.border.withValues(alpha: 0.65)),
+                    border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.65)),
                   ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -172,6 +186,9 @@ Future<NewTaskInput?> _showTaskDialog(
                       Navigator.of(context).pop(
                         NewTaskInput(
                           title: title,
+                          description: descriptionController.text.trim().isEmpty
+                              ? null
+                              : descriptionController.text.trim(),
                           priority: selectedPriority,
                           dueDate: selectedDate,
                         ),

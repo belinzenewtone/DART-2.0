@@ -56,7 +56,7 @@ class _AppDriftQueries {
 
   static Future<List<DriftTaskRecord>> loadTasks(AppDriftStore store) async {
     final rows = await store._db.runSelect(
-      'SELECT id, title, completed, due_at, priority FROM tasks ORDER BY id DESC',
+      'SELECT id, title, description, completed, due_at, priority FROM tasks ORDER BY id DESC',
       const [],
     );
     return rows
@@ -64,6 +64,7 @@ class _AppDriftQueries {
           (row) => DriftTaskRecord(
             id: store._asInt(row['id']),
             title: (row['title'] ?? '') as String,
+            description: row['description'] as String?,
             completed: store._asInt(row['completed']) == 1,
             priority: (row['priority'] ?? 'medium') as String,
             dueDate: row['due_at'] == null
@@ -81,6 +82,14 @@ class _AppDriftQueries {
   ) async {
     final start = DateTime(day.year, day.month, day.day);
     final end = start.add(const Duration(days: 1));
+    return loadEventsInRange(store, start, end);
+  }
+
+  static Future<List<DriftEventRecord>> loadEventsInRange(
+    AppDriftStore store,
+    DateTime start,
+    DateTime end,
+  ) async {
     final rows = await store._db.runSelect(
       'SELECT id, title, start_at, end_at, note FROM events WHERE start_at >= ? AND start_at < ? ORDER BY start_at ASC',
       [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],

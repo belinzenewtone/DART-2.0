@@ -126,6 +126,7 @@ class _FakeTasksRepository implements TasksRepository {
   @override
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
   }) async {
@@ -134,6 +135,7 @@ class _FakeTasksRepository implements TasksRepository {
       TaskItem(
         id: _nextId++,
         title: title,
+        description: description,
         completed: false,
         priority: priority,
         dueDate: dueDate,
@@ -155,6 +157,7 @@ class _FakeTasksRepository implements TasksRepository {
     _tasks[index] = TaskItem(
       id: current.id,
       title: current.title,
+      description: current.description,
       completed: completed,
       priority: current.priority,
       dueDate: current.dueDate,
@@ -166,6 +169,7 @@ class _FakeTasksRepository implements TasksRepository {
   Future<void> updateTask({
     required int taskId,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
   }) async {
@@ -177,6 +181,7 @@ class _FakeTasksRepository implements TasksRepository {
     _tasks[index] = TaskItem(
       id: taskId,
       title: title,
+      description: description ?? current.description,
       completed: current.completed,
       priority: priority,
       dueDate: dueDate,
@@ -202,6 +207,17 @@ class _FakeCalendarRepository implements CalendarRepository {
       controller.add(_eventsFor(day));
       final sub = _changes.stream.listen((_) {
         controller.add(_eventsFor(day));
+      });
+      controller.onCancel = sub.cancel;
+    });
+  }
+
+  @override
+  Stream<List<CalendarEvent>> watchEventsInRange(DateTime start, DateTime end) {
+    return Stream<List<CalendarEvent>>.multi((controller) {
+      controller.add(_eventsInRange(start, end));
+      final sub = _changes.stream.listen((_) {
+        controller.add(_eventsInRange(start, end));
       });
       controller.onCancel = sub.cancel;
     });
@@ -259,6 +275,12 @@ class _FakeCalendarRepository implements CalendarRepository {
       return event.startAt.year == day.year &&
           event.startAt.month == day.month &&
           event.startAt.day == day.day;
+    }).toList();
+  }
+
+  List<CalendarEvent> _eventsInRange(DateTime start, DateTime end) {
+    return _events.where((event) {
+      return !event.startAt.isBefore(start) && event.startAt.isBefore(end);
     }).toList();
   }
 }

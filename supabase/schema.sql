@@ -47,6 +47,45 @@ create table if not exists public.events (
 create index if not exists idx_events_owner_start
   on public.events (owner_id, start_at);
 
+create table if not exists public.incomes (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  amount double precision not null,
+  received_at timestamptz not null default now(),
+  source text not null default 'manual'
+);
+
+create index if not exists idx_incomes_owner_received
+  on public.incomes (owner_id, received_at desc);
+
+create table if not exists public.budgets (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  category text not null,
+  monthly_limit double precision not null
+);
+
+create unique index if not exists idx_budgets_owner_category
+  on public.budgets (owner_id, lower(category));
+
+create table if not exists public.recurring_templates (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null,
+  title text not null,
+  description text,
+  category text,
+  amount double precision,
+  priority text,
+  cadence text not null,
+  next_run_at timestamptz not null,
+  enabled boolean not null default true
+);
+
+create index if not exists idx_recurring_owner_next
+  on public.recurring_templates (owner_id, next_run_at);
+
 create table if not exists public.user_profile (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
@@ -95,6 +134,9 @@ alter table public.events enable row level security;
 alter table public.user_profile enable row level security;
 alter table public.assistant_messages enable row level security;
 alter table public.app_updates enable row level security;
+alter table public.incomes enable row level security;
+alter table public.budgets enable row level security;
+alter table public.recurring_templates enable row level security;
 
 drop policy if exists "transactions_owner_rw" on public.transactions;
 create policy "transactions_owner_rw"
@@ -130,6 +172,27 @@ create policy "user_profile_owner_rw"
   for all
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+drop policy if exists "incomes_owner_rw" on public.incomes;
+create policy "incomes_owner_rw"
+  on public.incomes
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "budgets_owner_rw" on public.budgets;
+create policy "budgets_owner_rw"
+  on public.budgets
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "recurring_templates_owner_rw" on public.recurring_templates;
+create policy "recurring_templates_owner_rw"
+  on public.recurring_templates
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
 
 drop policy if exists "app_updates_public_read" on public.app_updates;
 create policy "app_updates_public_read"

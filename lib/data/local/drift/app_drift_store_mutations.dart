@@ -32,13 +32,14 @@ extension AppDriftStoreMutations on AppDriftStore {
   Future<void> updateTask({
     required int id,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required String priority,
   }) async {
     await ensureInitialized();
     await executor.runUpdate(
-      'UPDATE tasks SET title = ?, due_at = ?, priority = ? WHERE id = ?',
-      [title, dueDate?.millisecondsSinceEpoch, priority, id],
+      'UPDATE tasks SET title = ?, description = ?, due_at = ?, priority = ? WHERE id = ?',
+      [title, description, dueDate?.millisecondsSinceEpoch, priority, id],
     );
     emitChange();
   }

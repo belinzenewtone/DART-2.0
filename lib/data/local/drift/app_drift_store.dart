@@ -10,9 +10,11 @@ part 'app_drift_store_schema.dart';
 part 'app_drift_store_utils.dart';
 
 class AppDriftStore {
-  AppDriftStore() : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite', inMemory: true);
+  AppDriftStore()
+      : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite', inMemory: true);
 
-  AppDriftStore.persistent() : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite');
+  AppDriftStore.persistent()
+      : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite');
 
   final QueryExecutor _db;
   final StreamController<int> _changes = StreamController<int>.broadcast();
@@ -40,6 +42,9 @@ class AppDriftStore {
 
   Stream<List<DriftEventRecord>> watchEventsForDay(DateTime day) =>
       _watch(() => _loadEventsForDay(day));
+  Stream<List<DriftEventRecord>> watchEventsInRange(
+          DateTime start, DateTime end) =>
+      _watch(() => _loadEventsInRange(start, end));
 
   Future<void> addTransaction({
     required String title,
@@ -60,13 +65,14 @@ class AppDriftStore {
 
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     String priority = 'medium',
   }) async {
     await _ensureInitialized();
     await _db.runInsert(
-      'INSERT INTO tasks(title, completed, due_at, priority) VALUES (?, ?, ?, ?)',
-      [title, 0, dueDate?.millisecondsSinceEpoch, priority],
+      'INSERT INTO tasks(title, description, completed, due_at, priority) VALUES (?, ?, ?, ?, ?)',
+      [title, description, 0, dueDate?.millisecondsSinceEpoch, priority],
     );
     _emitChange();
   }
@@ -133,6 +139,10 @@ class AppDriftStore {
 
   Future<List<DriftEventRecord>> _loadEventsForDay(DateTime day) =>
       _AppDriftQueries.loadEventsForDay(this, day);
+
+  Future<List<DriftEventRecord>> _loadEventsInRange(
+          DateTime start, DateTime end) =>
+      _AppDriftQueries.loadEventsInRange(this, start, end);
 
   Future<int> _countRows(String tableName) =>
       _AppDriftQueries.countRows(this, tableName);

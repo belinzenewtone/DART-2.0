@@ -16,6 +16,7 @@ class TasksRepositoryImpl implements TasksRepository {
                 (row) => TaskItem(
                   id: row.id,
                   title: row.title,
+                  description: row.description,
                   completed: row.completed,
                   priority: _toPriority(row.priority),
                   dueDate: row.dueDate,
@@ -28,11 +29,13 @@ class TasksRepositoryImpl implements TasksRepository {
   @override
   Future<void> addTask({
     required String title,
+    String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
   }) async {
     await _store.addTask(
       title: title,
+      description: description,
       dueDate: dueDate,
       priority: priority.name,
     );
@@ -53,12 +56,14 @@ class TasksRepositoryImpl implements TasksRepository {
   Future<void> updateTask({
     required int taskId,
     required String title,
+    String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
   }) async {
     await _store.updateTask(
       id: taskId,
       title: title,
+      description: description,
       dueDate: dueDate,
       priority: priority.name,
     );

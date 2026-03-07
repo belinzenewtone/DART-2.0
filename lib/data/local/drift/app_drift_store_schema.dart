@@ -24,11 +24,13 @@ class _AppDriftSchema {
       'CREATE TABLE IF NOT EXISTS tasks('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
       'title TEXT NOT NULL,'
+      'description TEXT,'
       'completed INTEGER NOT NULL DEFAULT 0,'
       'due_at INTEGER,'
       'priority TEXT NOT NULL DEFAULT \'medium\''
       ')',
     );
+    await tryAddTaskDescriptionColumn(store);
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS events('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -38,6 +40,38 @@ class _AppDriftSchema {
       'note TEXT'
       ')',
     );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS incomes('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'title TEXT NOT NULL,'
+      'amount REAL NOT NULL,'
+      'received_at INTEGER NOT NULL,'
+      'source TEXT NOT NULL DEFAULT \'manual\''
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS budgets('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'category TEXT NOT NULL,'
+      'monthly_limit REAL NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS recurring_templates('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'kind TEXT NOT NULL,'
+      'title TEXT NOT NULL,'
+      'description TEXT,'
+      'category TEXT,'
+      'amount REAL,'
+      'priority TEXT,'
+      'cadence TEXT NOT NULL,'
+      'next_run_at INTEGER NOT NULL,'
+      'enabled INTEGER NOT NULL DEFAULT 1'
+      ')',
+    );
+    await tryAddIncomesSourceColumn(store);
+    await tryAddRecurringPriorityColumn(store);
 
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_tx_occurred_at ON transactions(occurred_at)',
@@ -53,6 +87,15 @@ class _AppDriftSchema {
     );
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_events_start_at ON events(start_at)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_incomes_received_at ON incomes(received_at)',
+    );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category ON budgets(LOWER(category))',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_recurring_next_run_at ON recurring_templates(next_run_at)',
     );
 
     await seedDataIfEmpty(store);
@@ -106,12 +149,51 @@ class _AppDriftSchema {
     if (taskCount == 0) {
       final nowMs = DateTime.now().millisecondsSinceEpoch;
       await store._db.runInsert(
-        'INSERT INTO tasks(title, completed, due_at, priority) VALUES (?, ?, ?, ?)',
-        ['Prepare monthly spending review', 0, nowMs, 'high'],
+        'INSERT INTO tasks(title, description, completed, due_at, priority) VALUES (?, ?, ?, ?, ?)',
+        [
+          'Prepare monthly spending review',
+          'Review top spending categories and action items.',
+          0,
+          nowMs,
+          'high'
+        ],
       );
       await store._db.runInsert(
-        'INSERT INTO tasks(title, completed, due_at, priority) VALUES (?, ?, ?, ?)',
-        ['Submit transport expense report', 1, nowMs, 'medium'],
+        'INSERT INTO tasks(title, description, completed, due_at, priority) VALUES (?, ?, ?, ?, ?)',
+        [
+          'Submit transport expense report',
+          'Send final report to finance.',
+          1,
+          nowMs,
+          'medium'
+        ],
+      );
+    }
+
+    final incomeCount = await store._countRows('incomes');
+    if (incomeCount == 0) {
+      await store._db.runInsert(
+        'INSERT INTO incomes(title, amount, received_at, source) VALUES (?, ?, ?, ?)',
+        [
+          'Salary',
+          120000.0,
+          DateTime.now()
+              .subtract(const Duration(days: 5))
+              .millisecondsSinceEpoch,
+          'seed',
+        ],
+      );
+    }
+
+    final budgetCount = await store._countRows('budgets');
+    if (budgetCount == 0) {
+      await store._db.runInsert(
+        'INSERT OR IGNORE INTO budgets(category, monthly_limit) VALUES (?, ?)',
+        ['Food', 15000.0],
+      );
+      await store._db.runInsert(
+        'INSERT OR IGNORE INTO budgets(category, monthly_limit) VALUES (?, ?)',
+        ['Transport', 8000.0],
       );
     }
   }
@@ -120,6 +202,34 @@ class _AppDriftSchema {
     try {
       await store._db
           .runCustom('ALTER TABLE transactions ADD COLUMN source_hash TEXT');
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddTaskDescriptionColumn(AppDriftStore store) async {
+    try {
+      await store._db
+          .runCustom('ALTER TABLE tasks ADD COLUMN description TEXT');
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddIncomesSourceColumn(AppDriftStore store) async {
+    try {
+      await store._db.runCustom(
+        'ALTER TABLE incomes ADD COLUMN source TEXT NOT NULL DEFAULT \'manual\'',
+      );
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddRecurringPriorityColumn(AppDriftStore store) async {
+    try {
+      await store._db.runCustom(
+          'ALTER TABLE recurring_templates ADD COLUMN priority TEXT');
     } catch (_) {
       return;
     }
