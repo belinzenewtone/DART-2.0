@@ -52,6 +52,15 @@ class AssistantProfileStore {
     _emitChange();
   }
 
+  Future<void> updateAvatarUrl(String? avatarUrl) async {
+    await _ensureInitialized();
+    await _db.runUpdate(
+      'UPDATE user_profile SET avatar_url = ? WHERE id = 1',
+      [avatarUrl],
+    );
+    _emitChange();
+  }
+
   Stream<T> _watch<T>(Future<T> Function() loader) {
     return Stream<T>.multi((controller) async {
       await _ensureInitialized();
@@ -85,9 +94,11 @@ class AssistantProfileStore {
       'email TEXT NOT NULL,'
       'phone TEXT NOT NULL,'
       'member_since_label TEXT NOT NULL,'
-      'verified INTEGER NOT NULL'
+      'verified INTEGER NOT NULL,'
+      'avatar_url TEXT'
       ')',
     );
+    await _tryAddAvatarUrlColumn();
     await _db.runCustom(
       'CREATE TABLE IF NOT EXISTS assistant_messages('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -132,7 +143,7 @@ class AssistantProfileStore {
 
   Future<DriftProfileRecord> _loadProfile() async {
     final rows = await _db.runSelect(
-      'SELECT name, email, phone, member_since_label, verified FROM user_profile WHERE id = 1',
+      'SELECT name, email, phone, member_since_label, verified, avatar_url FROM user_profile WHERE id = 1',
       const [],
     );
     final row = rows.first;
@@ -142,6 +153,7 @@ class AssistantProfileStore {
       phone: (row['phone'] ?? '') as String,
       memberSinceLabel: (row['member_since_label'] ?? '') as String,
       verified: _asInt(row['verified']) == 1,
+      avatarUrl: row['avatar_url'] as String?,
     );
   }
 
@@ -182,6 +194,14 @@ class AssistantProfileStore {
       return value.toInt();
     }
     return int.tryParse('$value') ?? 0;
+  }
+
+  Future<void> _tryAddAvatarUrlColumn() async {
+    try {
+      await _db.runCustom('ALTER TABLE user_profile ADD COLUMN avatar_url TEXT');
+    } catch (_) {
+      return;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
+import 'package:dart_2_0/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 
 class ProfileContentSection extends StatelessWidget {
@@ -9,6 +10,7 @@ class ProfileContentSection extends StatelessWidget {
     required this.profile,
     required this.onEdit,
     required this.onChangePassword,
+    required this.onAvatarCameraTap,
     required this.showSignOut,
     required this.signingOut,
     required this.onSignOut,
@@ -17,6 +19,7 @@ class ProfileContentSection extends StatelessWidget {
   final UserProfile profile;
   final VoidCallback onEdit;
   final VoidCallback onChangePassword;
+  final VoidCallback onAvatarCameraTap;
   final bool showSignOut;
   final bool signingOut;
   final VoidCallback onSignOut;
@@ -28,17 +31,10 @@ class ProfileContentSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Center(
-          child: CircleAvatar(
-            radius: 58,
-            backgroundColor: AppColors.accent,
-            child: Text(
-              profile.name.isEmpty ? 'U' : profile.name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 56,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          child: ProfileAvatar(
+            name: profile.name,
+            avatarUrl: profile.avatarUrl,
+            onCameraTap: onAvatarCameraTap,
           ),
         ),
         const SizedBox(height: 12),
@@ -57,7 +53,8 @@ class ProfileContentSection extends StatelessWidget {
         const SizedBox(height: 12),
         GlassCard(
           child: _StatusRow(
-            icon: profile.verified ? Icons.verified : Icons.warning_amber_rounded,
+            icon:
+                profile.verified ? Icons.verified : Icons.warning_amber_rounded,
             iconColor: profile.verified ? AppColors.success : AppColors.warning,
             title: profile.verified ? 'Account Verified' : 'Account Pending',
             subtitle: profile.verified
@@ -150,25 +147,6 @@ class ProfileContentSection extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class ProfileErrorCard extends StatelessWidget {
-  const ProfileErrorCard({super.key, required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.danger),
-          const SizedBox(width: 8),
-          Text(label),
-        ],
-      ),
     );
   }
 }

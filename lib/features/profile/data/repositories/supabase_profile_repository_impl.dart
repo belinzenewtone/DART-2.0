@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
 import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
 import 'package:dart_2_0/features/profile/domain/repositories/profile_repository.dart';
@@ -7,6 +9,7 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
   SupabaseProfileRepositoryImpl(this._client);
 
   final SupabaseClient _client;
+  static const String _avatarBucket = 'avatars';
 
   @override
   Stream<UserProfile> watchProfile() => pollStream(_loadProfile);
@@ -44,11 +47,33 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
     await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
+  @override
+  Future<void> updateAvatar({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    final userId = _requireUserId();
+    final ext = _normalizeExtension(fileExtension);
+    final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _client.storage.from(_avatarBucket).uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: _contentTypeFor(ext),
+          ),
+        );
+    final url = _client.storage.from(_avatarBucket).getPublicUrl(path);
+    await _client
+        .from('user_profile')
+        .update({'avatar_url': url}).eq('id', userId);
+  }
+
   Future<UserProfile> _loadProfile() async {
     final user = _requireUser();
     final row = await _client
         .from('user_profile')
-        .select('name,email,phone,member_since_label,verified')
+        .select('name,email,phone,member_since_label,verified,avatar_url')
         .eq('id', user.id)
         .maybeSingle();
     if (row == null) {
@@ -69,6 +94,7 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
         phone: initialPhone.isEmpty ? '-' : initialPhone,
         memberSinceLabel: _memberSinceLabel(),
         verified: user.emailConfirmedAt != null,
+        avatarUrl: null,
       );
     }
     return UserProfile(
@@ -77,6 +103,7 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
       phone: '${row['phone'] ?? ''}',
       memberSinceLabel: '${row['member_since_label'] ?? ''}',
       verified: row['verified'] == true,
+      avatarUrl: row['avatar_url'] as String?,
     );
   }
 
@@ -128,5 +155,24 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
     final month = months[parsed.month - 1];
     final day = parsed.day.toString().padLeft(2, '0');
     return '$weekday, $month $day, ${parsed.year}';
+  }
+
+  String _normalizeExtension(String extension) {
+    final value = extension.toLowerCase().replaceAll('.', '');
+    if (value == 'jpg') {
+      return 'jpeg';
+    }
+    return switch (value) {
+      'jpeg' || 'png' || 'webp' => value,
+      _ => 'jpeg',
+    };
+  }
+
+  String _contentTypeFor(String extension) {
+    return switch (extension) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
   }
 }

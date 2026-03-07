@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dart_2_0/core/security/password_hasher.dart';
 import 'package:dart_2_0/core/security/secure_credentials_store.dart';
 import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
@@ -26,6 +29,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
             phone: profile.phone,
             memberSinceLabel: profile.memberSinceLabel,
             verified: profile.verified,
+            avatarUrl: profile.avatarUrl,
           ),
         );
   }
@@ -54,6 +58,17 @@ class ProfileRepositoryImpl implements ProfileRepository {
     await _credentialsStore.writePasswordHash(newHash);
   }
 
+  @override
+  Future<void> updateAvatar({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    final ext = _normalizeExtension(fileExtension);
+    final encoded = base64Encode(bytes);
+    final dataUri = 'data:image/$ext;base64,$encoded';
+    await _store.updateAvatarUrl(dataUri);
+  }
+
   Future<void> _ensurePasswordBootstrap() async {
     if (_passwordBootstrapped) {
       return;
@@ -64,5 +79,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
       await _credentialsStore.writePasswordHash(defaultHash);
     }
     _passwordBootstrapped = true;
+  }
+
+  String _normalizeExtension(String extension) {
+    final value = extension.toLowerCase().replaceAll('.', '');
+    if (value == 'jpg') {
+      return 'jpeg';
+    }
+    return switch (value) {
+      'jpeg' || 'png' || 'webp' => value,
+      _ => 'jpeg',
+    };
   }
 }

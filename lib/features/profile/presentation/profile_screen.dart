@@ -1,11 +1,14 @@
 import 'package:dart_2_0/core/di/repository_providers.dart';
+import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/features/auth/presentation/providers/account_providers.dart';
 import 'package:dart_2_0/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dart_2_0/features/profile/presentation/widgets/profile_content_section.dart';
 import 'package:dart_2_0/features/profile/presentation/widgets/profile_dialogs.dart';
-import 'package:dart_2_0/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -50,11 +53,7 @@ class ProfileScreen extends ConsumerWidget {
                 Text('Profile', style: textTheme.titleLarge),
                 IconButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SettingsScreen(),
-                      ),
-                    );
+                    context.pushNamed('settings');
                   },
                   icon: const Icon(Icons.settings_outlined),
                 ),
@@ -66,15 +65,59 @@ class ProfileScreen extends ConsumerWidget {
                 profile: profile,
                 onEdit: () => showEditProfileDialog(context, ref, profile),
                 onChangePassword: () => showPasswordDialog(context, ref),
+                onAvatarCameraTap: () async {
+                  try {
+                    final picker = ImagePicker();
+                    final picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 1024,
+                      maxHeight: 1024,
+                      imageQuality: 88,
+                    );
+                    if (picked == null) {
+                      return;
+                    }
+                    final bytes = await picked.readAsBytes();
+                    final extension =
+                        p.extension(picked.path).replaceFirst('.', '');
+                    await ref
+                        .read(profileWriteControllerProvider.notifier)
+                        .updateAvatar(
+                          bytes: bytes,
+                          fileExtension: extension.isEmpty ? 'jpeg' : extension,
+                        );
+                    if (!context.mounted) {
+                      return;
+                    }
+                    final writeState = ref.read(profileWriteControllerProvider);
+                    if (!writeState.hasError) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile photo updated')),
+                      );
+                    }
+                  } catch (error) {
+                    if (!context.mounted) {
+                      return;
+                    }
+                    final message = '$error'.replaceFirst('Exception: ', '');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  }
+                },
                 showSignOut: useSupabase,
                 signingOut: authWriteState.isLoading,
                 onSignOut: () async {
-                  await ref.read(accountAuthControllerProvider.notifier).signOut();
+                  await ref
+                      .read(accountAuthControllerProvider.notifier)
+                      .signOut();
                 },
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) =>
-                  const ProfileErrorCard(label: 'Unable to load profile'),
+              error: (_, __) => ErrorMessage(
+                label: 'Unable to load profile',
+                onRetry: () => ref.invalidate(profileProvider),
+              ),
             ),
           ],
         ),
