@@ -1,7 +1,7 @@
 name: dart_2_0
 description: Personal management app with clean architecture and glassmorphism UI.
 publish_to: "none"
-version: 0.1.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
