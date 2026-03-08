@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
@@ -46,7 +47,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            padding: AppSpacing.sectionPadding(context, bottom: 0),
             child: Row(
               children: [
                 const CircleAvatar(
@@ -74,7 +75,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           ),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 120 + keyboardInset),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenHorizontal,
+                16,
+                AppSpacing.screenHorizontal,
+                AppSpacing.contentBottomSafe + keyboardInset,
+              ),
               children: [
                 messagesState.when(
                   data: (messages) => _ConversationList(messages: messages),

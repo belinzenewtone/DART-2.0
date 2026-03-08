@@ -3,6 +3,7 @@ import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/features/calendar/presentation/providers/calendar_providers.dart';
 import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_events_card.dart';
 import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_month_grid.dart';
@@ -44,7 +45,7 @@ class CalendarScreen extends ConsumerWidget {
     final visibleMonth = ref.watch(visibleMonthProvider);
     final selectedDay = ref.watch(selectedDayProvider);
     final eventsState = ref.watch(dayEventsProvider);
-    final monthEventDaysState = ref.watch(monthEventDaysProvider);
+    final monthEventTypesState = ref.watch(monthEventTypesProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
 
     ref.listen<AsyncValue<void>>(calendarWriteControllerProvider,
@@ -60,7 +61,7 @@ class CalendarScreen extends ConsumerWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+        padding: AppSpacing.screenPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -119,7 +120,7 @@ class CalendarScreen extends ConsumerWidget {
                     CalendarMonthGrid(
                       visibleMonth: visibleMonth,
                       selectedDay: selectedDay,
-                      eventDays: monthEventDaysState.valueOrNull ?? const {},
+                      eventTypes: monthEventTypesState.valueOrNull ?? const {},
                       maxWidth: _calendarContentMaxWidth,
                       onSelect: (day) {
                         ref.read(selectedDayProvider.notifier).state = day;
@@ -164,6 +165,7 @@ class CalendarScreen extends ConsumerWidget {
                           title: input.title,
                           startAt: input.startAt,
                           priority: input.priority,
+                          type: input.type,
                           endAt: input.endAt,
                           note: input.note,
                         );
@@ -203,6 +205,7 @@ class CalendarScreen extends ConsumerWidget {
                               title: input.title,
                               startAt: input.startAt,
                               priority: input.priority,
+                              type: input.type,
                               endAt: input.endAt,
                               note: input.note,
                             );

@@ -1,5 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/theme/app_motion.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/core/widgets/beltech_logo.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+        padding: AppSpacing.screenPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -109,6 +110,8 @@ class _OverviewContent extends StatelessWidget {
                 child: _SummaryCard(
                   title: 'Today',
                   amount: CurrencyFormatter.money(overview.todayKes),
+                  tone: GlassCardTone.accent,
+                  accentColor: AppColors.accent,
                 ),
               ),
             ),
@@ -119,6 +122,8 @@ class _OverviewContent extends StatelessWidget {
                 child: _SummaryCard(
                   title: 'This Week',
                   amount: CurrencyFormatter.money(overview.weekKes),
+                  tone: GlassCardTone.accent,
+                  accentColor: AppColors.violet,
                 ),
               ),
             ),
@@ -169,15 +174,24 @@ class _OverviewContent extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.title, required this.amount});
+  const _SummaryCard({
+    required this.title,
+    required this.amount,
+    this.tone = GlassCardTone.standard,
+    this.accentColor,
+  });
 
   final String title;
   final String amount;
+  final GlassCardTone tone;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return GlassCard(
+      tone: tone,
+      accentColor: accentColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

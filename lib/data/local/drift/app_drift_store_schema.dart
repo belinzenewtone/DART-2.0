@@ -39,11 +39,13 @@ class _AppDriftSchema {
       'end_at INTEGER,'
       'note TEXT,'
       'completed INTEGER NOT NULL DEFAULT 0,'
-      'priority TEXT NOT NULL DEFAULT \'medium\''
+      'priority TEXT NOT NULL DEFAULT \'medium\','
+      'event_type TEXT NOT NULL DEFAULT \'general\''
       ')',
     );
     await tryAddEventCompletedColumn(store);
     await tryAddEventPriorityColumn(store);
+    await tryAddEventTypeColumn(store);
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS incomes('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -253,6 +255,16 @@ class _AppDriftSchema {
     try {
       await store._db.runCustom(
         'ALTER TABLE events ADD COLUMN priority TEXT NOT NULL DEFAULT \'medium\'',
+      );
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddEventTypeColumn(AppDriftStore store) async {
+    try {
+      await store._db.runCustom(
+        'ALTER TABLE events ADD COLUMN event_type TEXT NOT NULL DEFAULT \'general\'',
       );
     } catch (_) {
       return;

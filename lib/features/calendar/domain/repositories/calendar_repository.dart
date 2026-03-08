@@ -8,6 +8,7 @@ abstract class CalendarRepository {
     required String title,
     required DateTime startAt,
     CalendarEventPriority priority = CalendarEventPriority.medium,
+    CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
   });
@@ -17,6 +18,7 @@ abstract class CalendarRepository {
     required String title,
     required DateTime startAt,
     required CalendarEventPriority priority,
+    required CalendarEventType type,
     DateTime? endAt,
     String? note,
   });

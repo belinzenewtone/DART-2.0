@@ -46,7 +46,7 @@ class CalendarEventsCard extends StatelessWidget {
         final end = event.endAt == null
             ? null
             : '${event.endAt!.hour.toString().padLeft(2, '0')}:${event.endAt!.minute.toString().padLeft(2, '0')}';
-        final priorityColor = _priorityColor(event.priority);
+        final typeColor = _typeColor(event.type);
         final statusLabel = event.completed ? 'Completed' : 'Scheduled';
         return Dismissible(
           key: ValueKey('event-${event.id}'),
@@ -87,16 +87,14 @@ class CalendarEventsCard extends StatelessWidget {
                   height: 68,
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(
-                    color: priorityColor,
+                    color: typeColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Icon(
-                  event.completed
-                      ? Icons.check_circle
-                      : Icons.event_note_outlined,
-                  color: event.completed ? AppColors.success : AppColors.accent,
+                  event.completed ? Icons.check_circle : _typeIcon(event.type),
+                  color: event.completed ? AppColors.success : typeColor,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -116,6 +114,8 @@ class CalendarEventsCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
+                          _EventTypeBadge(type: event.type),
+                          const SizedBox(width: 8),
                           _EventPriorityBadge(priority: event.priority),
                           const SizedBox(width: 8),
                           Expanded(
@@ -158,11 +158,23 @@ class CalendarEventsCard extends StatelessWidget {
   }
 }
 
-Color _priorityColor(CalendarEventPriority priority) {
-  return switch (priority) {
-    CalendarEventPriority.high => AppColors.danger,
-    CalendarEventPriority.medium => AppColors.warning,
-    CalendarEventPriority.low => AppColors.accent,
+Color _typeColor(CalendarEventType type) {
+  return switch (type) {
+    CalendarEventType.work => AppColors.accent,
+    CalendarEventType.personal => AppColors.violet,
+    CalendarEventType.finance => AppColors.teal,
+    CalendarEventType.health => AppColors.warning,
+    CalendarEventType.general => AppColors.slate,
+  };
+}
+
+IconData _typeIcon(CalendarEventType type) {
+  return switch (type) {
+    CalendarEventType.work => Icons.work_outline,
+    CalendarEventType.personal => Icons.person_outline,
+    CalendarEventType.finance => Icons.account_balance_wallet_outlined,
+    CalendarEventType.health => Icons.favorite_outline,
+    CalendarEventType.general => Icons.event_note_outlined,
   };
 }
 
@@ -204,6 +216,37 @@ class _EventPriorityBadge extends StatelessWidget {
       CalendarEventPriority.low => ('Neutral', AppColors.accent),
     };
 
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _EventTypeBadge extends StatelessWidget {
+  const _EventTypeBadge({required this.type});
+
+  final CalendarEventType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (type) {
+      CalendarEventType.work => ('Work', AppColors.accent),
+      CalendarEventType.personal => ('Personal', AppColors.violet),
+      CalendarEventType.finance => ('Finance', AppColors.teal),
+      CalendarEventType.health => ('Health', AppColors.warning),
+      CalendarEventType.general => ('General', AppColors.slate),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

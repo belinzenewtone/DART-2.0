@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/widgets/glass_card.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/features/export/domain/entities/export_result.dart';
 import 'package:dart_2_0/features/export/presentation/providers/export_providers.dart';
@@ -33,7 +34,7 @@ class ExportScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           children: [
             const GlassCard(
               child: Text(

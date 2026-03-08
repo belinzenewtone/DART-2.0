@@ -49,6 +49,8 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
               child: _SummaryCard(
                 title: 'Today',
                 amount: CurrencyFormatter.money(widget.snapshot.todayKes),
+                tone: GlassCardTone.accent,
+                accentColor: AppColors.accent,
               ),
             ),
             const SizedBox(width: 10),
@@ -56,6 +58,8 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
               child: _SummaryCard(
                 title: 'This Week',
                 amount: CurrencyFormatter.money(widget.snapshot.weekKes),
+                tone: GlassCardTone.accent,
+                accentColor: AppColors.teal,
               ),
             ),
           ],
@@ -138,15 +142,21 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.title,
     required this.amount,
+    this.tone = GlassCardTone.standard,
+    this.accentColor,
   });
 
   final String title;
   final String amount;
+  final GlassCardTone tone;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return GlassCard(
+      tone: tone,
+      accentColor: accentColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

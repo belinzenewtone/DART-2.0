@@ -19,6 +19,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   startAt: row.startAt,
                   completed: row.completed,
                   priority: _priorityFrom(row.priority),
+                  type: calendarEventTypeFromRaw(row.eventType),
                   endAt: row.endAt,
                   note: row.note,
                 ),
@@ -38,6 +39,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   startAt: row.startAt,
                   completed: row.completed,
                   priority: _priorityFrom(row.priority),
+                  type: calendarEventTypeFromRaw(row.eventType),
                   endAt: row.endAt,
                   note: row.note,
                 ),
@@ -51,6 +53,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
     required String title,
     required DateTime startAt,
     CalendarEventPriority priority = CalendarEventPriority.medium,
+    CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
   }) async {
@@ -58,6 +61,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
       title: title,
       startAt: startAt,
       priority: priority.name,
+      eventType: calendarEventTypeToRaw(type),
       endAt: endAt,
       note: note,
     );
@@ -69,6 +73,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
     required String title,
     required DateTime startAt,
     required CalendarEventPriority priority,
+    required CalendarEventType type,
     DateTime? endAt,
     String? note,
   }) {
@@ -77,6 +82,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
       title: title,
       startAt: startAt,
       priority: priority.name,
+      eventType: calendarEventTypeToRaw(type),
       endAt: endAt,
       note: note,
     );

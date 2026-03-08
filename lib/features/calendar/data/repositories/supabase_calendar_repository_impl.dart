@@ -30,6 +30,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     required String title,
     required DateTime startAt,
     CalendarEventPriority priority = CalendarEventPriority.medium,
+    CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
   }) {
@@ -42,6 +43,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
       'note': note,
       'completed': false,
       'priority': priority.name,
+      'event_type': calendarEventTypeToRaw(type),
     });
   }
 
@@ -51,6 +53,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     required String title,
     required DateTime startAt,
     required CalendarEventPriority priority,
+    required CalendarEventType type,
     DateTime? endAt,
     String? note,
   }) {
@@ -63,6 +66,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
           'end_at': endAt?.toUtc().toIso8601String(),
           'note': note,
           'priority': priority.name,
+          'event_type': calendarEventTypeToRaw(type),
         })
         .eq('id', eventId)
         .eq('owner_id', userId);
@@ -96,7 +100,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     final userId = _requireUserId();
     final rows = await _client
         .from('events')
-        .select('id,title,start_at,end_at,note,completed,priority')
+        .select('id,title,start_at,end_at,note,completed,priority,event_type')
         .eq('owner_id', userId)
         .gte('start_at', start.toUtc().toIso8601String())
         .lt('start_at', end.toUtc().toIso8601String())
@@ -111,6 +115,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
             startAt: parseTimestamp(row['start_at']),
             completed: row['completed'] == true,
             priority: _priorityFrom('${row['priority'] ?? 'medium'}'),
+            type: calendarEventTypeFromRaw('${row['event_type'] ?? 'general'}'),
             endAt: row['end_at'] == null ? null : parseTimestamp(row['end_at']),
             note: row['note'] as String?,
           ),

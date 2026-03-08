@@ -23,7 +23,7 @@ final dayEventsProvider = StreamProvider<List<CalendarEvent>>(
   },
 );
 
-final monthEventDaysProvider = StreamProvider<Set<int>>(
+final monthEventTypesProvider = StreamProvider<Map<int, CalendarEventType>>(
   (ref) {
     final visibleMonth = ref.watch(visibleMonthProvider);
     final monthStart = DateTime(visibleMonth.year, visibleMonth.month, 1);
@@ -31,7 +31,14 @@ final monthEventDaysProvider = StreamProvider<Set<int>>(
     return ref
         .watch(calendarRepositoryProvider)
         .watchEventsInRange(monthStart, monthEnd)
-        .map((events) => events.map((event) => event.startAt.day).toSet());
+        .map((events) {
+      final dayTypes = <int, CalendarEventType>{};
+      for (final event in events) {
+        dayTypes[event.startAt.day] =
+            _preferType(dayTypes[event.startAt.day], event.type);
+      }
+      return dayTypes;
+    });
   },
 );
 
@@ -53,6 +60,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     required String title,
     required DateTime startAt,
     CalendarEventPriority priority = CalendarEventPriority.medium,
+    CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
   }) async {
@@ -64,6 +72,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         title: title,
         startAt: startAt,
         priority: priority,
+        type: type,
         endAt: endAt,
         note: note,
       );
@@ -82,6 +91,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     required String title,
     required DateTime startAt,
     required CalendarEventPriority priority,
+    required CalendarEventType type,
     DateTime? endAt,
     String? note,
   }) async {
@@ -94,6 +104,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         title: title,
         startAt: startAt,
         priority: priority,
+        type: type,
         endAt: endAt,
         note: note,
       );
@@ -164,3 +175,20 @@ final calendarWriteControllerProvider =
     AutoDisposeAsyncNotifierProvider<CalendarWriteController, void>(
   CalendarWriteController.new,
 );
+
+CalendarEventType _preferType(
+  CalendarEventType? current,
+  CalendarEventType incoming,
+) {
+  if (current == null) {
+    return incoming;
+  }
+  const weight = <CalendarEventType, int>{
+    CalendarEventType.work: 5,
+    CalendarEventType.finance: 4,
+    CalendarEventType.health: 3,
+    CalendarEventType.personal: 2,
+    CalendarEventType.general: 1,
+  };
+  return (weight[incoming] ?? 0) >= (weight[current] ?? 0) ? incoming : current;
+}

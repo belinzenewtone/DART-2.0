@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
@@ -69,7 +70,7 @@ class RecurringScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           child: templatesState.when(
             data: (templates) {
               if (templates.isEmpty) {

@@ -8,6 +8,9 @@ import 'package:dart_2_0/features/auth/data/repositories/local_account_repositor
 import 'package:dart_2_0/features/auth/data/repositories/supabase_account_repository_impl.dart';
 import 'package:dart_2_0/features/auth/domain/repositories/account_repository.dart';
 import 'package:dart_2_0/features/auth/domain/repositories/auth_repository.dart';
+import 'package:dart_2_0/features/analytics/data/repositories/analytics_repository_impl.dart';
+import 'package:dart_2_0/features/analytics/data/repositories/supabase_analytics_repository_impl.dart';
+import 'package:dart_2_0/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:dart_2_0/features/assistant/data/repositories/assistant_repository_impl.dart';
 import 'package:dart_2_0/features/assistant/data/repositories/supabase_assistant_repository_impl.dart';
 import 'package:dart_2_0/features/assistant/data/services/assistant_proxy_service.dart';
@@ -21,6 +24,7 @@ import 'package:dart_2_0/features/calendar/domain/repositories/calendar_reposito
 import 'package:dart_2_0/features/expenses/data/repositories/expenses_repository_impl.dart';
 import 'package:dart_2_0/features/expenses/data/repositories/supabase_expenses_repository_impl.dart';
 import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:dart_2_0/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:dart_2_0/features/export/data/repositories/export_repository_impl.dart';
@@ -56,6 +60,9 @@ final supabaseClientProvider =
 final deviceSmsDataSourceProvider = Provider<DeviceSmsDataSource>(
   (_) => DeviceSmsDataSource(),
 );
+final merchantLearningServiceProvider = Provider<MerchantLearningService>(
+  (_) => MerchantLearningService(),
+);
 final assistantProxyServiceProvider = Provider<AssistantProxyService?>((ref) {
   if (!AssistantProxyConfig.isConfigured) {
     return null;
@@ -85,12 +92,14 @@ final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
     return SupabaseExpensesRepositoryImpl(
       ref.watch(supabaseClientProvider),
       const MpesaParserService(),
+      ref.watch(merchantLearningServiceProvider),
       ref.watch(deviceSmsDataSourceProvider),
     );
   }
   return ExpensesRepositoryImpl(
     ref.watch(appDriftStoreProvider),
     const MpesaParserService(),
+    ref.watch(merchantLearningServiceProvider),
     ref.watch(deviceSmsDataSourceProvider),
   );
 });
@@ -155,6 +164,12 @@ final assistantRepositoryProvider = Provider<AssistantRepository>((ref) {
     ref.watch(appDriftStoreProvider),
     proxyService: ref.watch(assistantProxyServiceProvider),
   );
+});
+final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
+  if (ref.watch(useSupabaseProvider)) {
+    return SupabaseAnalyticsRepositoryImpl(ref.watch(supabaseClientProvider));
+  }
+  return AnalyticsRepositoryImpl(ref.watch(appDriftStoreProvider));
 });
 final profileRepositoryProvider = Provider<ProfileRepository>(
   (ref) {

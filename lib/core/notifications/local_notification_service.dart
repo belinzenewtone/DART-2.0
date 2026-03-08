@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -17,6 +18,7 @@ class LocalNotificationService {
   static const String _channelName = 'Task and Event Reminders';
   static const String _channelDescription =
       'Notifications for task deadlines and calendar events.';
+  static const String _notificationsEnabledKey = 'notifications_enabled';
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
@@ -67,12 +69,59 @@ class LocalNotificationService {
     return _cancelById(_eventOffset + eventId);
   }
 
+  Future<bool> isNotificationsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notificationsEnabledKey) ?? true;
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsEnabledKey, enabled);
+    if (!enabled) {
+      await cancelAllReminders();
+    }
+  }
+
+  Future<void> cancelAllReminders() async {
+    await _ensureInitialized();
+    await _plugin.cancelAll();
+  }
+
+  Future<void> cleanupOrphanedReminders({
+    required Iterable<int> activeTaskIds,
+    required Iterable<int> activeEventIds,
+  }) async {
+    await _ensureInitialized();
+    final pending = await _plugin.pendingNotificationRequests();
+    final taskSet = activeTaskIds.toSet();
+    final eventSet = activeEventIds.toSet();
+    for (final item in pending) {
+      if (item.id >= _taskOffset && item.id < _eventOffset) {
+        final taskId = item.id - _taskOffset;
+        if (!taskSet.contains(taskId)) {
+          await _plugin.cancel(id: item.id);
+        }
+        continue;
+      }
+      if (item.id >= _eventOffset) {
+        final eventId = item.id - _eventOffset;
+        if (!eventSet.contains(eventId)) {
+          await _plugin.cancel(id: item.id);
+        }
+      }
+    }
+  }
+
   Future<void> _scheduleAt({
     required int id,
     required String title,
     required String body,
     required DateTime when,
   }) async {
+    final enabled = await isNotificationsEnabled();
+    if (!enabled) {
+      return;
+    }
     if (!when.isAfter(DateTime.now())) {
       return;
     }

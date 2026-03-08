@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
@@ -50,7 +51,7 @@ class IncomeScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           child: incomesState.when(
             data: (incomes) {
               if (incomes.isEmpty) {

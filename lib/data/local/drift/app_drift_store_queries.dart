@@ -91,7 +91,7 @@ class _AppDriftQueries {
     DateTime end,
   ) async {
     final rows = await store._db.runSelect(
-      'SELECT id, title, start_at, end_at, note, completed, priority FROM events WHERE start_at >= ? AND start_at < ? ORDER BY completed ASC, start_at ASC',
+      'SELECT id, title, start_at, end_at, note, completed, priority, event_type FROM events WHERE start_at >= ? AND start_at < ? ORDER BY completed ASC, start_at ASC',
       [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
     );
     return rows
@@ -103,6 +103,7 @@ class _AppDriftQueries {
                 store._asInt(row['start_at'])),
             completed: store._asInt(row['completed']) == 1,
             priority: (row['priority'] ?? 'medium') as String,
+            eventType: (row['event_type'] ?? 'general') as String,
             endAt: row['end_at'] == null
                 ? null
                 : DateTime.fromMillisecondsSinceEpoch(

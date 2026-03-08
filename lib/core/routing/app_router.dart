@@ -1,4 +1,5 @@
 import 'package:dart_2_0/features/auth/presentation/auth_gate.dart';
+import 'package:dart_2_0/features/analytics/presentation/analytics_screen.dart';
 import 'package:dart_2_0/features/budget/presentation/budget_screen.dart';
 import 'package:dart_2_0/features/export/presentation/export_screen.dart';
 import 'package:dart_2_0/features/income/presentation/income_screen.dart';
@@ -46,6 +47,11 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/export',
         name: 'export',
         builder: (context, state) => const ExportScreen(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        name: 'analytics',
+        builder: (context, state) => const AnalyticsScreen(),
       ),
     ],
   ),

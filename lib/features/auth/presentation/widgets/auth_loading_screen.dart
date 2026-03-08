@@ -8,7 +8,8 @@ class AuthLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: GlassStyles.backgroundGradientFor(Theme.of(context).brightness),
+        gradient:
+            GlassStyles.backgroundGradientFor(Theme.of(context).brightness),
       ),
       child: const Scaffold(
         backgroundColor: Colors.transparent,

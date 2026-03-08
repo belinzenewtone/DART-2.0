@@ -1,6 +1,7 @@
 import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
 import 'package:dart_2_0/data/local/drift/app_drift_store_mutations.dart';
 import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:dart_2_0/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
 import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
@@ -9,11 +10,15 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
   ExpensesRepositoryImpl(
     this._store,
     this._parser, [
+    MerchantLearningService? merchantLearningService,
     DeviceSmsDataSource? deviceSmsDataSource,
-  ]) : _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource();
+  ])  : _merchantLearningService =
+            merchantLearningService ?? MerchantLearningService(),
+        _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource();
 
   final AppDriftStore _store;
   final MpesaParserService _parser;
+  final MerchantLearningService _merchantLearningService;
   final DeviceSmsDataSource _deviceSmsDataSource;
 
   @override
@@ -52,6 +57,10 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     required double amountKes,
     DateTime? occurredAt,
   }) async {
+    await _merchantLearningService.learn(
+      merchantTitle: title,
+      category: category,
+    );
     await _store.addTransaction(
       title: title,
       category: category,
@@ -68,13 +77,18 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     required double amountKes,
     required DateTime occurredAt,
   }) {
-    return _store.updateTransaction(
-      id: transactionId,
-      title: title,
-      category: category,
-      amountKes: amountKes,
-      occurredAt: occurredAt,
-    );
+    return _merchantLearningService
+        .learn(
+          merchantTitle: title,
+          category: category,
+        )
+        .then((_) => _store.updateTransaction(
+              id: transactionId,
+              title: title,
+              category: category,
+              amountKes: amountKes,
+              occurredAt: occurredAt,
+            ));
   }
 
   @override
@@ -109,9 +123,13 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
       if (exists.isNotEmpty) {
         continue;
       }
+      final learnedCategory = await _merchantLearningService.resolveCategory(
+        merchantTitle: tx.title,
+        fallbackCategory: tx.category,
+      );
       await _store.addTransaction(
         title: tx.title,
-        category: tx.category,
+        category: learnedCategory,
         amountKes: tx.amountKes,
         occurredAt: tx.occurredAt,
         source: 'sms',

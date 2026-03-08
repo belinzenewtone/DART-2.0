@@ -1,6 +1,7 @@
 import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
 import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
 import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:dart_2_0/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
 import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
@@ -10,11 +11,15 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   SupabaseExpensesRepositoryImpl(
     this._client,
     this._parser, [
+    MerchantLearningService? merchantLearningService,
     DeviceSmsDataSource? deviceSmsDataSource,
-  ]) : _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource();
+  ])  : _merchantLearningService =
+            merchantLearningService ?? MerchantLearningService(),
+        _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource();
 
   final SupabaseClient _client;
   final MpesaParserService _parser;
+  final MerchantLearningService _merchantLearningService;
   final DeviceSmsDataSource _deviceSmsDataSource;
 
   @override
@@ -28,15 +33,21 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     DateTime? occurredAt,
   }) {
     final userId = _requireUserId();
-    return _client.from('transactions').insert({
-      'owner_id': userId,
-      'title': title,
-      'category': category,
-      'amount': amountKes,
-      'occurred_at': (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
-      'source': 'manual',
-      'source_hash': null,
-    });
+    return _merchantLearningService
+        .learn(
+          merchantTitle: title,
+          category: category,
+        )
+        .then((_) => _client.from('transactions').insert({
+              'owner_id': userId,
+              'title': title,
+              'category': category,
+              'amount': amountKes,
+              'occurred_at':
+                  (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
+              'source': 'manual',
+              'source_hash': null,
+            }));
   }
 
   @override
@@ -48,18 +59,25 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     required DateTime occurredAt,
   }) {
     final userId = _requireUserId();
-    return _client
-        .from('transactions')
-        .update({
-          'title': title,
-          'category': category,
-          'amount': amountKes,
-          'occurred_at': occurredAt.toUtc().toIso8601String(),
-          'source': 'manual',
-          'source_hash': null,
-        })
-        .eq('id', transactionId)
-        .eq('owner_id', userId);
+    return _merchantLearningService
+        .learn(
+          merchantTitle: title,
+          category: category,
+        )
+        .then(
+          (_) => _client
+              .from('transactions')
+              .update({
+                'title': title,
+                'category': category,
+                'amount': amountKes,
+                'occurred_at': occurredAt.toUtc().toIso8601String(),
+                'source': 'manual',
+                'source_hash': null,
+              })
+              .eq('id', transactionId)
+              .eq('owner_id', userId),
+        );
   }
 
   @override
@@ -103,10 +121,14 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
       if ((existing as List).isNotEmpty) {
         continue;
       }
+      final learnedCategory = await _merchantLearningService.resolveCategory(
+        merchantTitle: tx.title,
+        fallbackCategory: tx.category,
+      );
       payload.add({
         'owner_id': userId,
         'title': tx.title,
-        'category': tx.category,
+        'category': learnedCategory,
         'amount': tx.amountKes,
         'occurred_at': tx.occurredAt.toUtc().toIso8601String(),
         'source': 'sms',

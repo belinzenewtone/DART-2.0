@@ -8,5 +8,6 @@ class EventsTable extends Table {
   TextColumn get note => text().nullable()();
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
   TextColumn get priority => text().withDefault(const Constant('medium'))();
+  TextColumn get eventType => text().withDefault(const Constant('general'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

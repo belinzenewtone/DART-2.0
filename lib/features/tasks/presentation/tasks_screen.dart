@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/widgets/action_button.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/category_chip.dart';
@@ -33,7 +34,7 @@ class TasksScreen extends ConsumerWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+        padding: AppSpacing.screenPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

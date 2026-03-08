@@ -3,6 +3,7 @@ import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
 import 'package:dart_2_0/core/theme/app_motion.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:dart_2_0/features/expenses/presentation/widgets/expense_dialogs.dart';
 import 'package:dart_2_0/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
@@ -77,7 +78,10 @@ class ExpensesScreen extends ConsumerWidget {
       child: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
+            padding: AppSpacing.screenPadding(
+              context,
+              bottom: AppSpacing.contentBottomSafe + 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -158,7 +162,7 @@ class ExpensesScreen extends ConsumerWidget {
           ),
           Positioned(
             right: 20,
-            bottom: 104,
+            bottom: AppSpacing.fabBottom(context),
             child: ActionButton(
               icon: Icons.add,
               isLoading: writeState.isLoading,

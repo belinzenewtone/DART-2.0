@@ -7,7 +7,8 @@ import 'package:drift/drift.dart' show OpeningDetails;
 
 class AssistantProfileStore {
   AssistantProfileStore()
-      : _db = openDriftExecutor(name: 'dart_2_0_profile.sqlite', inMemory: true);
+      : _db =
+            openDriftExecutor(name: 'dart_2_0_profile.sqlite', inMemory: true);
   AssistantProfileStore.persistent()
       : _db = openDriftExecutor(name: 'dart_2_0_profile.sqlite');
 
@@ -198,7 +199,8 @@ class AssistantProfileStore {
 
   Future<void> _tryAddAvatarUrlColumn() async {
     try {
-      await _db.runCustom('ALTER TABLE user_profile ADD COLUMN avatar_url TEXT');
+      await _db
+          .runCustom('ALTER TABLE user_profile ADD COLUMN avatar_url TEXT');
     } catch (_) {
       return;
     }

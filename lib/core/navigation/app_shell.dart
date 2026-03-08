@@ -2,16 +2,18 @@ import 'dart:async';
 
 import 'package:dart_2_0/core/di/update_providers.dart';
 import 'package:dart_2_0/core/di/sync_providers.dart';
+import 'package:dart_2_0/core/di/notification_providers.dart';
 import 'package:dart_2_0/core/di/repository_providers.dart';
 import 'package:dart_2_0/core/navigation/shell_providers.dart';
 import 'package:dart_2_0/core/navigation/widgets/shell_body_switcher.dart';
-import 'package:dart_2_0/core/sync/sms_auto_import_service.dart';
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/theme/app_motion.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/theme/glass_styles.dart';
 import 'package:dart_2_0/core/update/presentation/app_update_dialog.dart';
 import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
+import 'package:dart_2_0/features/analytics/presentation/analytics_screen.dart';
 import 'package:dart_2_0/features/assistant/presentation/assistant_screen.dart';
 import 'package:dart_2_0/features/calendar/presentation/calendar_screen.dart';
 import 'package:dart_2_0/features/expenses/presentation/expenses_screen.dart';
@@ -20,13 +22,14 @@ import 'package:dart_2_0/features/profile/presentation/profile_screen.dart';
 import 'package:dart_2_0/features/tasks/presentation/tasks_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dart_2_0/features/recurring/data/services/recurring_materializer_service.dart';
+import 'package:dart_2_0/core/sync/background_sync_coordinator.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   static const List<Widget> _screens = [
     HomeScreen(),
+    AnalyticsScreen(),
     CalendarScreen(),
     ExpensesScreen(),
     TasksScreen(),
@@ -40,8 +43,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
-  late final SmsAutoImportService _autoImportService;
-  late final RecurringMaterializerService _recurringMaterializerService;
+  late final BackgroundSyncCoordinator _backgroundSyncCoordinator;
   bool _updateChecked = false;
   bool _biometricConfigured = false;
   bool _appLocked = false;
@@ -52,12 +54,10 @@ class _AppShellState extends ConsumerState<AppShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _autoImportService = ref.read(smsAutoImportServiceProvider);
-    _recurringMaterializerService =
-        ref.read(recurringMaterializerServiceProvider);
-    unawaited(_startAutoImport());
-    unawaited(_startRecurringMaterialization());
+    _backgroundSyncCoordinator = ref.read(backgroundSyncCoordinatorProvider);
+    unawaited(_startBackgroundSync());
     unawaited(_initializeBiometricLock());
+    unawaited(_cleanupNotificationReminders());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkForAppUpdate());
     });
@@ -66,8 +66,7 @@ class _AppShellState extends ConsumerState<AppShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _autoImportService.stop();
-    _recurringMaterializerService.stop();
+    _backgroundSyncCoordinator.stop();
     super.dispose();
   }
 
@@ -76,6 +75,7 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncNow());
       unawaited(_materializeRecurringNow());
+      unawaited(_cleanupNotificationReminders());
       unawaited(_applyBiometricLockOnResume());
     }
   }
@@ -119,7 +119,12 @@ class _AppShellState extends ConsumerState<AppShell>
                 children: AppShell._screens,
               ),
               bottomNavigationBar: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.shellHorizontal,
+                  0,
+                  AppSpacing.shellHorizontal,
+                  AppSpacing.navBottom(context),
+                ),
                 child: GlassCard(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -150,6 +155,11 @@ class _AppShellState extends ConsumerState<AppShell>
                           icon: Icon(Icons.home_outlined),
                           selectedIcon: Icon(Icons.home),
                           label: 'Home',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.query_stats_outlined),
+                          selectedIcon: Icon(Icons.query_stats),
+                          label: 'Analytics',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.calendar_month_outlined),
@@ -197,6 +207,7 @@ class _AppShellState extends ConsumerState<AppShell>
   Color _accentForTab(int tab) {
     const palette = [
       Color(0xFF2D7CFF),
+      Color(0xFF45A3C9),
       Color(0xFF2AAE9D),
       Color(0xFF3A8AE8),
       Color(0xFFE4895E),
@@ -206,20 +217,43 @@ class _AppShellState extends ConsumerState<AppShell>
     return palette[tab % palette.length];
   }
 
-  Future<void> _startAutoImport() async {
-    await _autoImportService.start();
-  }
-
-  Future<void> _syncNow() async {
-    await _autoImportService.syncNow();
-  }
-
-  Future<void> _startRecurringMaterialization() async {
-    await _recurringMaterializerService.start();
+  Future<void> _startBackgroundSync() async {
+    await _backgroundSyncCoordinator.start();
   }
 
   Future<void> _materializeRecurringNow() async {
-    await _recurringMaterializerService.syncNow();
+    await _backgroundSyncCoordinator.materializeNow();
+  }
+
+  Future<void> _syncNow() async {
+    await _backgroundSyncCoordinator.syncNow();
+  }
+
+  Future<void> _cleanupNotificationReminders() async {
+    final notifications = ref.read(localNotificationServiceProvider);
+    final tasks = await ref.read(tasksRepositoryProvider).watchTasks().first;
+    final activeTaskIds = tasks
+        .where((task) =>
+            !task.completed &&
+            task.dueDate != null &&
+            task.dueDate!.isAfter(DateTime.now()))
+        .map((task) => task.id);
+
+    final from = DateTime.now().subtract(const Duration(days: 1));
+    final to = DateTime.now().add(const Duration(days: 365 * 2));
+    final events = await ref
+        .read(calendarRepositoryProvider)
+        .watchEventsInRange(from, to)
+        .first;
+    final activeEventIds = events
+        .where((event) =>
+            !event.completed && event.startAt.isAfter(DateTime.now()))
+        .map((event) => event.id);
+
+    await notifications.cleanupOrphanedReminders(
+      activeTaskIds: activeTaskIds,
+      activeEventIds: activeEventIds,
+    );
   }
 
   Future<void> _checkForAppUpdate() async {

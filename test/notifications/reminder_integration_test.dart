@@ -60,6 +60,7 @@ void main() {
           title: 'Team Call',
           startAt: start,
           priority: CalendarEventPriority.medium,
+          type: CalendarEventType.work,
           endAt: start.add(const Duration(hours: 1)),
           note: 'Planning',
         );
@@ -229,6 +230,7 @@ class _FakeCalendarRepository implements CalendarRepository {
     required String title,
     required DateTime startAt,
     CalendarEventPriority priority = CalendarEventPriority.medium,
+    CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
   }) async {
@@ -239,6 +241,7 @@ class _FakeCalendarRepository implements CalendarRepository {
         startAt: startAt,
         completed: false,
         priority: priority,
+        type: type,
         endAt: endAt,
         note: note,
       ),
@@ -252,6 +255,7 @@ class _FakeCalendarRepository implements CalendarRepository {
     required String title,
     required DateTime startAt,
     required CalendarEventPriority priority,
+    required CalendarEventType type,
     DateTime? endAt,
     String? note,
   }) async {
@@ -265,6 +269,7 @@ class _FakeCalendarRepository implements CalendarRepository {
       startAt: startAt,
       completed: _events[index].completed,
       priority: priority,
+      type: type,
       endAt: endAt,
       note: note,
     );
@@ -287,6 +292,7 @@ class _FakeCalendarRepository implements CalendarRepository {
       startAt: current.startAt,
       completed: completed,
       priority: current.priority,
+      type: current.type,
       endAt: current.endAt,
       note: current.note,
     );

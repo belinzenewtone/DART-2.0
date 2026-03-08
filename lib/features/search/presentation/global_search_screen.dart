@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/search/domain/entities/global_search_result.dart';
@@ -18,7 +19,7 @@ class GlobalSearchScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Global Search')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           child: Column(
             children: [
               TextField(

@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/di/repository_providers.dart';
+import 'package:dart_2_0/core/sync/background_sync_coordinator.dart';
 import 'package:dart_2_0/core/sync/sms_auto_import_service.dart';
 import 'package:dart_2_0/features/recurring/data/services/recurring_materializer_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,4 +24,16 @@ final recurringMaterializerServiceProvider =
     service.stop();
   });
   return service;
+});
+
+final backgroundSyncCoordinatorProvider =
+    Provider<BackgroundSyncCoordinator>((ref) {
+  final coordinator = BackgroundSyncCoordinator(
+    ref.watch(smsAutoImportServiceProvider),
+    ref.watch(recurringMaterializerServiceProvider),
+  );
+  ref.onDispose(() {
+    coordinator.stop();
+  });
+  return coordinator;
 });

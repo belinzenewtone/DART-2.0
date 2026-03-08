@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
 import 'package:flutter/material.dart';
 
 class CalendarMonthGrid extends StatelessWidget {
@@ -6,14 +7,14 @@ class CalendarMonthGrid extends StatelessWidget {
     super.key,
     required this.visibleMonth,
     required this.selectedDay,
-    required this.eventDays,
+    required this.eventTypes,
     required this.maxWidth,
     required this.onSelect,
   });
 
   final DateTime visibleMonth;
   final DateTime selectedDay;
-  final Set<int> eventDays;
+  final Map<int, CalendarEventType> eventTypes;
   final double maxWidth;
   final ValueChanged<DateTime> onSelect;
 
@@ -52,10 +53,13 @@ class CalendarMonthGrid extends StatelessWidget {
             final isToday = today.year == current.year &&
                 today.month == current.month &&
                 today.day == current.day;
-            final hasEvents = eventDays.contains(day);
+            final eventType = eventTypes[day];
+            final hasEvents = eventType != null;
             final dotColor = isSelected
                 ? AppColors.textPrimary
-                : (hasEvents ? AppColors.accent : AppColors.textSecondary);
+                : (hasEvents
+                    ? _eventTypeColor(eventType)
+                    : AppColors.textSecondary);
 
             return Center(
               child: InkWell(
@@ -102,4 +106,14 @@ class CalendarMonthGrid extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _eventTypeColor(CalendarEventType type) {
+  return switch (type) {
+    CalendarEventType.work => AppColors.accent,
+    CalendarEventType.personal => AppColors.violet,
+    CalendarEventType.finance => AppColors.teal,
+    CalendarEventType.health => AppColors.warning,
+    CalendarEventType.general => AppColors.slate,
+  };
 }

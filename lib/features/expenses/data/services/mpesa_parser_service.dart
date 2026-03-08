@@ -82,7 +82,7 @@ class MpesaParserService {
     final occurredAt = _extractDateTime(cleaned) ?? DateTime.now();
     return ParsedMpesaTransaction(
       title: title,
-      category: _categorize(title),
+      category: _categorize(title, cleaned),
       amountKes: amount,
       occurredAt: occurredAt,
       rawMessage: cleaned,
@@ -155,25 +155,53 @@ class MpesaParserService {
     return double.tryParse(normalized);
   }
 
-  String _categorize(String title) {
-    final value = title.toLowerCase();
+  String _categorize(String title, String fullMessage) {
+    final value = '$title ${fullMessage.toLowerCase()}';
+    if (value.contains('salary') ||
+        value.contains('payroll') ||
+        value.contains('income')) {
+      return 'Income';
+    }
     if (value.contains('hotel') ||
         value.contains('restaurant') ||
-        value.contains('food')) {
+        value.contains('food') ||
+        value.contains('cafe') ||
+        value.contains('kitchen')) {
       return 'Food';
     }
-    if (value.contains('airtime')) {
+    if (value.contains('airtime') || value.contains('bundle')) {
       return 'Airtime';
     }
     if (value.contains('token') ||
         value.contains('bill') ||
-        value.contains('electricity')) {
+        value.contains('electricity') ||
+        value.contains('water') ||
+        value.contains('utility')) {
       return 'Bills';
     }
     if (value.contains('fuel') ||
         value.contains('transport') ||
-        value.contains('uber')) {
+        value.contains('uber') ||
+        value.contains('bolt') ||
+        value.contains('matatu') ||
+        value.contains('taxi')) {
       return 'Transport';
+    }
+    if (value.contains('hospital') ||
+        value.contains('clinic') ||
+        value.contains('pharmacy') ||
+        value.contains('medical')) {
+      return 'Health';
+    }
+    if (value.contains('withdraw') ||
+        value.contains('atm') ||
+        value.contains('agent')) {
+      return 'Cash';
+    }
+    if (value.contains('fee') ||
+        value.contains('charge') ||
+        value.contains('cost')) {
+      return 'Fees';
     }
     return 'Other';
   }

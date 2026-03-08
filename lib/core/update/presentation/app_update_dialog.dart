@@ -60,11 +60,13 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                       color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.system_update, color: AppColors.accent),
+                    child: const Icon(Icons.system_update,
+                        color: AppColors.accent),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(widget.update.title, style: textTheme.titleMedium),
+                    child:
+                        Text(widget.update.title, style: textTheme.titleMedium),
                   ),
                   if (!widget.update.forceUpdate && !_installing)
                     IconButton(

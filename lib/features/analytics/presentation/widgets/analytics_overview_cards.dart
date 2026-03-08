@@ -1,0 +1,106 @@
+import 'package:dart_2_0/core/utils/currency_formatter.dart';
+import 'package:dart_2_0/core/widgets/glass_card.dart';
+import 'package:dart_2_0/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:flutter/material.dart';
+
+class AnalyticsOverviewCards extends StatelessWidget {
+  const AnalyticsOverviewCards({
+    super.key,
+    required this.snapshot,
+  });
+
+  final AnalyticsSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                title: 'This Month',
+                value: CurrencyFormatter.money(snapshot.totalSpentThisMonthKes),
+                icon: Icons.payments_outlined,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricCard(
+                title: 'Daily Avg',
+                value:
+                    CurrencyFormatter.money(snapshot.averageDailySpendingKes),
+                icon: Icons.show_chart,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                title: 'Tasks',
+                value:
+                    '${snapshot.totalTasksCompleted} done · ${snapshot.totalTasksPending} pending',
+                icon: Icons.check_circle_outline,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricCard(
+                title: 'Productivity',
+                value: '${snapshot.productivityScore.toStringAsFixed(0)}%',
+                icon: Icons.bolt_outlined,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: textTheme.titleMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}

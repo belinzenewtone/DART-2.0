@@ -54,4 +54,28 @@ class GlassStyles {
       ],
     );
   }
+
+  static LinearGradient accentGlassGradientFor(
+    Brightness brightness,
+    Color accent,
+  ) {
+    if (brightness == Brightness.light) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          accent.withValues(alpha: 0.2),
+          const Color(0xF7FFFFFF),
+        ],
+      );
+    }
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        accent.withValues(alpha: 0.24),
+        const Color(0x1C102542),
+      ],
+    );
+  }
 }

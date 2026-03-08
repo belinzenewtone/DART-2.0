@@ -34,11 +34,10 @@ class AppUpdateInfo {
     final latest = (data['latest_version'] ?? data['latestVersion'] ?? '')
         .toString()
         .trim();
-    final minimum = (data['min_supported_version'] ??
-            data['minSupportedVersion'] ??
-            latest)
-        .toString()
-        .trim();
+    final minimum =
+        (data['min_supported_version'] ?? data['minSupportedVersion'] ?? latest)
+            .toString()
+            .trim();
     final rawNotes = data['notes'];
     final notes = switch (rawNotes) {
       List<dynamic>() => rawNotes

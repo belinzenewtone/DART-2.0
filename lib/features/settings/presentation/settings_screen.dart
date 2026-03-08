@@ -1,4 +1,6 @@
+import 'package:dart_2_0/core/di/notification_providers.dart';
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
@@ -22,6 +24,14 @@ class SettingsScreen extends ConsumerWidget {
         AppFeedback.error(context, '${next.error}');
       }
     });
+    ref.listen<AsyncValue<void>>(notificationPreferenceControllerProvider,
+        (previous, next) {
+      if (previous is AsyncLoading && next is AsyncData<void>) {
+        AppFeedback.success(context, 'Notification preference updated.');
+      } else if (next.hasError) {
+        AppFeedback.error(context, 'Unable to update notification settings.');
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -29,7 +39,7 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -97,6 +107,12 @@ class _ToolsCard extends StatelessWidget {
             subtitle: 'Export your data for backup',
             onTap: () => context.pushNamed('export'),
           ),
+          _ToolTile(
+            icon: Icons.query_stats,
+            title: 'Analytics',
+            subtitle: 'View trends and performance metrics',
+            onTap: () => context.pushNamed('analytics'),
+          ),
         ],
       ),
     );
@@ -136,6 +152,11 @@ class _SecurityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final notificationsEnabledState = ref.watch(notificationsEnabledProvider);
+    final notificationWriteState =
+        ref.watch(notificationPreferenceControllerProvider);
+    final notificationsEnabled = notificationsEnabledState.valueOrNull ?? true;
+
     return GlassCard(
       child: Column(
         children: [
@@ -184,6 +205,21 @@ class _SecurityCard extends ConsumerWidget {
                   : const Icon(Icons.fingerprint),
               label: const Text('Authenticate Now'),
             ),
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Notifications'),
+            subtitle: const Text('Enable task and event reminders'),
+            value: notificationsEnabled,
+            onChanged: notificationsEnabledState.isLoading ||
+                    notificationWriteState.isLoading
+                ? null
+                : (value) async {
+                    await ref
+                        .read(notificationPreferenceControllerProvider.notifier)
+                        .setEnabled(value);
+                  },
           ),
         ],
       ),

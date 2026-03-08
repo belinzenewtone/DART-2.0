@@ -9,6 +9,7 @@ class NewEventInput {
     required this.title,
     required this.startAt,
     required this.priority,
+    required this.type,
     this.endAt,
     this.note,
   });
@@ -16,6 +17,7 @@ class NewEventInput {
   final String title;
   final DateTime startAt;
   final CalendarEventPriority priority;
+  final CalendarEventType type;
   final DateTime? endAt;
   final String? note;
 }
@@ -51,6 +53,7 @@ Future<NewEventInput?> _showEventDialog(
       DateTime(selectedDay.year, selectedDay.month, selectedDay.day, 14, 0);
   var selectedStart = initialEvent?.startAt ?? defaultStart;
   var selectedPriority = initialEvent?.priority ?? CalendarEventPriority.medium;
+  var selectedType = initialEvent?.type ?? CalendarEventType.general;
   final eventDuration = initialEvent?.endAt == null
       ? const Duration(hours: 1)
       : initialEvent!.endAt!.difference(initialEvent.startAt).inMinutes <= 0
@@ -154,6 +157,66 @@ Future<NewEventInput?> _showEventDialog(
                   }).toList(),
                 ),
                 const SizedBox(height: 14),
+                Text(
+                  'Event Type',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: CalendarEventType.values.map((type) {
+                    final option = _eventTypeOption(type);
+                    final selected = selectedType == type;
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => setState(() => selectedType = type),
+                      child: AnimatedContainer(
+                        duration: choiceDuration,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? option.color.withValues(alpha: 0.88)
+                              : option.color.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: option.color.withValues(
+                              alpha: selected ? 0.95 : 0.35,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              option.icon,
+                              size: 16,
+                              color: selected
+                                  ? textPrimary
+                                  : option.color.withValues(alpha: 0.95),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              option.label,
+                              style: TextStyle(
+                                color: selected
+                                    ? textPrimary
+                                    : option.color.withValues(alpha: 0.95),
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
                 InkWell(
                   borderRadius: BorderRadius.circular(14),
                   onTap: () async {
@@ -211,6 +274,7 @@ Future<NewEventInput?> _showEventDialog(
                             startAt: selectedStart,
                             endAt: selectedStart.add(eventDuration),
                             priority: selectedPriority,
+                            type: selectedType,
                             note: note.isEmpty ? null : note,
                           ),
                         );
@@ -276,5 +340,36 @@ String _formatDateTimeLabel(BuildContext context, DateTime value) {
         color: AppColors.warning
       ),
     CalendarEventPriority.low => (label: 'Neutral', color: AppColors.accent),
+  };
+}
+
+({String label, Color color, IconData icon}) _eventTypeOption(
+    CalendarEventType type) {
+  return switch (type) {
+    CalendarEventType.work => (
+        label: 'Work',
+        color: const Color(0xFF2F82FF),
+        icon: Icons.work_outline
+      ),
+    CalendarEventType.personal => (
+        label: 'Personal',
+        color: const Color(0xFF6D77E8),
+        icon: Icons.person_outline
+      ),
+    CalendarEventType.finance => (
+        label: 'Finance',
+        color: const Color(0xFF2AAE9D),
+        icon: Icons.account_balance_wallet_outlined
+      ),
+    CalendarEventType.health => (
+        label: 'Health',
+        color: const Color(0xFFE4895E),
+        icon: Icons.favorite_outline
+      ),
+    CalendarEventType.general => (
+        label: 'General',
+        color: const Color(0xFF5F7395),
+        icon: Icons.event_note_outlined
+      ),
   };
 }

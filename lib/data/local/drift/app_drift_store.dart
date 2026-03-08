@@ -93,12 +93,13 @@ class AppDriftStore {
     required String title,
     required DateTime startAt,
     String priority = 'medium',
+    String eventType = 'general',
     DateTime? endAt,
     String? note,
   }) async {
     await _ensureInitialized();
     await _db.runInsert(
-      'INSERT INTO events(title, start_at, end_at, note, completed, priority) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO events(title, start_at, end_at, note, completed, priority, event_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         title,
         startAt.millisecondsSinceEpoch,
@@ -106,6 +107,7 @@ class AppDriftStore {
         note,
         0,
         priority,
+        eventType,
       ],
     );
     _emitChange();

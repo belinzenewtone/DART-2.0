@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/theme/app_spacing.dart';
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
 import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
@@ -51,7 +52,7 @@ class BudgetScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppSpacing.sectionPadding(context),
           children: [
             snapshotState.when(
               data: (snapshot) => _BudgetSummaryCard(snapshot: snapshot),
