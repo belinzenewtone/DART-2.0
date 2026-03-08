@@ -29,6 +29,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    CalendarEventPriority priority = CalendarEventPriority.medium,
     DateTime? endAt,
     String? note,
   }) {
@@ -39,6 +40,8 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
       'start_at': startAt.toUtc().toIso8601String(),
       'end_at': endAt?.toUtc().toIso8601String(),
       'note': note,
+      'completed': false,
+      'priority': priority.name,
     });
   }
 
@@ -47,6 +50,7 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     required int eventId,
     required String title,
     required DateTime startAt,
+    required CalendarEventPriority priority,
     DateTime? endAt,
     String? note,
   }) {
@@ -58,7 +62,21 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
           'start_at': startAt.toUtc().toIso8601String(),
           'end_at': endAt?.toUtc().toIso8601String(),
           'note': note,
+          'priority': priority.name,
         })
+        .eq('id', eventId)
+        .eq('owner_id', userId);
+  }
+
+  @override
+  Future<void> setCompleted({
+    required int eventId,
+    required bool completed,
+  }) {
+    final userId = _requireUserId();
+    return _client
+        .from('events')
+        .update({'completed': completed})
         .eq('id', eventId)
         .eq('owner_id', userId);
   }
@@ -78,10 +96,11 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     final userId = _requireUserId();
     final rows = await _client
         .from('events')
-        .select('id,title,start_at,end_at,note')
+        .select('id,title,start_at,end_at,note,completed,priority')
         .eq('owner_id', userId)
         .gte('start_at', start.toUtc().toIso8601String())
         .lt('start_at', end.toUtc().toIso8601String())
+        .order('completed')
         .order('start_at');
     final events = (rows as List).cast<Map<String, dynamic>>();
     return events
@@ -90,11 +109,21 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
             id: parseInt(row['id']),
             title: '${row['title'] ?? ''}',
             startAt: parseTimestamp(row['start_at']),
+            completed: row['completed'] == true,
+            priority: _priorityFrom('${row['priority'] ?? 'medium'}'),
             endAt: row['end_at'] == null ? null : parseTimestamp(row['end_at']),
             note: row['note'] as String?,
           ),
         )
         .toList();
+  }
+
+  CalendarEventPriority _priorityFrom(String raw) {
+    return switch (raw.toLowerCase()) {
+      'high' => CalendarEventPriority.high,
+      'low' => CalendarEventPriority.low,
+      _ => CalendarEventPriority.medium,
+    };
   }
 
   String _requireUserId() {

@@ -54,17 +54,19 @@ extension AppDriftStoreMutations on AppDriftStore {
     required int id,
     required String title,
     required DateTime startAt,
+    required String priority,
     required DateTime? endAt,
     String? note,
   }) async {
     await ensureInitialized();
     await executor.runUpdate(
-      'UPDATE events SET title = ?, start_at = ?, end_at = ?, note = ? WHERE id = ?',
+      'UPDATE events SET title = ?, start_at = ?, end_at = ?, note = ?, priority = ? WHERE id = ?',
       [
         title,
         startAt.millisecondsSinceEpoch,
         endAt?.millisecondsSinceEpoch,
         note,
+        priority,
         id
       ],
     );

@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
-        android:label="dart_2_0"
+        android:label="BELTECH"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

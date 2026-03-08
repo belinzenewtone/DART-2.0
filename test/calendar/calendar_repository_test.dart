@@ -34,6 +34,7 @@ void main() {
       eventId: event.id,
       title: 'Calendar CRUD Updated',
       startAt: event.startAt,
+      priority: event.priority,
       endAt: event.endAt,
       note: 'after update',
     );

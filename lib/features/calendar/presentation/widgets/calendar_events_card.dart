@@ -8,12 +8,14 @@ class CalendarEventsCard extends StatelessWidget {
     super.key,
     required this.events,
     required this.busy,
+    required this.onComplete,
     required this.onEdit,
     required this.onDelete,
   });
 
   final List<CalendarEvent> events;
   final bool busy;
+  final Future<void> Function(CalendarEvent event) onComplete;
   final Future<void> Function(CalendarEvent event) onEdit;
   final Future<void> Function(CalendarEvent event) onDelete;
 
@@ -42,13 +44,19 @@ class CalendarEventsCard extends StatelessWidget {
           final end = event.endAt == null
               ? null
               : '${event.endAt!.hour.toString().padLeft(2, '0')}:${event.endAt!.minute.toString().padLeft(2, '0')}';
+          final priorityColor = _priorityColor(event.priority);
+          final statusLabel = event.completed ? 'Completed' : 'Scheduled';
           return Dismissible(
             key: ValueKey('event-${event.id}'),
             direction:
                 busy ? DismissDirection.none : DismissDirection.horizontal,
+            dismissThresholds: const {
+              DismissDirection.startToEnd: 0.4,
+              DismissDirection.endToStart: 0.4,
+            },
             confirmDismiss: (direction) async {
               if (direction == DismissDirection.startToEnd) {
-                await onEdit(event);
+                await onComplete(event);
                 return false;
               }
               if (direction == DismissDirection.endToStart) {
@@ -58,8 +66,8 @@ class CalendarEventsCard extends StatelessWidget {
               return false;
             },
             background: const _EventSwipeBackground(
-              color: Color(0xFF57411D),
-              icon: Icons.edit_outlined,
+              color: Color(0xFF1E5C2A),
+              icon: Icons.check_circle_outline,
               alignment: Alignment.centerLeft,
             ),
             secondaryBackground: const _EventSwipeBackground(
@@ -70,16 +78,57 @@ class CalendarEventsCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.event_note_outlined, color: AppColors.accent),
+                Container(
+                  width: 4,
+                  height: 68,
+                  margin: const EdgeInsets.only(top: 4),
+                  decoration: BoxDecoration(
+                    color: priorityColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Icon(
+                  event.completed
+                      ? Icons.check_circle
+                      : Icons.event_note_outlined,
+                  color: event.completed ? AppColors.success : AppColors.accent,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(event.title,
-                          style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        event.title,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              decoration: event.completed
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                      ),
                       Text(end == null ? start : '$start - $end',
                           style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          _EventPriorityBadge(priority: event.priority),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              statusLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: event.completed
+                                        ? AppColors.success
+                                        : AppColors.textSecondary,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                       if (event.note != null && event.note!.isNotEmpty)
                         Text(event.note!,
                             style: Theme.of(context).textTheme.bodySmall),
@@ -105,6 +154,14 @@ class CalendarEventsCard extends StatelessWidget {
   }
 }
 
+Color _priorityColor(CalendarEventPriority priority) {
+  return switch (priority) {
+    CalendarEventPriority.high => AppColors.danger,
+    CalendarEventPriority.medium => AppColors.warning,
+    CalendarEventPriority.low => AppColors.accent,
+  };
+}
+
 class _EventSwipeBackground extends StatelessWidget {
   const _EventSwipeBackground({
     required this.color,
@@ -126,6 +183,36 @@ class _EventSwipeBackground extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 22),
       alignment: alignment,
       child: Icon(icon, color: Colors.white, size: 28),
+    );
+  }
+}
+
+class _EventPriorityBadge extends StatelessWidget {
+  const _EventPriorityBadge({required this.priority});
+
+  final CalendarEventPriority priority;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (priority) {
+      CalendarEventPriority.high => ('Urgent', AppColors.danger),
+      CalendarEventPriority.medium => ('Important', AppColors.warning),
+      CalendarEventPriority.low => ('Neutral', AppColors.accent),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }

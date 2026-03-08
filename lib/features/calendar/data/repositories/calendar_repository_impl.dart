@@ -17,6 +17,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   id: row.id,
                   title: row.title,
                   startAt: row.startAt,
+                  completed: row.completed,
+                  priority: _priorityFrom(row.priority),
                   endAt: row.endAt,
                   note: row.note,
                 ),
@@ -34,6 +36,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   id: row.id,
                   title: row.title,
                   startAt: row.startAt,
+                  completed: row.completed,
+                  priority: _priorityFrom(row.priority),
                   endAt: row.endAt,
                   note: row.note,
                 ),
@@ -46,12 +50,14 @@ class CalendarRepositoryImpl implements CalendarRepository {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    CalendarEventPriority priority = CalendarEventPriority.medium,
     DateTime? endAt,
     String? note,
   }) async {
     await _store.addEvent(
       title: title,
       startAt: startAt,
+      priority: priority.name,
       endAt: endAt,
       note: note,
     );
@@ -62,6 +68,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
     required int eventId,
     required String title,
     required DateTime startAt,
+    required CalendarEventPriority priority,
     DateTime? endAt,
     String? note,
   }) {
@@ -69,13 +76,33 @@ class CalendarRepositoryImpl implements CalendarRepository {
       id: eventId,
       title: title,
       startAt: startAt,
+      priority: priority.name,
       endAt: endAt,
       note: note,
     );
   }
 
   @override
+  Future<void> setCompleted({
+    required int eventId,
+    required bool completed,
+  }) {
+    return _store.setEventCompletion(
+      eventId: eventId,
+      completed: completed,
+    );
+  }
+
+  @override
   Future<void> deleteEvent(int eventId) {
     return _store.deleteEvent(eventId);
+  }
+
+  CalendarEventPriority _priorityFrom(String raw) {
+    return switch (raw.toLowerCase()) {
+      'high' => CalendarEventPriority.high,
+      'low' => CalendarEventPriority.low,
+      _ => CalendarEventPriority.medium,
+    };
   }
 }

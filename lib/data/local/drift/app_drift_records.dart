@@ -76,12 +76,16 @@ class DriftEventRecord {
     required this.id,
     required this.title,
     required this.startAt,
+    required this.completed,
+    required this.priority,
     this.endAt,
     this.note,
   });
   final int id;
   final String title;
   final DateTime startAt;
+  final bool completed;
+  final String priority;
   final DateTime? endAt;
   final String? note;
 }

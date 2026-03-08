@@ -143,6 +143,14 @@ class CalendarScreen extends ConsumerWidget {
                 data: (events) => CalendarEventsCard(
                   events: events,
                   busy: writeState.isLoading,
+                  onComplete: (event) async {
+                    if (event.completed) {
+                      return;
+                    }
+                    await ref
+                        .read(calendarWriteControllerProvider.notifier)
+                        .setEventCompleted(eventId: event.id, completed: true);
+                  },
                   onEdit: (event) async {
                     final input = await showEditEventDialog(
                       context,
@@ -158,6 +166,7 @@ class CalendarScreen extends ConsumerWidget {
                           eventId: event.id,
                           title: input.title,
                           startAt: input.startAt,
+                          priority: input.priority,
                           endAt: input.endAt,
                           note: input.note,
                         );
@@ -196,6 +205,7 @@ class CalendarScreen extends ConsumerWidget {
                             .addEvent(
                               title: input.title,
                               startAt: input.startAt,
+                              priority: input.priority,
                               endAt: input.endAt,
                               note: input.note,
                             );

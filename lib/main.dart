@@ -25,7 +25,7 @@ class PersonalManagementApp extends ConsumerWidget {
     final themeMode = ref.watch(currentThemeModeProvider);
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
-      title: 'Personal Management App',
+      title: 'BELTECH',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

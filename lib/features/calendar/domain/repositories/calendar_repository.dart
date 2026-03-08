@@ -7,6 +7,7 @@ abstract class CalendarRepository {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    CalendarEventPriority priority = CalendarEventPriority.medium,
     DateTime? endAt,
     String? note,
   });
@@ -15,8 +16,14 @@ abstract class CalendarRepository {
     required int eventId,
     required String title,
     required DateTime startAt,
+    required CalendarEventPriority priority,
     DateTime? endAt,
     String? note,
+  });
+
+  Future<void> setCompleted({
+    required int eventId,
+    required bool completed,
   });
 
   Future<void> deleteEvent(int eventId);

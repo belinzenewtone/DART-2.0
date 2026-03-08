@@ -52,6 +52,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    CalendarEventPriority priority = CalendarEventPriority.medium,
     DateTime? endAt,
     String? note,
   }) async {
@@ -62,6 +63,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
       await repository.addEvent(
         title: title,
         startAt: startAt,
+        priority: priority,
         endAt: endAt,
         note: note,
       );
@@ -79,6 +81,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     required int eventId,
     required String title,
     required DateTime startAt,
+    required CalendarEventPriority priority,
     DateTime? endAt,
     String? note,
   }) async {
@@ -90,6 +93,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         eventId: eventId,
         title: title,
         startAt: startAt,
+        priority: priority,
         endAt: endAt,
         note: note,
       );
@@ -108,6 +112,21 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       await notifications.cancelEventReminder(eventId);
       await repository.deleteEvent(eventId);
+    });
+  }
+
+  Future<void> setEventCompleted({
+    required int eventId,
+    required bool completed,
+  }) async {
+    final repository = ref.read(calendarRepositoryProvider);
+    final notifications = ref.read(localNotificationServiceProvider);
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await repository.setCompleted(eventId: eventId, completed: completed);
+      if (completed) {
+        await notifications.cancelEventReminder(eventId);
+      }
     });
   }
 

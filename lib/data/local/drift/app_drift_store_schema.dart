@@ -37,9 +37,13 @@ class _AppDriftSchema {
       'title TEXT NOT NULL,'
       'start_at INTEGER NOT NULL,'
       'end_at INTEGER,'
-      'note TEXT'
+      'note TEXT,'
+      'completed INTEGER NOT NULL DEFAULT 0,'
+      'priority TEXT NOT NULL DEFAULT \'medium\''
       ')',
     );
+    await tryAddEventCompletedColumn(store);
+    await tryAddEventPriorityColumn(store);
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS incomes('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -230,6 +234,26 @@ class _AppDriftSchema {
     try {
       await store._db.runCustom(
           'ALTER TABLE recurring_templates ADD COLUMN priority TEXT');
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddEventCompletedColumn(AppDriftStore store) async {
+    try {
+      await store._db.runCustom(
+        'ALTER TABLE events ADD COLUMN completed INTEGER NOT NULL DEFAULT 0',
+      );
+    } catch (_) {
+      return;
+    }
+  }
+
+  static Future<void> tryAddEventPriorityColumn(AppDriftStore store) async {
+    try {
+      await store._db.runCustom(
+        'ALTER TABLE events ADD COLUMN priority TEXT NOT NULL DEFAULT \'medium\'',
+      );
     } catch (_) {
       return;
     }

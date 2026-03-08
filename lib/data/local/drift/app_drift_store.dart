@@ -92,18 +92,33 @@ class AppDriftStore {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    String priority = 'medium',
     DateTime? endAt,
     String? note,
   }) async {
     await _ensureInitialized();
     await _db.runInsert(
-      'INSERT INTO events(title, start_at, end_at, note) VALUES (?, ?, ?, ?)',
+      'INSERT INTO events(title, start_at, end_at, note, completed, priority) VALUES (?, ?, ?, ?, ?, ?)',
       [
         title,
         startAt.millisecondsSinceEpoch,
         endAt?.millisecondsSinceEpoch,
-        note
+        note,
+        0,
+        priority,
       ],
+    );
+    _emitChange();
+  }
+
+  Future<void> setEventCompletion({
+    required int eventId,
+    required bool completed,
+  }) async {
+    await _ensureInitialized();
+    await _db.runUpdate(
+      'UPDATE events SET completed = ? WHERE id = ?',
+      [completed ? 1 : 0, eventId],
     );
     _emitChange();
   }

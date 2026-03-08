@@ -41,8 +41,16 @@ create table if not exists public.events (
   title text not null,
   start_at timestamptz not null,
   end_at timestamptz,
-  note text
+  note text,
+  completed boolean not null default false,
+  priority text not null default 'medium'
 );
+
+alter table public.events
+  add column if not exists completed boolean not null default false;
+
+alter table public.events
+  add column if not exists priority text not null default 'medium';
 
 create index if not exists idx_events_owner_start
   on public.events (owner_id, start_at);

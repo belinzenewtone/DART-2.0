@@ -37,6 +37,10 @@ class TaskItemCard extends StatelessWidget {
     return Dismissible(
       key: ValueKey('task-${task.id}'),
       direction: busy ? DismissDirection.none : DismissDirection.horizontal,
+      dismissThresholds: const {
+        DismissDirection.startToEnd: 0.4,
+        DismissDirection.endToStart: 0.4,
+      },
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           await onToggle();

@@ -59,6 +59,7 @@ void main() {
     await container.read(calendarWriteControllerProvider.notifier).addEvent(
           title: 'Team Call',
           startAt: start,
+          priority: CalendarEventPriority.medium,
           endAt: start.add(const Duration(hours: 1)),
           note: 'Planning',
         );
@@ -227,6 +228,7 @@ class _FakeCalendarRepository implements CalendarRepository {
   Future<void> addEvent({
     required String title,
     required DateTime startAt,
+    CalendarEventPriority priority = CalendarEventPriority.medium,
     DateTime? endAt,
     String? note,
   }) async {
@@ -235,6 +237,8 @@ class _FakeCalendarRepository implements CalendarRepository {
         id: _nextId++,
         title: title,
         startAt: startAt,
+        completed: false,
+        priority: priority,
         endAt: endAt,
         note: note,
       ),
@@ -247,6 +251,7 @@ class _FakeCalendarRepository implements CalendarRepository {
     required int eventId,
     required String title,
     required DateTime startAt,
+    required CalendarEventPriority priority,
     DateTime? endAt,
     String? note,
   }) async {
@@ -258,8 +263,32 @@ class _FakeCalendarRepository implements CalendarRepository {
       id: eventId,
       title: title,
       startAt: startAt,
+      completed: _events[index].completed,
+      priority: priority,
       endAt: endAt,
       note: note,
+    );
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> setCompleted({
+    required int eventId,
+    required bool completed,
+  }) async {
+    final index = _events.indexWhere((item) => item.id == eventId);
+    if (index == -1) {
+      return;
+    }
+    final current = _events[index];
+    _events[index] = CalendarEvent(
+      id: current.id,
+      title: current.title,
+      startAt: current.startAt,
+      completed: completed,
+      priority: current.priority,
+      endAt: current.endAt,
+      note: current.note,
     );
     _changes.add(null);
   }
