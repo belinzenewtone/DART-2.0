@@ -18,25 +18,28 @@ class GlobalSearchRepositoryImpl implements GlobalSearchRepository {
     final results = <GlobalSearchResult>[];
 
     final expenses = await _store.executor.runSelect(
-      'SELECT title, category, amount FROM transactions '
-      'WHERE LOWER(title) LIKE ? OR LOWER(category) LIKE ? '
+      'SELECT title, category, amount, source FROM transactions '
+      'WHERE LOWER(title) LIKE ? OR LOWER(category) LIKE ? OR LOWER(source) LIKE ? OR LOWER(COALESCE(source_hash, \'\')) LIKE ? '
       'ORDER BY occurred_at DESC LIMIT 15',
-      [pattern, pattern],
+      [pattern, pattern, pattern, pattern],
     );
     for (final row in expenses) {
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.expense,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['category'] ?? 'Other'}',
+          secondaryText:
+              '${row['category'] ?? 'Other'} · ${row['source'] ?? 'manual'}',
           trailingText: 'KES ${_asDouble(row['amount']).toStringAsFixed(2)}',
         ),
       );
     }
 
     final incomes = await _store.executor.runSelect(
-      'SELECT title, amount, source FROM incomes WHERE LOWER(title) LIKE ? ORDER BY received_at DESC LIMIT 15',
-      [pattern],
+      'SELECT title, amount, source FROM incomes '
+      'WHERE LOWER(title) LIKE ? OR LOWER(source) LIKE ? OR LOWER(CAST(amount AS TEXT)) LIKE ? '
+      'ORDER BY received_at DESC LIMIT 15',
+      [pattern, pattern, pattern],
     );
     for (final row in incomes) {
       results.add(
@@ -50,32 +53,36 @@ class GlobalSearchRepositoryImpl implements GlobalSearchRepository {
     }
 
     final tasks = await _store.executor.runSelect(
-      'SELECT title, description, completed FROM tasks '
-      'WHERE LOWER(title) LIKE ? OR LOWER(COALESCE(description, \'\')) LIKE ? '
+      'SELECT title, description, completed, priority FROM tasks '
+      'WHERE LOWER(title) LIKE ? OR LOWER(COALESCE(description, \'\')) LIKE ? OR LOWER(priority) LIKE ? '
       'ORDER BY id DESC LIMIT 15',
-      [pattern, pattern],
+      [pattern, pattern, pattern],
     );
     for (final row in tasks) {
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.task,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['description'] ?? ''}',
+          secondaryText:
+              '${row['description'] ?? ''}${(row['description'] as String?)?.isNotEmpty == true ? ' · ' : ''}${row['priority'] ?? 'medium'}',
           trailingText: _asInt(row['completed']) == 1 ? 'Done' : 'Pending',
         ),
       );
     }
 
     final events = await _store.executor.runSelect(
-      'SELECT title, note FROM events WHERE LOWER(title) LIKE ? OR LOWER(COALESCE(note, \'\')) LIKE ? ORDER BY start_at DESC LIMIT 15',
-      [pattern, pattern],
+      'SELECT title, note, priority FROM events '
+      'WHERE LOWER(title) LIKE ? OR LOWER(COALESCE(note, \'\')) LIKE ? OR LOWER(priority) LIKE ? '
+      'ORDER BY start_at DESC LIMIT 15',
+      [pattern, pattern, pattern],
     );
     for (final row in events) {
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.event,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['note'] ?? ''}',
+          secondaryText:
+              '${row['note'] ?? ''}${(row['note'] as String?)?.isNotEmpty == true ? ' · ' : ''}${row['priority'] ?? 'medium'}',
           trailingText: 'Event',
         ),
       );
@@ -98,16 +105,25 @@ class GlobalSearchRepositoryImpl implements GlobalSearchRepository {
     }
 
     final recurring = await _store.executor.runSelect(
-      'SELECT title, kind, cadence FROM recurring_templates WHERE LOWER(title) LIKE ? ORDER BY id DESC LIMIT 15',
-      [pattern],
+      'SELECT title, kind, cadence, description, category FROM recurring_templates '
+      'WHERE LOWER(title) LIKE ? OR LOWER(COALESCE(description, \'\')) LIKE ? OR LOWER(COALESCE(category, \'\')) LIKE ? OR LOWER(kind) LIKE ? OR LOWER(cadence) LIKE ? '
+      'ORDER BY id DESC LIMIT 15',
+      [pattern, pattern, pattern, pattern, pattern],
     );
     for (final row in recurring) {
+      final meta = [
+        '${row['kind'] ?? ''}',
+        '${row['cadence'] ?? ''}',
+        '${row['category'] ?? ''}',
+      ].where((value) => value.trim().isNotEmpty).join(' · ');
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.recurring,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['kind'] ?? ''}',
-          trailingText: '${row['cadence'] ?? ''}',
+          secondaryText: meta,
+          trailingText: '${row['description'] ?? ''}'.trim().isEmpty
+              ? 'Recurring'
+              : '${row['description']}',
         ),
       );
     }

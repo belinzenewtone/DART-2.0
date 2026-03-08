@@ -1,5 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/auth/domain/entities/auth_state.dart';
@@ -18,9 +19,7 @@ class SettingsScreen extends ConsumerWidget {
 
     ref.listen<AsyncValue<AuthState>>(authProvider, (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error.toString())),
-        );
+        AppFeedback.error(context, '${next.error}');
       }
     });
 
@@ -168,13 +167,12 @@ class _SecurityCard extends ConsumerWidget {
                           .read(authProvider.notifier)
                           .authenticateNow();
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'Authentication successful'
-                                : 'Authentication failed'),
-                          ),
-                        );
+                        if (ok) {
+                          AppFeedback.success(
+                              context, 'Authentication successful.');
+                        } else {
+                          AppFeedback.error(context, 'Authentication failed.');
+                        }
                       }
                     },
               icon: state.isAuthenticating

@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 
 class IncomeInput {
@@ -25,7 +26,7 @@ Future<IncomeInput?> showIncomeDialog(
   DateTime selectedDate = initialDate ?? DateTime.now();
   final formKey = GlobalKey<FormState>();
 
-  final result = await showDialog<IncomeInput>(
+  final result = await showAppDialog<IncomeInput>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {

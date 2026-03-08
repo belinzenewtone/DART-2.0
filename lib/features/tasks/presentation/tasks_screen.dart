@@ -1,5 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/widgets/action_button.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/category_chip.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
@@ -24,13 +25,9 @@ class TasksScreen extends ConsumerWidget {
 
     ref.listen<AsyncValue<void>>(taskWriteControllerProvider, (previous, next) {
       if (previous is AsyncLoading && next is AsyncData<void>) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Task updated')),
-        );
+        AppFeedback.success(context, 'Task changes saved successfully.');
       } else if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Task action failed')),
-        );
+        AppFeedback.error(context, 'Task action failed. Please try again.');
       }
     });
 

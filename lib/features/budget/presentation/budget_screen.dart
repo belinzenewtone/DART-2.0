@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/budget/domain/entities/budget_snapshot.dart';
@@ -21,9 +22,7 @@ class BudgetScreen extends ConsumerWidget {
     ref.listen<AsyncValue<void>>(budgetWriteControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to save budget')),
-        );
+        AppFeedback.error(context, 'Unable to save budget changes.');
       }
     });
 

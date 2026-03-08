@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
@@ -17,9 +18,9 @@ class RecurringScreen extends ConsumerWidget {
     ref.listen<AsyncValue<void>>(recurringWriteControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recurring action failed')),
-        );
+        AppFeedback.error(context, 'Recurring action failed.');
+      } else if (previous is AsyncLoading && next is AsyncData<void>) {
+        AppFeedback.success(context, 'Recurring template saved successfully.');
       }
     });
 
@@ -35,9 +36,7 @@ class RecurringScreen extends ConsumerWidget {
                         .read(recurringWriteControllerProvider.notifier)
                         .materializeNow();
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Generated $count item(s)')),
-                      );
+                      AppFeedback.info(context, 'Generated $count item(s).');
                     }
                   },
             icon: const Icon(Icons.play_arrow),

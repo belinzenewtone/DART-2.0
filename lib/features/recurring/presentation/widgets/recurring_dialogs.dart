@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
 import 'package:flutter/material.dart';
 
@@ -36,7 +37,7 @@ Future<RecurringTemplateInput?> showRecurringTemplateDialog(
   var priority = 'medium';
   var nextRunAt = DateTime.now().add(const Duration(hours: 1));
 
-  final result = await showDialog<RecurringTemplateInput>(
+  final result = await showAppDialog<RecurringTemplateInput>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {

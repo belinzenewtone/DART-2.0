@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/widgets/action_button.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
@@ -49,13 +50,9 @@ class CalendarScreen extends ConsumerWidget {
     ref.listen<AsyncValue<void>>(calendarWriteControllerProvider,
         (previous, next) {
       if (previous is AsyncLoading && next is AsyncData<void>) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Event added')),
-        );
+        AppFeedback.success(context, 'Calendar event saved successfully.');
       } else if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add event')),
-        );
+        AppFeedback.error(context, 'Unable to save calendar event.');
       }
     });
 

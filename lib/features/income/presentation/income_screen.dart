@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/income/domain/entities/income_item.dart';
@@ -19,9 +20,9 @@ class IncomeScreen extends ConsumerWidget {
     ref.listen<AsyncValue<void>>(incomeWriteControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Income update failed')),
-        );
+        AppFeedback.error(context, 'Unable to save income changes.');
+      } else if (previous is AsyncLoading && next is AsyncData<void>) {
+        AppFeedback.success(context, 'Income changes saved successfully.');
       }
     });
 

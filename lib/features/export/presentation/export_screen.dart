@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/widgets/glass_card.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/features/export/domain/entities/export_result.dart';
 import 'package:dart_2_0/features/export/presentation/providers/export_providers.dart';
 import 'package:flutter/material.dart';
@@ -15,16 +16,13 @@ class ExportScreen extends ConsumerWidget {
     ref.listen<AsyncValue<ExportResult?>>(exportControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('${next.error}'.replaceFirst('Exception: ', ''))),
-        );
+        AppFeedback.error(
+            context, '${next.error}'.replaceFirst('Exception: ', ''));
       } else if (previous is AsyncLoading && next.hasValue) {
         final result = next.valueOrNull;
         if (result != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Exported ${result.rowsExported} rows')),
-          );
+          AppFeedback.success(
+              context, 'Export complete: ${result.rowsExported} row(s).');
         }
       }
     });

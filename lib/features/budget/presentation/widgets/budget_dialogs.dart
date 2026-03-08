@@ -1,3 +1,4 @@
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 
 class BudgetInput {
@@ -21,7 +22,7 @@ Future<BudgetInput?> showBudgetTargetDialog(
   );
   final formKey = GlobalKey<FormState>();
 
-  final result = await showDialog<BudgetInput>(
+  final result = await showAppDialog<BudgetInput>(
     context: context,
     builder: (context) {
       return AlertDialog(

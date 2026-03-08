@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
 import 'package:dart_2_0/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ Future<void> showEditProfileDialog(
   final phoneCtrl = TextEditingController(text: profile.phone);
   final formKey = GlobalKey<FormState>();
 
-  await showDialog<void>(
+  await showAppDialog<void>(
     context: context,
     builder: (context) {
       return AlertDialog(
@@ -96,7 +97,7 @@ Future<void> showPasswordDialog(BuildContext context, WidgetRef ref) async {
   final newCtrl = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
-  await showDialog<void>(
+  await showAppDialog<void>(
     context: context,
     builder: (context) {
       return AlertDialog(

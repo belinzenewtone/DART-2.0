@@ -8,12 +8,23 @@ class GlassStyles {
   static const double borderRadius = 24;
   static const EdgeInsets cardPadding = EdgeInsets.all(16);
 
+  static double blurSigmaFor(Brightness brightness) {
+    if (brightness == Brightness.light) {
+      return 6;
+    }
+    return blurSigma;
+  }
+
   static LinearGradient backgroundGradientFor(Brightness brightness) {
     if (brightness == Brightness.light) {
       return const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFEFF5FF), Color(0xFFDCEBFF)],
+        colors: [
+          Color(0xFFF9FBFF),
+          Color(0xFFF0F5FC),
+          Color(0xFFEAF1FB),
+        ],
       );
     }
     return const LinearGradient(
@@ -29,8 +40,8 @@ class GlassStyles {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xBFEFFFFF),
-          Color(0x99DDE9FF),
+          Color(0xF7FFFFFF),
+          Color(0xE7F2FAFF),
         ],
       );
     }

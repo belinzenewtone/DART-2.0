@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_motion.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,11 @@ class TaskItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final brightness = Theme.of(context).brightness;
+    final secondaryText = AppColors.textSecondaryFor(brightness);
     final localizations = MaterialLocalizations.of(context);
+    final swipeDuration = AppMotion.swipe(context);
+    final resizeDuration = AppMotion.resize(context);
     final priorityColor = _priorityColor(task.priority);
     final isOverdue = !task.completed &&
         task.dueDate != null &&
@@ -37,6 +42,8 @@ class TaskItemCard extends StatelessWidget {
     return Dismissible(
       key: ValueKey('task-${task.id}'),
       direction: busy ? DismissDirection.none : DismissDirection.horizontal,
+      movementDuration: swipeDuration,
+      resizeDuration: resizeDuration,
       dismissThresholds: const {
         DismissDirection.startToEnd: 0.4,
         DismissDirection.endToStart: 0.4,
@@ -86,9 +93,7 @@ class TaskItemCard extends StatelessWidget {
                 task.completed
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
-                color: task.completed
-                    ? AppColors.success
-                    : AppColors.textSecondary,
+                color: task.completed ? AppColors.success : secondaryText,
               ),
             ),
             const SizedBox(width: 12),
@@ -111,7 +116,7 @@ class TaskItemCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: secondaryText,
                         ),
                       ),
                     ),
@@ -130,7 +135,7 @@ class TaskItemCard extends StatelessWidget {
                                 ? AppColors.success
                                 : (isOverdue
                                     ? AppColors.danger
-                                    : AppColors.textSecondary),
+                                    : secondaryText),
                           ),
                         ),
                       ),

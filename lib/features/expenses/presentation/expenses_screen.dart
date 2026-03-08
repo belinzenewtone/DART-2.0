@@ -1,6 +1,8 @@
 import 'package:dart_2_0/core/widgets/action_button.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/loading_indicator.dart';
+import 'package:dart_2_0/core/theme/app_motion.dart';
 import 'package:dart_2_0/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:dart_2_0/features/expenses/presentation/widgets/expense_dialogs.dart';
 import 'package:dart_2_0/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
@@ -16,16 +18,59 @@ class ExpensesScreen extends ConsumerWidget {
     final snapshotState = ref.watch(expensesSnapshotProvider);
     final selectedFilter = ref.watch(expenseFilterProvider);
     final writeState = ref.watch(expenseWriteControllerProvider);
+    final contentSwitchDuration =
+        AppMotion.duration(context, normalMs: 180, reducedMs: 0);
+    final snapshotChild = snapshotState.when(
+      data: (snapshot) => KeyedSubtree(
+        key: const ValueKey<String>('expenses-data'),
+        child: ExpensesSnapshotContent(
+          snapshot: snapshot,
+          selectedFilter: selectedFilter,
+          busy: writeState.isLoading,
+          onFilterChanged: (filter) {
+            ref.read(expenseFilterProvider.notifier).state = filter;
+          },
+          onEditExpense: (expense) async {
+            final updated =
+                await showEditExpenseDialog(context, expense: expense);
+            if (updated == null) {
+              return;
+            }
+            await ref
+                .read(expenseWriteControllerProvider.notifier)
+                .updateExpense(
+                  transactionId: expense.id,
+                  title: updated.title,
+                  category: updated.category,
+                  amountKes: updated.amountKes,
+                  occurredAt: updated.occurredAt,
+                );
+          },
+          onDeleteExpense: (expense) async {
+            await ref
+                .read(expenseWriteControllerProvider.notifier)
+                .deleteExpense(expense.id);
+          },
+        ),
+      ),
+      loading: () => const KeyedSubtree(
+        key: ValueKey<String>('expenses-loading'),
+        child: Center(child: LoadingIndicator()),
+      ),
+      error: (_, __) => KeyedSubtree(
+        key: const ValueKey<String>('expenses-error'),
+        child: ErrorMessage(
+          label: 'Unable to load expenses',
+          onRetry: () => ref.invalidate(expensesSnapshotProvider),
+        ),
+      ),
+    );
     ref.listen<AsyncValue<void>>(expenseWriteControllerProvider,
         (previous, next) {
       if (previous is AsyncLoading && next is AsyncData<void>) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Expense added')),
-        );
+        AppFeedback.success(context, 'Expense changes saved successfully.');
       } else if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add expense')),
-        );
+        AppFeedback.error(context, 'Unable to save expense changes.');
       }
     });
     return SafeArea(
@@ -44,7 +89,6 @@ class ExpensesScreen extends ConsumerWidget {
                       onPressed: writeState.isLoading
                           ? null
                           : () async {
-                              final messenger = ScaffoldMessenger.of(context);
                               final method = await showSmsImportMethodDialog(
                                 context,
                               );
@@ -69,9 +113,7 @@ class ExpensesScreen extends ConsumerWidget {
                                   final label = count == 0
                                       ? 'No MPESA messages found in ${importWindowLabel(window)}'
                                       : 'Imported $count MPESA transactions from device';
-                                  messenger.showSnackBar(
-                                    SnackBar(content: Text(label)),
-                                  );
+                                  AppFeedback.info(context, label);
                                 }
                                 return;
                               }
@@ -93,8 +135,7 @@ class ExpensesScreen extends ConsumerWidget {
                                 final label = count == 0
                                     ? 'No MPESA messages found in ${importWindowLabel(input.window)}'
                                     : 'Imported $count MPESA transactions';
-                                messenger.showSnackBar(
-                                    SnackBar(content: Text(label)));
+                                AppFeedback.info(context, label);
                               }
                             },
                       child: const Text('Import SMS'),
@@ -105,43 +146,12 @@ class ExpensesScreen extends ConsumerWidget {
                     style: textTheme.bodyMedium),
                 const SizedBox(height: 16),
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 240),
-                  child: snapshotState.when(
-                    data: (snapshot) => ExpensesSnapshotContent(
-                      snapshot: snapshot,
-                      selectedFilter: selectedFilter,
-                      busy: writeState.isLoading,
-                      onFilterChanged: (filter) {
-                        ref.read(expenseFilterProvider.notifier).state = filter;
-                      },
-                      onEditExpense: (expense) async {
-                        final updated = await showEditExpenseDialog(context,
-                            expense: expense);
-                        if (updated == null) {
-                          return;
-                        }
-                        await ref
-                            .read(expenseWriteControllerProvider.notifier)
-                            .updateExpense(
-                              transactionId: expense.id,
-                              title: updated.title,
-                              category: updated.category,
-                              amountKes: updated.amountKes,
-                              occurredAt: updated.occurredAt,
-                            );
-                      },
-                      onDeleteExpense: (expense) async {
-                        await ref
-                            .read(expenseWriteControllerProvider.notifier)
-                            .deleteExpense(expense.id);
-                      },
-                    ),
-                    loading: () => const Center(child: LoadingIndicator()),
-                    error: (_, __) => ErrorMessage(
-                      label: 'Unable to load expenses',
-                      onRetry: () => ref.invalidate(expensesSnapshotProvider),
-                    ),
-                  ),
+                  duration: contentSwitchDuration,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: snapshotChild,
                 ),
               ],
             ),

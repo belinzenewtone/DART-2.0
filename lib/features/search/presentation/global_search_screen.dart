@@ -26,7 +26,8 @@ class GlobalSearchScreen extends ConsumerWidget {
                   ref.read(globalSearchQueryProvider.notifier).state = value;
                 },
                 decoration: const InputDecoration(
-                  hintText: 'Search expenses, tasks, events, income...',
+                  hintText:
+                      'Search expenses, income, tasks, events, budgets, recurring...',
                   prefixIcon: Icon(Icons.search),
                 ),
               ),

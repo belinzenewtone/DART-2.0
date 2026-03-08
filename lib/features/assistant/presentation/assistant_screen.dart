@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
@@ -26,6 +27,8 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final brightness = Theme.of(context).brightness;
+    final secondaryText = AppColors.textSecondaryFor(brightness);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final messagesState = ref.watch(assistantMessagesProvider);
     final suggestions = ref.watch(assistantSuggestionsProvider);
@@ -34,9 +37,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     ref.listen<AsyncValue<void>>(assistantWriteControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send message')),
-        );
+        AppFeedback.error(context, 'Message failed to send.');
       }
     });
 
@@ -61,7 +62,9 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     Text(
                       'Online',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.accent,
+                        color: brightness == Brightness.light
+                            ? AppColors.teal
+                            : AppColors.accent,
                       ),
                     ),
                   ],
@@ -83,10 +86,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                const Text(
+                Text(
                   'Try asking:',
-                  style:
-                      TextStyle(color: AppColors.textSecondary, fontSize: 20),
+                  style: TextStyle(
+                    color: secondaryText,
+                    fontSize: 20,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _PromptGrid(
@@ -109,10 +114,10 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     child: TextField(
                       controller: _messageController,
                       onSubmitted: (_) => _sendMessage(_messageController.text),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Message BELTECH...',
                         border: InputBorder.none,
-                        hintStyle: TextStyle(color: AppColors.textSecondary),
+                        hintStyle: TextStyle(color: secondaryText),
                       ),
                     ),
                   ),
@@ -184,6 +189,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     final alignment =
         message.isUser ? Alignment.centerRight : Alignment.centerLeft;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -236,17 +242,17 @@ class _MessageBubble extends StatelessWidget {
                 data: message.text.trim(),
                 selectable: false,
                 styleSheet: MarkdownStyleSheet(
-                  p: const TextStyle(
+                  p: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textPrimary,
+                    color: onSurface,
                     height: 1.35,
                   ),
-                  strong: const TextStyle(
+                  strong: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textPrimary,
+                    color: onSurface,
                     fontWeight: FontWeight.w700,
                   ),
-                  listBullet: const TextStyle(color: AppColors.textPrimary),
+                  listBullet: TextStyle(color: onSurface),
                 ),
               ),
             ),
@@ -268,6 +274,7 @@ class _PromptGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -281,7 +288,7 @@ class _PromptGrid extends StatelessWidget {
               borderRadius: 20,
               child: Text(
                 prompt,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: onSurface),
               ),
             ),
           ),

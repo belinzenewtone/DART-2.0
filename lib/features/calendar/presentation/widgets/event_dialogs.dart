@@ -1,4 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_motion.dart';
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
 import 'package:flutter/material.dart';
 
@@ -55,162 +57,173 @@ Future<NewEventInput?> _showEventDialog(
           ? const Duration(hours: 1)
           : initialEvent.endAt!.difference(initialEvent.startAt);
 
-  return showDialog<NewEventInput>(
+  return showAppDialog<NewEventInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
-          ),
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                initialEvent == null ? 'New Event' : 'Edit Event',
-                style: Theme.of(context).textTheme.titleLarge,
+      builder: (context, setState) {
+        final brightness = Theme.of(context).brightness;
+        final textPrimary = AppColors.textPrimaryFor(brightness);
+        final choiceDuration = AppMotion.content(context);
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceFor(brightness).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                color: AppColors.borderFor(brightness).withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(hintText: 'Title'),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: noteController,
-                minLines: 2,
-                maxLines: 3,
-                decoration: const InputDecoration(hintText: 'Note (optional)'),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Priority',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: const [
-                  CalendarEventPriority.low,
-                  CalendarEventPriority.medium,
-                  CalendarEventPriority.high,
-                ].map((priority) {
-                  final option = _priorityOption(priority);
-                  final selected = selectedPriority == priority;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: priority == CalendarEventPriority.low ? 8 : 0,
-                        left: priority == CalendarEventPriority.high ? 8 : 0,
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () =>
-                            setState(() => selectedPriority = priority),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? option.color.withValues(alpha: 0.9)
-                                : option.color.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+            ),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  initialEvent == null ? 'New Event' : 'Edit Event',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(hintText: 'Title'),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: noteController,
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration:
+                      const InputDecoration(hintText: 'Note (optional)'),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Priority',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: const [
+                    CalendarEventPriority.low,
+                    CalendarEventPriority.medium,
+                    CalendarEventPriority.high,
+                  ].map((priority) {
+                    final option = _priorityOption(priority);
+                    final selected = selectedPriority == priority;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: priority == CalendarEventPriority.low ? 8 : 0,
+                          left: priority == CalendarEventPriority.high ? 8 : 0,
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () =>
+                              setState(() => selectedPriority = priority),
+                          child: AnimatedContainer(
+                            duration: choiceDuration,
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
                               color: selected
-                                  ? option.color.withValues(alpha: 0.95)
-                                  : option.color.withValues(alpha: 0.35),
+                                  ? option.color.withValues(alpha: 0.9)
+                                  : option.color.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: selected
+                                    ? option.color.withValues(alpha: 0.95)
+                                    : option.color.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Text(
+                              option.label,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: selected
+                                    ? textPrimary
+                                    : option.color.withValues(alpha: 0.95),
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
                             ),
                           ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+                InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () async {
+                    final picked = await _pickDateTime(context, selectedStart);
+                    if (picked != null) {
+                      setState(() => selectedStart = picked);
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMutedFor(brightness)
+                          .withValues(alpha: 0.86),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.borderFor(brightness)
+                            .withValues(alpha: 0.65),
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.schedule, color: AppColors.accent),
+                        const SizedBox(width: 10),
+                        Expanded(
                           child: Text(
-                            option.label,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: selected
-                                  ? AppColors.textPrimary
-                                  : option.color.withValues(alpha: 0.95),
-                              fontWeight:
-                                  selected ? FontWeight.w700 : FontWeight.w600,
-                            ),
+                            _formatDateTimeLabel(context, selectedStart),
+                            style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 14),
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () async {
-                  final picked = await _pickDateTime(context, selectedStart);
-                  if (picked != null) {
-                    setState(() => selectedStart = picked);
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppColors.border.withValues(alpha: 0.65),
-                    ),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.schedule, color: AppColors.accent),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _formatDateTimeLabel(context, selectedStart),
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton(
-                    onPressed: () {
-                      final title = titleController.text.trim();
-                      if (title.isEmpty) {
-                        return;
-                      }
-                      final note = noteController.text.trim();
-                      Navigator.of(context).pop(
-                        NewEventInput(
-                          title: title,
-                          startAt: selectedStart,
-                          endAt: selectedStart.add(eventDuration),
-                          priority: selectedPriority,
-                          note: note.isEmpty ? null : note,
-                        ),
-                      );
-                    },
-                    child: Text(initialEvent == null ? 'Create' : 'Update'),
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      onPressed: () {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) {
+                          return;
+                        }
+                        final note = noteController.text.trim();
+                        Navigator.of(context).pop(
+                          NewEventInput(
+                            title: title,
+                            startAt: selectedStart,
+                            endAt: selectedStart.add(eventDuration),
+                            priority: selectedPriority,
+                            note: note.isEmpty ? null : note,
+                          ),
+                        );
+                      },
+                      child: Text(initialEvent == null ? 'Create' : 'Update'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     ),
   );
 }

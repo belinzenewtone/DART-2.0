@@ -19,16 +19,19 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
 
     final txRows = await _client
         .from('transactions')
-        .select('title,category,amount')
+        .select('title,category,amount,source,source_hash')
         .eq('owner_id', userId)
-        .or('title.ilike.%$q%,category.ilike.%$q%')
+        .or(
+          'title.ilike.%$q%,category.ilike.%$q%,source.ilike.%$q%,source_hash.ilike.%$q%',
+        )
         .limit(15);
     for (final row in (txRows as List).cast<Map<String, dynamic>>()) {
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.expense,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['category'] ?? 'Other'}',
+          secondaryText:
+              '${row['category'] ?? 'Other'} · ${row['source'] ?? 'manual'}',
           trailingText: 'KES ${parseDouble(row['amount']).toStringAsFixed(2)}',
         ),
       );
@@ -38,7 +41,7 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
         .from('incomes')
         .select('title,amount,source')
         .eq('owner_id', userId)
-        .ilike('title', '%$q%')
+        .or('title.ilike.%$q%,source.ilike.%$q%')
         .limit(15);
     for (final row in (incomeRows as List).cast<Map<String, dynamic>>()) {
       results.add(
@@ -53,16 +56,19 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
 
     final taskRows = await _client
         .from('tasks')
-        .select('title,description,completed')
+        .select('title,description,completed,priority')
         .eq('owner_id', userId)
-        .or('title.ilike.%$q%,description.ilike.%$q%')
+        .or('title.ilike.%$q%,description.ilike.%$q%,priority.ilike.%$q%')
         .limit(15);
     for (final row in (taskRows as List).cast<Map<String, dynamic>>()) {
+      final description = '${row['description'] ?? ''}'.trim();
+      final priority = '${row['priority'] ?? 'medium'}';
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.task,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['description'] ?? ''}',
+          secondaryText:
+              description.isEmpty ? priority : '$description · $priority',
           trailingText: row['completed'] == true ? 'Done' : 'Pending',
         ),
       );
@@ -70,16 +76,18 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
 
     final eventRows = await _client
         .from('events')
-        .select('title,note')
+        .select('title,note,priority')
         .eq('owner_id', userId)
-        .or('title.ilike.%$q%,note.ilike.%$q%')
+        .or('title.ilike.%$q%,note.ilike.%$q%,priority.ilike.%$q%')
         .limit(15);
     for (final row in (eventRows as List).cast<Map<String, dynamic>>()) {
+      final note = '${row['note'] ?? ''}'.trim();
+      final priority = '${row['priority'] ?? 'medium'}';
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.event,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['note'] ?? ''}',
+          secondaryText: note.isEmpty ? priority : '$note · $priority',
           trailingText: 'Event',
         ),
       );
@@ -105,17 +113,25 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
 
     final recurringRows = await _client
         .from('recurring_templates')
-        .select('title,kind,cadence')
+        .select('title,kind,cadence,description,category')
         .eq('owner_id', userId)
-        .ilike('title', '%$q%')
+        .or(
+          'title.ilike.%$q%,description.ilike.%$q%,category.ilike.%$q%,kind.ilike.%$q%,cadence.ilike.%$q%',
+        )
         .limit(15);
     for (final row in (recurringRows as List).cast<Map<String, dynamic>>()) {
+      final meta = [
+        '${row['kind'] ?? ''}',
+        '${row['cadence'] ?? ''}',
+        '${row['category'] ?? ''}',
+      ].where((value) => value.trim().isNotEmpty).join(' · ');
+      final description = '${row['description'] ?? ''}'.trim();
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.recurring,
           primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['kind'] ?? ''}',
-          trailingText: '${row['cadence'] ?? ''}',
+          secondaryText: meta,
+          trailingText: description.isEmpty ? 'Recurring' : description,
         ),
       );
     }

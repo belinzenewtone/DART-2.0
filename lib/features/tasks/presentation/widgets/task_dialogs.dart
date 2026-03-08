@@ -1,4 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_motion.dart';
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
 import 'package:flutter/material.dart';
 
@@ -37,171 +39,184 @@ Future<NewTaskInput?> _showTaskDialog(
   var selectedPriority = initialTask?.priority ?? TaskPriority.medium;
   DateTime? selectedDate = initialTask?.dueDate;
 
-  return showDialog<NewTaskInput>(
+  return showAppDialog<NewTaskInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
-          ),
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                initialTask == null ? 'New Task' : 'Edit Task',
-                style: Theme.of(context).textTheme.titleLarge,
+      builder: (context, setState) {
+        final brightness = Theme.of(context).brightness;
+        final textPrimary = AppColors.textPrimaryFor(brightness);
+        final textSecondary = AppColors.textSecondaryFor(brightness);
+        final choiceDuration = AppMotion.content(context);
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceFor(brightness).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                color: AppColors.borderFor(brightness).withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  hintText: 'Title',
+            ),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  initialTask == null ? 'New Task' : 'Edit Task',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: descriptionController,
-                minLines: 2,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Description (optional)',
+                const SizedBox(height: 14),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    hintText: 'Title',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Priority',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: TaskPriority.values.map((priority) {
-                  final option = _priorityOption(priority);
-                  final selected = selectedPriority == priority;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: priority == TaskPriority.low ? 8 : 0,
-                        left: priority == TaskPriority.high ? 8 : 0,
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () =>
-                            setState(() => selectedPriority = priority),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? option.color.withValues(alpha: 0.9)
-                                : option.color.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+                const SizedBox(height: 14),
+                TextField(
+                  controller: descriptionController,
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Description (optional)',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Priority',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: TaskPriority.values.map((priority) {
+                    final option = _priorityOption(priority);
+                    final selected = selectedPriority == priority;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: priority == TaskPriority.low ? 8 : 0,
+                          left: priority == TaskPriority.high ? 8 : 0,
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () =>
+                              setState(() => selectedPriority = priority),
+                          child: AnimatedContainer(
+                            duration: choiceDuration,
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
                               color: selected
-                                  ? option.color.withValues(alpha: 0.95)
-                                  : option.color.withValues(alpha: 0.35),
+                                  ? option.color.withValues(alpha: 0.9)
+                                  : option.color.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: selected
+                                    ? option.color.withValues(alpha: 0.95)
+                                    : option.color.withValues(alpha: 0.35),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            option.label,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: selected
-                                  ? AppColors.textPrimary
-                                  : option.color.withValues(alpha: 0.95),
-                              fontWeight:
-                                  selected ? FontWeight.w700 : FontWeight.w600,
+                            child: Text(
+                              option.label,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: selected
+                                    ? textPrimary
+                                    : option.color.withValues(alpha: 0.95),
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
                       ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+                InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () async {
+                    final picked = await _pickDateTime(context, selectedDate);
+                    if (picked != null) {
+                      setState(() => selectedDate = picked);
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMutedFor(brightness)
+                          .withValues(alpha: 0.86),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: AppColors.borderFor(brightness)
+                              .withValues(alpha: 0.65)),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 14),
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () async {
-                  final picked = await _pickDateTime(context, selectedDate);
-                  if (picked != null) {
-                    setState(() => selectedDate = picked);
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.65)),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.schedule, color: AppColors.accent),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          selectedDate == null
-                              ? 'Set deadline (date & time)'
-                              : _formatDueLabel(context, selectedDate!),
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                      if (selectedDate != null)
-                        IconButton(
-                          onPressed: () => setState(() => selectedDate = null),
-                          icon: const Icon(
-                            Icons.close_rounded,
-                            color: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.schedule, color: AppColors.accent),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            selectedDate == null
+                                ? 'Set deadline (date & time)'
+                                : _formatDueLabel(context, selectedDate!),
+                            style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
-                    ],
+                        if (selectedDate != null)
+                          IconButton(
+                            onPressed: () =>
+                                setState(() => selectedDate = null),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton(
-                    onPressed: () {
-                      final title = titleController.text.trim();
-                      if (title.isEmpty) {
-                        return;
-                      }
-                      Navigator.of(context).pop(
-                        NewTaskInput(
-                          title: title,
-                          description: descriptionController.text.trim().isEmpty
-                              ? null
-                              : descriptionController.text.trim(),
-                          priority: selectedPriority,
-                          dueDate: selectedDate,
-                        ),
-                      );
-                    },
-                    child: Text(initialTask == null ? 'Create' : 'Update'),
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      onPressed: () {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) {
+                          return;
+                        }
+                        Navigator.of(context).pop(
+                          NewTaskInput(
+                            title: title,
+                            description:
+                                descriptionController.text.trim().isEmpty
+                                    ? null
+                                    : descriptionController.text.trim(),
+                            priority: selectedPriority,
+                            dueDate: selectedDate,
+                          ),
+                        );
+                      },
+                      child: Text(initialTask == null ? 'Create' : 'Update'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     ),
   );
 }

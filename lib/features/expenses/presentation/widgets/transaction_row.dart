@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:dart_2_0/core/theme/app_motion.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
 
@@ -25,9 +26,17 @@ class ExpenseTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final swipeDuration = AppMotion.swipe(context);
+    final resizeDuration = AppMotion.resize(context);
     return Dismissible(
       key: ValueKey(dismissKey),
       direction: busy ? DismissDirection.none : DismissDirection.horizontal,
+      movementDuration: swipeDuration,
+      resizeDuration: resizeDuration,
+      dismissThresholds: const {
+        DismissDirection.startToEnd: 0.4,
+        DismissDirection.endToStart: 0.4,
+      },
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           onEdit();

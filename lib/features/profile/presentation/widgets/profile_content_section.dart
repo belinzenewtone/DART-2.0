@@ -27,6 +27,8 @@ class ProfileContentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final brightness = Theme.of(context).brightness;
+    final secondaryText = AppColors.textSecondaryFor(brightness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -120,15 +122,15 @@ class ProfileContentSection extends StatelessWidget {
                     child: const Icon(Icons.logout, color: AppColors.danger),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Sign Out'),
-                        SizedBox(height: 2),
+                        const Text('Sign Out'),
+                        const SizedBox(height: 2),
                         Text(
                           'Sign out from this device',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: secondaryText),
                         ),
                       ],
                     ),
@@ -204,11 +206,15 @@ class _InfoLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final brightness = Theme.of(context).brightness;
+    final infoIconBackground = brightness == Brightness.light
+        ? AppColors.accent.withValues(alpha: 0.14)
+        : AppColors.accentSoft;
     return Row(
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: AppColors.accentSoft,
+          backgroundColor: infoIconBackground,
           child: Icon(icon, color: AppColors.accent, size: 18),
         ),
         const SizedBox(width: 10),

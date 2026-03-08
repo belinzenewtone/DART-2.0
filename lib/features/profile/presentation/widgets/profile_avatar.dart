@@ -18,6 +18,9 @@ class ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final onSurface = AppColors.textPrimaryFor(brightness);
+    final borderColor = AppColors.surfaceFor(brightness);
     final image = _avatarImage(avatarUrl);
     return Stack(
       clipBehavior: Clip.none,
@@ -29,8 +32,8 @@ class ProfileAvatar extends StatelessWidget {
           child: image == null
               ? Text(
                   name.isEmpty ? 'U' : name.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: onSurface,
                     fontSize: 56,
                     fontWeight: FontWeight.w500,
                   ),
@@ -50,7 +53,7 @@ class ProfileAvatar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.accent,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.surface, width: 2),
+                  border: Border.all(color: borderColor, width: 2),
                 ),
                 child: const Icon(
                   Icons.camera_alt_outlined,

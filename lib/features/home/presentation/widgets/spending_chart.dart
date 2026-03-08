@@ -14,6 +14,11 @@ class SpendingChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = dayValues.entries.toList();
     final maxValue = _maxValue(entries);
+    final brightness = Theme.of(context).brightness;
+    final axisColor = AppColors.textSecondaryFor(brightness);
+    final barColor = brightness == Brightness.light
+        ? Theme.of(context).colorScheme.primary
+        : AppColors.accent;
 
     return SizedBox(
       height: 150,
@@ -48,8 +53,8 @@ class SpendingChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       entries[index].key,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: axisColor,
                         fontSize: 12,
                       ),
                     ),
@@ -68,7 +73,7 @@ class SpendingChart extends StatelessWidget {
                 BarChartRodData(
                   toY: value,
                   width: 18,
-                  color: AppColors.accent,
+                  color: barColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ],

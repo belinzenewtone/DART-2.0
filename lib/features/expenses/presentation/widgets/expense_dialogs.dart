@@ -1,5 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/utils/currency_formatter.dart';
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
 import 'package:flutter/material.dart';
 
@@ -45,7 +46,7 @@ Future<ManualExpenseInput?> _showExpenseDialog(
           ? initialExpense.category
           : 'Other');
 
-  return showDialog<ManualExpenseInput>(
+  return showAppDialog<ManualExpenseInput>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(

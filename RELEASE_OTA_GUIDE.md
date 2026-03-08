@@ -1,8 +1,8 @@
-# Android Production APK + OTA Guide
+# Android Production APK + Shorebird OTA Guide
 
-This project already includes OTA prompt/install logic through:
-- Supabase `app_updates` table
-- `ota_update` plugin for Android APK updates
+This project uses:
+- Supabase `app_updates` table for release metadata/prompts
+- Shorebird for OTA patch distribution (no in-app APK installer)
 
 ## 1) One-time release signing setup
 
@@ -35,7 +35,7 @@ Output file:
 
 Upload `app-release.apk` to a stable HTTPS URL (Supabase Storage, CDN, server, etc.).
 
-## 4) Publish OTA update metadata in Supabase
+## 4) Publish update metadata in Supabase
 
 ```sql
 update public.app_updates
@@ -61,17 +61,39 @@ insert into public.app_updates (
   'Update BELTECH App',
   'A newer update is available. Please update now.',
   array['New features added', 'Performance improvements', 'Bug fixes'],
-  'https://YOUR_DOMAIN/app-release.apk',
+  null,
   'https://YOUR_DOMAIN/download',
   now()
 );
 ```
 
-## 5) Rules for OTA to work
+## 5) Shorebird release flow
+
+Install Shorebird CLI and authenticate:
+
+```powershell
+shorebird --version
+shorebird login
+```
+
+Create a full release (first time, and when native code changes):
+
+```powershell
+cd C:\Users\BELINZE NEWTONE\Documents\Playground\DART-2.0
+shorebird release android -- --dart-define=SUPABASE_URL=https://sjapmklwyibqvatssctw.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_1PTKefse6HZdZtEq0lnbmA_G7s_aQ34
+```
+
+Create an OTA patch (Dart-only changes):
+
+```powershell
+cd C:\Users\BELINZE NEWTONE\Documents\Playground\DART-2.0
+shorebird patch android -- --dart-define=SUPABASE_URL=https://sjapmklwyibqvatssctw.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_1PTKefse6HZdZtEq0lnbmA_G7s_aQ34
+```
+
+## 6) Rules for updates to work
 
 - Keep same `applicationId`.
 - Keep same signing key.
 - Increase version every release in `pubspec.yaml` (`versionName+versionCode`).
-- APK URL must be downloadable over HTTPS.
-- User confirms install on Android.
-
+- Use `shorebird release` for base builds and `shorebird patch` for OTA Dart updates.
+- For full native/binary updates, distribute a new APK/AAB through your app store or direct channel.

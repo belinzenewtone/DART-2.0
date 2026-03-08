@@ -1,5 +1,6 @@
 import 'package:dart_2_0/core/theme/app_colors.dart';
 import 'package:dart_2_0/core/widgets/glass_card.dart';
+import 'package:dart_2_0/core/widgets/app_dialog.dart';
 import 'package:dart_2_0/features/expenses/domain/entities/expense_import_window.dart';
 import 'package:flutter/material.dart';
 
@@ -19,94 +20,103 @@ Future<SmsImportInput?> showSmsImportDialog(BuildContext context) async {
   final controller = TextEditingController();
   var selectedWindow = ExpenseImportWindow.last30Days;
 
-  return showDialog<SmsImportInput>(
+  return showAppDialog<SmsImportInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Import MPESA SMS'),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<ExpenseImportWindow>(
-                initialValue: selectedWindow,
-                decoration: const InputDecoration(labelText: 'Import period'),
-                items: const [
-                  DropdownMenuItem(
-                    value: ExpenseImportWindow.last24Hours,
-                    child: Text('Last 24 hours'),
+      builder: (context, setState) {
+        final brightness = Theme.of(context).brightness;
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceFor(brightness),
+          title: const Text('Import MPESA SMS'),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<ExpenseImportWindow>(
+                  initialValue: selectedWindow,
+                  decoration: const InputDecoration(labelText: 'Import period'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: ExpenseImportWindow.last24Hours,
+                      child: Text('Last 24 hours'),
+                    ),
+                    DropdownMenuItem(
+                      value: ExpenseImportWindow.last7Days,
+                      child: Text('Last 7 days'),
+                    ),
+                    DropdownMenuItem(
+                      value: ExpenseImportWindow.last30Days,
+                      child: Text('Last 30 days'),
+                    ),
+                    DropdownMenuItem(
+                      value: ExpenseImportWindow.last90Days,
+                      child: Text('Last 90 days'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedWindow = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  minLines: 6,
+                  maxLines: 12,
+                  decoration: const InputDecoration(
+                    hintText:
+                        'Paste MPESA SMS lines only.\nExample:\nQW12AB34CD Confirmed. Ksh1,250.00 sent to DELITOS HOTEL on 7/3/26 at 6:24 PM.',
                   ),
-                  DropdownMenuItem(
-                    value: ExpenseImportWindow.last7Days,
-                    child: Text('Last 7 days'),
-                  ),
-                  DropdownMenuItem(
-                    value: ExpenseImportWindow.last30Days,
-                    child: Text('Last 30 days'),
-                  ),
-                  DropdownMenuItem(
-                    value: ExpenseImportWindow.last90Days,
-                    child: Text('Last 90 days'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => selectedWindow = value);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                minLines: 6,
-                maxLines: 12,
-                decoration: const InputDecoration(
-                  hintText:
-                      'Paste MPESA SMS lines only.\nExample:\nQW12AB34CD Confirmed. Ksh1,250.00 sent to DELITOS HOTEL on 7/3/26 at 6:24 PM.',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(
+                SmsImportInput(
+                  payload: controller.text.trim(),
+                  window: selectedWindow,
                 ),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(
-              SmsImportInput(
-                payload: controller.text.trim(),
-                window: selectedWindow,
-              ),
+              child: const Text('Import'),
             ),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     ),
   );
 }
 
 Future<ExpenseImportWindow?> showSmsWindowDialog(BuildContext context) async {
-  return showDialog<ExpenseImportWindow>(
+  return showAppDialog<ExpenseImportWindow>(
     context: context,
     builder: (context) => Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 440),
         decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.97),
+          color: AppColors.surfaceFor(Theme.of(context).brightness)
+              .withValues(alpha: 0.97),
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.75)),
+          border: Border.all(
+            color: AppColors.borderFor(Theme.of(context).brightness)
+                .withValues(alpha: 0.75),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Import MPESA SMS', style: Theme.of(context).textTheme.titleLarge),
+            Text('Import MPESA SMS',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
               'Select time period to scan:',
@@ -196,9 +206,13 @@ class _ImportWindowOption extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceMuted.withValues(alpha: 0.78),
+          color: AppColors.surfaceMutedFor(Theme.of(context).brightness)
+              .withValues(alpha: 0.86),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.65)),
+          border: Border.all(
+            color: AppColors.borderFor(Theme.of(context).brightness)
+                .withValues(alpha: 0.65),
+          ),
         ),
         child: Text(
           importWindowLabel(window),

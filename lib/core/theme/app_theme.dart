@@ -7,7 +7,8 @@ class AppTheme {
   static ThemeData get darkTheme {
     const colorScheme = ColorScheme.dark(
       primary: AppColors.accent,
-      secondary: AppColors.accent,
+      secondary: AppColors.teal,
+      tertiary: AppColors.violet,
       surface: AppColors.surface,
       error: AppColors.danger,
     );
@@ -70,14 +71,17 @@ class AppTheme {
         fillColor: AppColors.surfaceMuted.withValues(alpha: 0.72),
         hintStyle: const TextStyle(color: AppColors.textSecondary),
         labelStyle: const TextStyle(color: AppColors.textSecondary),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.65)),
+          borderSide:
+              BorderSide(color: AppColors.border.withValues(alpha: 0.65)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.65)),
+          borderSide:
+              BorderSide(color: AppColors.border.withValues(alpha: 0.65)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -100,55 +104,56 @@ class AppTheme {
 
   static ThemeData get lightTheme {
     const colorScheme = ColorScheme.light(
-      primary: Color(0xFF1F72F1),
-      secondary: Color(0xFF2D7CFF),
-      surface: Color(0xFFF3F7FF),
+      primary: Color(0xFF2A6FE8),
+      secondary: Color(0xFF2AAE9D),
+      tertiary: Color(0xFF6D77E8),
+      surface: Color(0xFFFFFFFF),
       error: Color(0xFFB3261E),
       onPrimary: Colors.white,
-      onSurface: Color(0xFF13213D),
+      onSurface: Color(0xFF11233F),
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFE8F0FF),
+      scaffoldBackgroundColor: AppColors.backgroundFor(Brightness.light),
       textTheme: const TextTheme(
         headlineMedium: TextStyle(
-          color: Color(0xFF102444),
+          color: Color(0xFF11233F),
           fontWeight: FontWeight.w700,
           fontSize: 32,
         ),
         titleLarge: TextStyle(
-          color: Color(0xFF102444),
+          color: Color(0xFF11233F),
           fontWeight: FontWeight.w600,
           fontSize: 26,
         ),
         titleMedium: TextStyle(
-          color: Color(0xFF1A2E54),
+          color: Color(0xFF183056),
           fontWeight: FontWeight.w600,
           fontSize: 20,
         ),
         bodyLarge: TextStyle(
-          color: Color(0xFF1A2E54),
+          color: Color(0xFF1A335A),
           fontWeight: FontWeight.w500,
           fontSize: 16,
         ),
         bodyMedium: TextStyle(
-          color: Color(0xFF4E617F),
+          color: Color(0xFF516584),
           fontWeight: FontWeight.w400,
           fontSize: 15,
         ),
       ),
-      iconTheme: const IconThemeData(color: Color(0xFF1A2E54)),
+      iconTheme: const IconThemeData(color: Color(0xFF183056)),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: const Color(0xFFD9E8FF).withValues(alpha: 0.97),
-        contentTextStyle: const TextStyle(color: Color(0xFF102444)),
+        backgroundColor: const Color(0xFFF0F5FF).withValues(alpha: 0.98),
+        contentTextStyle: const TextStyle(color: Color(0xFF11233F)),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
@@ -163,18 +168,21 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.86),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        fillColor: const Color(0xFFF7FAFF),
+        hintStyle: const TextStyle(color: Color(0xFF6980A0)),
+        labelStyle: const TextStyle(color: Color(0xFF516584)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: colorScheme.primary.withValues(alpha: 0.2),
+            color: const Color(0xFFAFC1DA),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: colorScheme.primary.withValues(alpha: 0.2),
+            color: const Color(0xFFAFC1DA),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -183,14 +191,14 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withValues(alpha: 0.85),
-        selectedColor: colorScheme.primary.withValues(alpha: 0.18),
-        side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.22)),
-        labelStyle: const TextStyle(color: Color(0xFF1A2E54)),
+        backgroundColor: const Color(0xFFF4F8FF),
+        selectedColor: colorScheme.primary.withValues(alpha: 0.16),
+        side: const BorderSide(color: Color(0xFFAAC0DE)),
+        labelStyle: const TextStyle(color: Color(0xFF183056)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFFEAF2FF),
+        backgroundColor: const Color(0xFFF3F7FF),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );

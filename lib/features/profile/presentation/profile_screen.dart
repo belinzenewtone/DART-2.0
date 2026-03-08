@@ -1,4 +1,5 @@
 import 'package:dart_2_0/core/di/repository_providers.dart';
+import 'package:dart_2_0/core/widgets/app_feedback.dart';
 import 'package:dart_2_0/core/widgets/error_message.dart';
 import 'package:dart_2_0/features/auth/presentation/providers/account_providers.dart';
 import 'package:dart_2_0/features/profile/presentation/providers/profile_providers.dart';
@@ -23,21 +24,17 @@ class ProfileScreen extends ConsumerWidget {
     ref.listen<AsyncValue<void>>(profileWriteControllerProvider,
         (previous, next) {
       if (previous is AsyncLoading && next is AsyncData<void>) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated')),
-        );
+        AppFeedback.success(context, 'Profile updated successfully.');
       } else if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error.toString())),
-        );
+        AppFeedback.error(
+            context, '${next.error}'.replaceFirst('Exception: ', ''));
       }
     });
     ref.listen<AsyncValue<void>>(accountAuthControllerProvider,
         (previous, next) {
       if (next.hasError) {
         final message = '${next.error}'.replaceFirst('Exception: ', '');
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        AppFeedback.error(context, message);
       }
     });
 
@@ -91,18 +88,15 @@ class ProfileScreen extends ConsumerWidget {
                     }
                     final writeState = ref.read(profileWriteControllerProvider);
                     if (!writeState.hasError) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Profile photo updated')),
-                      );
+                      AppFeedback.success(
+                          context, 'Profile photo updated successfully.');
                     }
                   } catch (error) {
                     if (!context.mounted) {
                       return;
                     }
                     final message = '$error'.replaceFirst('Exception: ', '');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(message)),
-                    );
+                    AppFeedback.error(context, message);
                   }
                 },
                 showSignOut: useSupabase,
