@@ -41,7 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
         localizedReason: 'Authenticate to unlock secure actions',
         options: const AuthenticationOptions(
           biometricOnly: true,
-          stickyAuth: false,
+          stickyAuth: true,
         ),
       );
     } catch (_) {

@@ -34,11 +34,21 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     final messagesState = ref.watch(assistantMessagesProvider);
     final suggestions = ref.watch(assistantSuggestionsProvider);
     final writeState = ref.watch(assistantWriteControllerProvider);
+    final conversationState =
+        ref.watch(assistantConversationControllerProvider);
 
     ref.listen<AsyncValue<void>>(assistantWriteControllerProvider,
         (previous, next) {
       if (next.hasError) {
         AppFeedback.error(context, 'Message failed to send.');
+      }
+    });
+    ref.listen<AsyncValue<void>>(assistantConversationControllerProvider,
+        (previous, next) {
+      if (next.hasError) {
+        AppFeedback.error(context, 'Unable to clear chat history.');
+      } else if (previous?.isLoading == true && next.hasValue) {
+        AppFeedback.success(context, 'Chat history cleared.');
       }
     });
 
@@ -69,6 +79,19 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                       ),
                     ),
                   ],
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Clear chats',
+                  onPressed:
+                      conversationState.isLoading ? null : _confirmClearChats,
+                  icon: conversationState.isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.delete_sweep_outlined),
                 ),
               ],
             ),
@@ -168,5 +191,33 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     await ref
         .read(assistantWriteControllerProvider.notifier)
         .sendMessage(payload);
+  }
+
+  Future<void> _confirmClearChats() async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear chats'),
+        content: const Text(
+          'This will remove previous assistant messages from this account.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+    if (shouldClear != true || !mounted) {
+      return;
+    }
+    await ref
+        .read(assistantConversationControllerProvider.notifier)
+        .clearConversation();
   }
 }

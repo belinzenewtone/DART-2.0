@@ -8,6 +8,7 @@ import 'package:beltech/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_loading_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -63,7 +64,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     ref.listen<AsyncValue<void>>(accountAuthControllerProvider,
         (previous, next) {
       if (next.hasError) {
-        final message = '${next.error}'.replaceFirst('Exception: ', '');
+        final message = _friendlyAuthError(next.error);
         AppFeedback.error(context, message);
       }
     });
@@ -146,5 +147,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+  }
+
+  String _friendlyAuthError(Object? error) {
+    if (error == null) {
+      return 'Sign in failed. Please try again.';
+    }
+    if (error is AuthApiException) {
+      final msg = error.message.toLowerCase();
+      if (msg.contains('invalid login credentials') ||
+          msg.contains('invalid_credentials')) {
+        return 'Invalid email or password. Please try again.';
+      }
+      if (msg.contains('email not confirmed')) {
+        return 'Please verify your email before signing in.';
+      }
+      return 'Authentication failed. Please try again.';
+    }
+    final raw = '$error';
+    if (raw.contains('invalid login credentials') ||
+        raw.contains('invalid_credentials')) {
+      return 'Invalid email or password. Please try again.';
+    }
+    return 'Authentication failed. Please try again.';
   }
 }

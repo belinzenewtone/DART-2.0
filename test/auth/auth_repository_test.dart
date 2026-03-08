@@ -53,7 +53,7 @@ void main() {
         localizedReason: 'Authenticate to unlock secure actions',
         options: const AuthenticationOptions(
           biometricOnly: true,
-          stickyAuth: false,
+          stickyAuth: true,
         ),
       ),
     );
@@ -69,7 +69,7 @@ void main() {
         localizedReason: 'Authenticate to unlock secure actions',
         options: const AuthenticationOptions(
           biometricOnly: true,
-          stickyAuth: false,
+          stickyAuth: true,
         ),
       ),
     ).thenAnswer((_) async => true);

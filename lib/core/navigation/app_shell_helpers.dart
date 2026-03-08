@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 Color accentForTab(int tab) {
   const palette = [
     Color(0xFF2D7CFF),
-    Color(0xFF45A3C9),
     Color(0xFF2AAE9D),
     Color(0xFF3A8AE8),
     Color(0xFFE4895E),

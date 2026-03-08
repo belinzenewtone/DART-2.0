@@ -5,4 +5,5 @@ abstract class AssistantRepository {
   List<AssistantSuggestion> suggestions();
 
   Future<void> sendMessage(String text);
+  Future<void> clearConversation();
 }

@@ -55,6 +55,11 @@ class AssistantRepositoryImpl implements AssistantRepository {
     );
   }
 
+  @override
+  Future<void> clearConversation() async {
+    await _store.clearAssistantMessages();
+  }
+
   Future<String> _buildReply(String prompt) async {
     final lower = prompt.toLowerCase();
     final todaySpending = await _sumTransactions(

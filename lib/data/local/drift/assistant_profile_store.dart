@@ -14,6 +14,8 @@ class AssistantProfileStore {
 
   final QueryExecutor _db;
   final StreamController<int> _changes = StreamController<int>.broadcast();
+  static const String _introMessage =
+      "Hey! I'm your BELTECH assistant. Ask me about spending, tasks, or schedule.";
 
   bool _initialized = false;
   int _changeSeq = 0;
@@ -36,6 +38,20 @@ class AssistantProfileStore {
     await _db.runInsert(
       'INSERT INTO assistant_messages(text, is_user, created_at) VALUES (?, ?, ?)',
       [text, isUser ? 1 : 0, DateTime.now().millisecondsSinceEpoch],
+    );
+    _emitChange();
+  }
+
+  Future<void> clearAssistantMessages() async {
+    await _ensureInitialized();
+    await _db.runDelete('DELETE FROM assistant_messages', const []);
+    await _db.runInsert(
+      'INSERT INTO assistant_messages(text, is_user, created_at) VALUES (?, ?, ?)',
+      [
+        _introMessage,
+        0,
+        DateTime.now().millisecondsSinceEpoch,
+      ],
     );
     _emitChange();
   }
@@ -134,7 +150,7 @@ class AssistantProfileStore {
       await _db.runInsert(
         'INSERT INTO assistant_messages(text, is_user, created_at) VALUES (?, ?, ?)',
         [
-          "Hey! I'm your BELTECH assistant. Ask me about spending, tasks, or schedule.",
+          _introMessage,
           0,
           DateTime.now().millisecondsSinceEpoch,
         ],

@@ -24,9 +24,14 @@ class AppFeedback {
     final keyboardInset = MediaQuery.maybeOf(context)?.viewInsets.bottom ?? 0;
     messenger.showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message.trim(),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.fromLTRB(16, 0, 16, 104 + keyboardInset),
+        margin: EdgeInsets.fromLTRB(16, 0, 16, 88 + keyboardInset),
+        duration: const Duration(seconds: 3),
       ),
     );
   }

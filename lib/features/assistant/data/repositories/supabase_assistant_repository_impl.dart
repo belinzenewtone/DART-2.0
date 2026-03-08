@@ -11,6 +11,9 @@ class SupabaseAssistantRepositoryImpl implements AssistantRepository {
       {AssistantProxyService? proxyService})
       : _proxyService = proxyService;
 
+  static const String _introMessage =
+      "Hey! I'm your BELTECH assistant. Ask me about spending, tasks, or schedule.";
+
   final SupabaseClient _client;
   final AssistantProxyService? _proxyService;
 
@@ -51,6 +54,18 @@ class SupabaseAssistantRepositoryImpl implements AssistantRepository {
     });
   }
 
+  @override
+  Future<void> clearConversation() async {
+    final userId = _requireUserId();
+    await _client.from('assistant_messages').delete().eq('owner_id', userId);
+    await _client.from('assistant_messages').insert({
+      'owner_id': userId,
+      'text': _introMessage,
+      'is_user': false,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
   Future<List<AssistantMessage>> _loadConversation() async {
     final userId = _requireUserId();
     final rows = await _client
@@ -63,8 +78,7 @@ class SupabaseAssistantRepositoryImpl implements AssistantRepository {
     if (messages.isEmpty) {
       await _client.from('assistant_messages').insert({
         'owner_id': userId,
-        'text':
-            "Hey! I'm your BELTECH assistant. Ask me about spending, tasks, or schedule.",
+        'text': _introMessage,
         'is_user': false,
         'created_at': DateTime.now().toUtc().toIso8601String(),
       });

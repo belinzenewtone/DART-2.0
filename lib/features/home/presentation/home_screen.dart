@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/beltech_logo.dart';
 import 'package:beltech/core/widgets/error_message.dart';
@@ -8,6 +9,7 @@ import 'package:beltech/features/home/presentation/widgets/home_overview_content
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -56,6 +58,21 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text("Here's your day at a glance", style: textTheme.bodyMedium),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: () => context.push('/analytics'),
+                icon: const Icon(Icons.query_stats),
+                label: const Text('Analytics'),
+                style: FilledButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+              ),
+            ),
             const SizedBox(height: 18),
             AnimatedSwitcher(
               duration: contentSwitchDuration,

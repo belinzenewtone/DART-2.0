@@ -13,7 +13,6 @@ import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:beltech/core/update/presentation/app_update_dialog.dart';
 import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
-import 'package:beltech/features/analytics/presentation/analytics_screen.dart';
 import 'package:beltech/features/assistant/presentation/assistant_screen.dart';
 import 'package:beltech/features/calendar/presentation/calendar_screen.dart';
 import 'package:beltech/features/expenses/presentation/expenses_screen.dart';
@@ -29,7 +28,6 @@ class AppShell extends ConsumerStatefulWidget {
 
   static const List<Widget> _screens = [
     HomeScreen(),
-    AnalyticsScreen(),
     CalendarScreen(),
     ExpensesScreen(),
     TasksScreen(),
@@ -49,6 +47,7 @@ class _AppShellState extends ConsumerState<AppShell>
   bool _appLocked = false;
   bool _biometricUnlockInProgress = false;
   String? _biometricLockMessage;
+  DateTime? _lastPausedAt;
 
   @override
   void initState() {
@@ -72,6 +71,11 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _lastPausedAt = DateTime.now();
+      return;
+    }
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncNow());
       unawaited(_materializeRecurringNow());
@@ -128,8 +132,8 @@ class _AppShellState extends ConsumerState<AppShell>
                 ),
                 child: GlassCard(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                  borderRadius: 28,
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  borderRadius: 24,
                   child: NavigationBarTheme(
                     data: NavigationBarThemeData(
                       backgroundColor: Colors.transparent,
@@ -146,6 +150,7 @@ class _AppShellState extends ConsumerState<AppShell>
                       ),
                     ),
                     child: NavigationBar(
+                      height: 66,
                       backgroundColor: Colors.transparent,
                       selectedIndex: currentIndex,
                       onDestinationSelected: (index) {
@@ -156,11 +161,6 @@ class _AppShellState extends ConsumerState<AppShell>
                           icon: Icon(Icons.home_outlined),
                           selectedIcon: Icon(Icons.home),
                           label: 'Home',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.query_stats_outlined),
-                          selectedIcon: Icon(Icons.query_stats),
-                          label: 'Analytics',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.calendar_month_outlined),
@@ -243,16 +243,22 @@ class _AppShellState extends ConsumerState<AppShell>
 
   Future<void> _initializeBiometricLock() async {
     await _refreshBiometricConfiguration(lockNow: true);
-    if (_biometricConfigured) {
-      await _unlockWithBiometrics();
-    }
   }
 
   Future<void> _applyBiometricLockOnResume() async {
-    await _refreshBiometricConfiguration(lockNow: true);
-    if (_biometricConfigured) {
-      await _unlockWithBiometrics();
+    if (_biometricUnlockInProgress) {
+      return;
     }
+    final pausedAt = _lastPausedAt;
+    _lastPausedAt = null;
+    if (pausedAt == null) {
+      return;
+    }
+    final inactiveDuration = DateTime.now().difference(pausedAt);
+    if (inactiveDuration < const Duration(seconds: 2)) {
+      return;
+    }
+    await _refreshBiometricConfiguration(lockNow: true);
   }
 
   Future<void> _refreshBiometricConfiguration({required bool lockNow}) async {
@@ -295,6 +301,9 @@ class _AppShellState extends ConsumerState<AppShell>
       _appLocked = !authenticated;
       _biometricLockMessage =
           authenticated ? null : 'Authentication was not completed.';
+      if (authenticated) {
+        _lastPausedAt = null;
+      }
     });
   }
 }
