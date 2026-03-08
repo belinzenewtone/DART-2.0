@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:dart_2_0/data/local/drift/assistant_profile_records.dart';
-import 'package:dart_2_0/data/local/drift/drift_executor_factory.dart';
+import 'package:beltech/data/local/drift/assistant_profile_records.dart';
+import 'package:beltech/data/local/drift/drift_executor_factory.dart';
 import 'package:drift/backends.dart';
 import 'package:drift/drift.dart' show OpeningDetails;
 

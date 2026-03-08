@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/update/data/app_update_service.dart';
-import 'package:dart_2_0/core/update/domain/app_update_info.dart';
-import 'package:dart_2_0/core/update/domain/update_install_progress.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/update/data/app_update_service.dart';
+import 'package:beltech/core/update/domain/app_update_info.dart';
+import 'package:beltech/core/update/domain/update_install_progress.dart';
 import 'package:flutter/material.dart';
 
 class AppUpdateDialog extends StatefulWidget {

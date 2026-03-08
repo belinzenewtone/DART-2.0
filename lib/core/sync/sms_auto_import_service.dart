@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/platform/runtime_env.dart';
-import 'package:dart_2_0/features/auth/domain/repositories/account_repository.dart';
-import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
+import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
+import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SmsAutoImportService {

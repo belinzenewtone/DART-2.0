@@ -1,5 +1,5 @@
-import 'package:dart_2_0/features/budget/domain/entities/budget_snapshot.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_target.dart';
+import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
+import 'package:beltech/features/budget/domain/entities/budget_target.dart';
 
 abstract class BudgetRepository {
   Stream<BudgetSnapshot> watchMonthlySnapshot(DateTime month);

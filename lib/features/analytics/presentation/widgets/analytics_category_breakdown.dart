@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/utils/currency_formatter.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
 import 'package:flutter/material.dart';
 
 class AnalyticsCategoryBreakdown extends StatelessWidget {

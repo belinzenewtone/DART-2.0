@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/di/notification_providers.dart';
-import 'package:dart_2_0/core/notifications/local_notification_service.dart';
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
-import 'package:dart_2_0/features/calendar/domain/repositories/calendar_repository.dart';
+import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/notifications/local_notification_service.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final visibleMonthProvider = StateProvider<DateTime>(

@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/auth/domain/entities/account_session.dart';
+import 'package:beltech/features/auth/domain/entities/account_session.dart';
 
 abstract class AccountRepository {
   Stream<AccountSession> watchSession();

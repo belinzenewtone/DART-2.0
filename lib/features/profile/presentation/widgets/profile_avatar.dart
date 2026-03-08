@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ProfileAvatar extends StatelessWidget {

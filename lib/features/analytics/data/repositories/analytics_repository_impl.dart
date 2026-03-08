@@ -1,6 +1,8 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/analytics/domain/entities/analytics_snapshot.dart';
-import 'package:dart_2_0/features/analytics/domain/repositories/analytics_repository.dart';
+import 'dart:async';
+
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:beltech/features/analytics/domain/repositories/analytics_repository.dart';
 
 class AnalyticsRepositoryImpl implements AnalyticsRepository {
   AnalyticsRepositoryImpl(this._store);
@@ -8,11 +10,31 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   final AppDriftStore _store;
 
   @override
-  Stream<AnalyticsSnapshot> watchSnapshot() async* {
-    while (true) {
-      yield await _loadSnapshot();
-      await Future<void>.delayed(const Duration(seconds: 2));
-    }
+  Stream<AnalyticsSnapshot> watchSnapshot() {
+    return Stream<AnalyticsSnapshot>.multi((controller) async {
+      var emitting = false;
+
+      Future<void> emitSnapshot() async {
+        if (controller.isClosed || emitting) {
+          return;
+        }
+        emitting = true;
+        try {
+          controller.add(await _loadSnapshot());
+        } catch (error, stackTrace) {
+          controller.addError(error, stackTrace);
+        } finally {
+          emitting = false;
+        }
+      }
+
+      await emitSnapshot();
+      final timer = Timer.periodic(
+        const Duration(seconds: 2),
+        (_) => unawaited(emitSnapshot()),
+      );
+      controller.onCancel = timer.cancel;
+    });
   }
 
   Future<AnalyticsSnapshot> _loadSnapshot() async {

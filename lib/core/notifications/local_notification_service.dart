@@ -13,6 +13,7 @@ class LocalNotificationService {
 
   static const int _taskOffset = 100000;
   static const int _eventOffset = 200000;
+  static const int _insightOffset = 300000;
 
   static const String _channelId = 'task_event_reminders';
   static const String _channelName = 'Task and Event Reminders';
@@ -67,6 +68,24 @@ class LocalNotificationService {
 
   Future<void> cancelEventReminder(int eventId) {
     return _cancelById(_eventOffset + eventId);
+  }
+
+  Future<void> showInsight({
+    required int insightId,
+    required String title,
+    required String body,
+  }) async {
+    final enabled = await isNotificationsEnabled();
+    if (!enabled) {
+      return;
+    }
+    await _ensureInitialized();
+    await _plugin.show(
+      id: _insightOffset + (insightId % 99999),
+      title: title,
+      body: body,
+      notificationDetails: _details,
+    );
   }
 
   Future<bool> isNotificationsEnabled() async {
@@ -172,8 +191,8 @@ class LocalNotificationService {
       ),
       linux: LinuxInitializationSettings(defaultActionName: 'Open'),
       windows: WindowsInitializationSettings(
-        appName: 'DART-2.0',
-        appUserModelId: 'beltech.dart2.app',
+        appName: 'BELTECH',
+        appUserModelId: 'beltech.app',
         guid: 'cd8f4c25-95e8-420f-b74b-c30db7b8e8c9',
       ),
     );

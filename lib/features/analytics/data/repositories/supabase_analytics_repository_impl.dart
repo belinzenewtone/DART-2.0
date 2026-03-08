@@ -1,6 +1,6 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/features/analytics/domain/entities/analytics_snapshot.dart';
-import 'package:dart_2_0/features/analytics/domain/repositories/analytics_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:beltech/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAnalyticsRepositoryImpl implements AnalyticsRepository {

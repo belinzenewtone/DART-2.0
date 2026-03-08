@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 
 abstract class ExpensesRepository {
   Stream<ExpensesSnapshot> watchSnapshot();

@@ -1,11 +1,11 @@
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/core/navigation/app_shell.dart';
-import 'package:dart_2_0/core/theme/glass_styles.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/features/auth/presentation/providers/account_providers.dart';
-import 'package:dart_2_0/features/auth/presentation/widgets/auth_brand_header.dart';
-import 'package:dart_2_0/features/auth/presentation/widgets/auth_form_card.dart';
-import 'package:dart_2_0/features/auth/presentation/widgets/auth_loading_screen.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/navigation/app_shell.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
+import 'package:beltech/features/auth/presentation/widgets/auth_brand_header.dart';
+import 'package:beltech/features/auth/presentation/widgets/auth_form_card.dart';
+import 'package:beltech/features/auth/presentation/widgets/auth_loading_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

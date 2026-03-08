@@ -1,10 +1,10 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store_mutations.dart';
-import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
-import 'package:dart_2_0/features/expenses/data/services/merchant_learning_service.dart';
-import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
-import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
-import 'package:dart_2_0/features/expenses/domain/repositories/expenses_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/data/local/drift/app_drift_store_mutations.dart';
+import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 
 class ExpensesRepositoryImpl implements ExpensesRepository {
   ExpensesRepositoryImpl(

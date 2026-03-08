@@ -1,10 +1,10 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/utils/currency_formatter.dart';
-import 'package:dart_2_0/core/widgets/category_chip.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/expenses/domain/entities/expense_item.dart';
-import 'package:dart_2_0/features/expenses/presentation/providers/expenses_providers.dart';
-import 'package:dart_2_0/features/expenses/presentation/widgets/transaction_row.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/core/widgets/category_chip.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
+import 'package:beltech/features/expenses/presentation/widgets/transaction_row.dart';
 import 'package:flutter/material.dart';
 
 class ExpensesSnapshotContent extends StatefulWidget {

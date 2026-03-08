@@ -1,5 +1,5 @@
-import 'package:dart_2_0/core/security/secure_credentials_store.dart';
-import 'package:dart_2_0/features/auth/domain/repositories/auth_repository.dart';
+import 'package:beltech/core/security/secure_credentials_store.dart';
+import 'package:beltech/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_auth/local_auth.dart';
 
 class AuthRepositoryImpl implements AuthRepository {

@@ -1,11 +1,11 @@
-import 'package:dart_2_0/features/auth/presentation/auth_gate.dart';
-import 'package:dart_2_0/features/analytics/presentation/analytics_screen.dart';
-import 'package:dart_2_0/features/budget/presentation/budget_screen.dart';
-import 'package:dart_2_0/features/export/presentation/export_screen.dart';
-import 'package:dart_2_0/features/income/presentation/income_screen.dart';
-import 'package:dart_2_0/features/recurring/presentation/recurring_screen.dart';
-import 'package:dart_2_0/features/search/presentation/global_search_screen.dart';
-import 'package:dart_2_0/features/settings/presentation/settings_screen.dart';
+import 'package:beltech/features/auth/presentation/auth_gate.dart';
+import 'package:beltech/features/analytics/presentation/analytics_screen.dart';
+import 'package:beltech/features/budget/presentation/budget_screen.dart';
+import 'package:beltech/features/export/presentation/export_screen.dart';
+import 'package:beltech/features/income/presentation/income_screen.dart';
+import 'package:beltech/features/recurring/presentation/recurring_screen.dart';
+import 'package:beltech/features/search/presentation/global_search_screen.dart';
+import 'package:beltech/features/settings/presentation/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 

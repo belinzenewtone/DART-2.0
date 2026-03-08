@@ -1,9 +1,9 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/core/utils/currency_formatter.dart';
-import 'package:dart_2_0/features/assistant/data/services/assistant_proxy_service.dart';
-import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
-import 'package:dart_2_0/features/assistant/domain/repositories/assistant_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/features/assistant/data/services/assistant_proxy_service.dart';
+import 'package:beltech/features/assistant/domain/entities/assistant_message.dart';
+import 'package:beltech/features/assistant/domain/repositories/assistant_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAssistantRepositoryImpl implements AssistantRepository {

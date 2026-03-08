@@ -1,5 +1,5 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/income/data/repositories/income_repository_impl.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/income/data/repositories/income_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

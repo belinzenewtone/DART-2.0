@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/config/supabase_config.dart';
-import 'package:dart_2_0/core/routing/app_router.dart';
-import 'package:dart_2_0/core/theme/app_theme.dart';
-import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
+import 'package:beltech/core/config/supabase_config.dart';
+import 'package:beltech/core/routing/app_router.dart';
+import 'package:beltech/core/theme/app_theme.dart';
+import 'package:beltech/core/theme/theme_mode_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

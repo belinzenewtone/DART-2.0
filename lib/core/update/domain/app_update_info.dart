@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/update/domain/version_utils.dart';
+import 'package:beltech/core/update/domain/version_utils.dart';
 
 class AppUpdateInfo {
   const AppUpdateInfo({

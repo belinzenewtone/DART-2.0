@@ -1,7 +1,7 @@
 import 'dart:ui';
 
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/theme/glass_styles.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:flutter/material.dart';
 
 enum GlassCardTone {

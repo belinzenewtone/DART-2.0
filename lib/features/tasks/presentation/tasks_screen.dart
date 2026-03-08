@@ -1,15 +1,15 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/widgets/action_button.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/category_chip.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/core/widgets/loading_indicator.dart';
-import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
-import 'package:dart_2_0/features/tasks/presentation/providers/tasks_providers.dart';
-import 'package:dart_2_0/features/tasks/presentation/widgets/task_item_card.dart';
-import 'package:dart_2_0/features/tasks/presentation/widgets/task_dialogs.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/action_button.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/category_chip.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/presentation/providers/tasks_providers.dart';
+import 'package:beltech/features/tasks/presentation/widgets/task_item_card.dart';
+import 'package:beltech/features/tasks/presentation/widgets/task_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
-import 'package:dart_2_0/features/profile/domain/repositories/profile_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/profile/domain/entities/user_profile.dart';
+import 'package:beltech/features/profile/domain/repositories/profile_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseProfileRepositoryImpl implements ProfileRepository {

@@ -1,9 +1,13 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/expenses/data/repositories/expenses_repository_impl.dart';
-import 'package:dart_2_0/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/expenses/data/repositories/expenses_repository_impl.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues(const {});
+
   late AppDriftStore store;
   late ExpensesRepositoryImpl repository;
 

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_2_0/core/security/password_hasher.dart';
-import 'package:dart_2_0/core/security/secure_credentials_store.dart';
-import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
-import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
-import 'package:dart_2_0/features/profile/domain/repositories/profile_repository.dart';
+import 'package:beltech/core/security/password_hasher.dart';
+import 'package:beltech/core/security/secure_credentials_store.dart';
+import 'package:beltech/data/local/drift/assistant_profile_store.dart';
+import 'package:beltech/features/profile/domain/entities/user_profile.dart';
+import 'package:beltech/features/profile/domain/repositories/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl(

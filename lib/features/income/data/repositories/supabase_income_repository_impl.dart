@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/income/domain/entities/income_item.dart';
-import 'package:dart_2_0/features/income/domain/repositories/income_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/income/domain/entities/income_item.dart';
+import 'package:beltech/features/income/domain/repositories/income_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseIncomeRepositoryImpl implements IncomeRepository {

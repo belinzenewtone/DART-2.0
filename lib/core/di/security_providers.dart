@@ -1,5 +1,5 @@
-import 'package:dart_2_0/core/security/password_hasher.dart';
-import 'package:dart_2_0/core/security/secure_credentials_store.dart';
+import 'package:beltech/core/security/password_hasher.dart';
+import 'package:beltech/core/security/secure_credentials_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';

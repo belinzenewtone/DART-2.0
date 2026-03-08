@@ -1,9 +1,9 @@
-import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/core/utils/currency_formatter.dart';
-import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
-import 'package:dart_2_0/features/assistant/domain/repositories/assistant_repository.dart';
-import 'package:dart_2_0/features/assistant/data/services/assistant_proxy_service.dart';
+import 'package:beltech/data/local/drift/assistant_profile_store.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/features/assistant/domain/entities/assistant_message.dart';
+import 'package:beltech/features/assistant/domain/repositories/assistant_repository.dart';
+import 'package:beltech/features/assistant/data/services/assistant_proxy_service.dart';
 
 class AssistantRepositoryImpl implements AssistantRepository {
   AssistantRepositoryImpl(this._store, this._appStore,

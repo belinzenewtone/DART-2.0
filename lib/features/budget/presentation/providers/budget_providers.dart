@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_snapshot.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_target.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
+import 'package:beltech/features/budget/domain/entities/budget_target.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final budgetMonthProvider = StateProvider<DateTime>((_) {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/features/auth/domain/entities/auth_state.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/features/auth/domain/entities/auth_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthController extends AutoDisposeAsyncNotifier<AuthState> {

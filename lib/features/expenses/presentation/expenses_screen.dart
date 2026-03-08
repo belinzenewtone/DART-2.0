@@ -1,13 +1,13 @@
-import 'package:dart_2_0/core/widgets/action_button.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/loading_indicator.dart';
-import 'package:dart_2_0/core/theme/app_motion.dart';
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/features/expenses/presentation/providers/expenses_providers.dart';
-import 'package:dart_2_0/features/expenses/presentation/widgets/expense_dialogs.dart';
-import 'package:dart_2_0/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
-import 'package:dart_2_0/features/expenses/presentation/widgets/sms_import_dialogs.dart';
+import 'package:beltech/core/widgets/action_button.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
+import 'package:beltech/features/expenses/presentation/widgets/expense_dialogs.dart';
+import 'package:beltech/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
+import 'package:beltech/features/expenses/presentation/widgets/sms_import_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

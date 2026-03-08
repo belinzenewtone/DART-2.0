@@ -1,8 +1,8 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_snapshot.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_target.dart';
-import 'package:dart_2_0/features/budget/domain/repositories/budget_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
+import 'package:beltech/features/budget/domain/entities/budget_target.dart';
+import 'package:beltech/features/budget/domain/repositories/budget_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseBudgetRepositoryImpl implements BudgetRepository {

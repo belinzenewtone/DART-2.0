@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/update/domain/update_install_progress.dart';
+import 'package:beltech/core/update/domain/update_install_progress.dart';
 
 import 'update_installer_stub.dart'
     if (dart.library.io) 'update_installer_io.dart' as installer;

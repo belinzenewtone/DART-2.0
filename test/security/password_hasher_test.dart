@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/security/password_hasher.dart';
+import 'package:beltech/core/security/password_hasher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

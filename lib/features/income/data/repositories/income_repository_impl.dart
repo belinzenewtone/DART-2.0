@@ -1,6 +1,6 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/income/domain/entities/income_item.dart';
-import 'package:dart_2_0/features/income/domain/repositories/income_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/income/domain/entities/income_item.dart';
+import 'package:beltech/features/income/domain/repositories/income_repository.dart';
 
 class IncomeRepositoryImpl implements IncomeRepository {
   IncomeRepositoryImpl(this._store);

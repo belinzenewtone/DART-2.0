@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/security/password_hasher.dart';
-import 'package:dart_2_0/core/security/secure_credentials_store.dart';
-import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
-import 'package:dart_2_0/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:beltech/core/security/password_hasher.dart';
+import 'package:beltech/core/security/secure_credentials_store.dart';
+import 'package:beltech/data/local/drift/assistant_profile_store.dart';
+import 'package:beltech/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

@@ -1,6 +1,6 @@
-import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/assistant/data/repositories/assistant_repository_impl.dart';
+import 'package:beltech/data/local/drift/assistant_profile_store.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/assistant/data/repositories/assistant_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

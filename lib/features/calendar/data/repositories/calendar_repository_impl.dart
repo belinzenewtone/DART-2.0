@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store_mutations.dart';
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
-import 'package:dart_2_0/features/calendar/domain/repositories/calendar_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/data/local/drift/app_drift_store_mutations.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
 
 class CalendarRepositoryImpl implements CalendarRepository {
   CalendarRepositoryImpl(this._store);

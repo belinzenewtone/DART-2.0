@@ -1,10 +1,10 @@
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
-import 'package:dart_2_0/features/recurring/presentation/providers/recurring_providers.dart';
-import 'package:dart_2_0/features/recurring/presentation/widgets/recurring_dialogs.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
+import 'package:beltech/features/recurring/presentation/providers/recurring_providers.dart';
+import 'package:beltech/features/recurring/presentation/widgets/recurring_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

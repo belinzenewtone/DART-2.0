@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -3,6 +3,11 @@
 1) Apply schema in Supabase SQL editor using `supabase/schema.sql`.
 If you already created older tables, migrate them so `transactions.source_hash` and owner-scoped indexes/policies exist.
 
+If you get `ERROR: 42703: column "owner_id" does not exist`, run:
+
+1. `supabase/owner_id_compat.sql`
+2. then `supabase/schema.sql` again
+
 2) Ensure Email auth provider is enabled in Supabase Auth settings.
 
 3) Run app with Supabase configured through `--dart-define` values:

@@ -1,5 +1,5 @@
-import 'package:dart_2_0/features/auth/domain/entities/account_session.dart';
-import 'package:dart_2_0/features/auth/domain/repositories/account_repository.dart';
+import 'package:beltech/features/auth/domain/entities/account_session.dart';
+import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAccountRepositoryImpl implements AccountRepository {

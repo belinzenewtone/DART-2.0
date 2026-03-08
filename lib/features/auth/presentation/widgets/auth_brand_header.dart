@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/widgets/beltech_logo.dart';
+import 'package:beltech/core/widgets/beltech_logo.dart';
 import 'package:flutter/material.dart';
 
 class AuthBrandHeader extends StatelessWidget {

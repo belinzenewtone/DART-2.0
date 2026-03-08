@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/theme/glass_styles.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:flutter/material.dart';
 
 class AuthLoadingScreen extends StatelessWidget {

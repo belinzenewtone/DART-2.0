@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/core/widgets/app_dialog.dart';
-import 'package:dart_2_0/features/expenses/domain/entities/expense_import_window.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_window.dart';
 import 'package:flutter/material.dart';
 
 class SmsImportInput {

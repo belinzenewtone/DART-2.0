@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
+import 'package:beltech/features/assistant/domain/entities/assistant_message.dart';
 
 abstract class AssistantRepository {
   Stream<List<AssistantMessage>> watchConversation();

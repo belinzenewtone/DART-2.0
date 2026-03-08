@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/theme/app_motion.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
 import 'package:flutter/material.dart';
 
 class CalendarEventsCard extends StatelessWidget {

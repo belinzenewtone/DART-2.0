@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppTheme {
@@ -175,14 +175,14 @@ class AppTheme {
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: const Color(0xFFAFC1DA),
+          borderSide: const BorderSide(
+            color: Color(0xFFAFC1DA),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: const Color(0xFFAFC1DA),
+          borderSide: const BorderSide(
+            color: Color(0xFFAFC1DA),
           ),
         ),
         focusedBorder: OutlineInputBorder(

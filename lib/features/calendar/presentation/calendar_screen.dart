@@ -1,13 +1,13 @@
-import 'package:dart_2_0/core/widgets/action_button.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/core/widgets/loading_indicator.dart';
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/features/calendar/presentation/providers/calendar_providers.dart';
-import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_events_card.dart';
-import 'package:dart_2_0/features/calendar/presentation/widgets/calendar_month_grid.dart';
-import 'package:dart_2_0/features/calendar/presentation/widgets/event_dialogs.dart';
+import 'package:beltech/core/widgets/action_button.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:beltech/features/calendar/presentation/widgets/calendar_events_card.dart';
+import 'package:beltech/features/calendar/presentation/widgets/calendar_month_grid.dart';
+import 'package:beltech/features/calendar/presentation/widgets/event_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

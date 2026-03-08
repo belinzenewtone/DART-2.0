@@ -1,6 +1,6 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/features/search/domain/entities/global_search_result.dart';
-import 'package:dart_2_0/features/search/domain/repositories/global_search_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/features/search/domain/entities/global_search_result.dart';
+import 'package:beltech/features/search/domain/repositories/global_search_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {

@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
+import 'package:beltech/features/profile/domain/entities/user_profile.dart';
 import 'dart:typed_data';
 
 abstract class ProfileRepository {

@@ -1,4 +1,4 @@
-package com.example.dart_2_0
+package com.beltech.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

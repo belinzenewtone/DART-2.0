@@ -1,8 +1,8 @@
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/search/domain/entities/global_search_result.dart';
-import 'package:dart_2_0/features/search/presentation/providers/global_search_providers.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/search/domain/entities/global_search_result.dart';
+import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

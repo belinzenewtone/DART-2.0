@@ -1,12 +1,13 @@
-import 'package:dart_2_0/core/di/notification_providers.dart';
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/theme/theme_mode_controller.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/auth/domain/entities/auth_state.dart';
-import 'package:dart_2_0/features/auth/presentation/providers/auth_providers.dart';
+import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/theme/theme_mode_controller.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/auth/domain/entities/auth_state.dart';
+import 'package:beltech/features/auth/presentation/providers/auth_providers.dart';
+import 'package:beltech/features/settings/presentation/widgets/notification_preferences_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -152,11 +153,6 @@ class _SecurityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationsEnabledState = ref.watch(notificationsEnabledProvider);
-    final notificationWriteState =
-        ref.watch(notificationPreferenceControllerProvider);
-    final notificationsEnabled = notificationsEnabledState.valueOrNull ?? true;
-
     return GlassCard(
       child: Column(
         children: [
@@ -207,20 +203,7 @@ class _SecurityCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Notifications'),
-            subtitle: const Text('Enable task and event reminders'),
-            value: notificationsEnabled,
-            onChanged: notificationsEnabledState.isLoading ||
-                    notificationWriteState.isLoading
-                ? null
-                : (value) async {
-                    await ref
-                        .read(notificationPreferenceControllerProvider.notifier)
-                        .setEnabled(value);
-                  },
-          ),
+          const NotificationPreferencesSection(),
         ],
       ),
     );

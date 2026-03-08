@@ -1,11 +1,11 @@
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/utils/currency_formatter.dart';
-import 'package:dart_2_0/core/widgets/app_feedback.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/income/domain/entities/income_item.dart';
-import 'package:dart_2_0/features/income/presentation/providers/income_providers.dart';
-import 'package:dart_2_0/features/income/presentation/widgets/income_dialogs.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/income/domain/entities/income_item.dart';
+import 'package:beltech/features/income/presentation/providers/income_providers.dart';
+import 'package:beltech/features/income/presentation/widgets/income_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

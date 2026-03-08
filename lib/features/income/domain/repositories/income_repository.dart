@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/income/domain/entities/income_item.dart';
+import 'package:beltech/features/income/domain/entities/income_item.dart';
 
 abstract class IncomeRepository {
   Stream<List<IncomeItem>> watchIncomes();

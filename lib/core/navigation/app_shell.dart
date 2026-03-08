@@ -1,28 +1,28 @@
 import 'dart:async';
-
-import 'package:dart_2_0/core/di/update_providers.dart';
-import 'package:dart_2_0/core/di/sync_providers.dart';
-import 'package:dart_2_0/core/di/notification_providers.dart';
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/core/navigation/shell_providers.dart';
-import 'package:dart_2_0/core/navigation/widgets/shell_body_switcher.dart';
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/theme/app_motion.dart';
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/theme/glass_styles.dart';
-import 'package:dart_2_0/core/update/presentation/app_update_dialog.dart';
-import 'package:dart_2_0/core/widgets/app_dialog.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/analytics/presentation/analytics_screen.dart';
-import 'package:dart_2_0/features/assistant/presentation/assistant_screen.dart';
-import 'package:dart_2_0/features/calendar/presentation/calendar_screen.dart';
-import 'package:dart_2_0/features/expenses/presentation/expenses_screen.dart';
-import 'package:dart_2_0/features/home/presentation/home_screen.dart';
-import 'package:dart_2_0/features/profile/presentation/profile_screen.dart';
-import 'package:dart_2_0/features/tasks/presentation/tasks_screen.dart';
+import 'package:beltech/core/di/update_providers.dart';
+import 'package:beltech/core/di/sync_providers.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/navigation/app_shell_helpers.dart';
+import 'package:beltech/core/navigation/shell_providers.dart';
+import 'package:beltech/core/navigation/widgets/biometric_lock_overlay.dart';
+import 'package:beltech/core/navigation/widgets/shell_body_switcher.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/update/presentation/app_update_dialog.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/analytics/presentation/analytics_screen.dart';
+import 'package:beltech/features/assistant/presentation/assistant_screen.dart';
+import 'package:beltech/features/calendar/presentation/calendar_screen.dart';
+import 'package:beltech/features/expenses/presentation/expenses_screen.dart';
+import 'package:beltech/features/home/presentation/home_screen.dart';
+import 'package:beltech/features/profile/presentation/profile_screen.dart';
+import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
+import 'package:beltech/core/sync/background_sync_coordinator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dart_2_0/core/sync/background_sync_coordinator.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -57,7 +57,7 @@ class _AppShellState extends ConsumerState<AppShell>
     _backgroundSyncCoordinator = ref.read(backgroundSyncCoordinatorProvider);
     unawaited(_startBackgroundSync());
     unawaited(_initializeBiometricLock());
-    unawaited(_cleanupNotificationReminders());
+    unawaited(cleanupNotificationReminders(ref));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkForAppUpdate());
     });
@@ -75,7 +75,8 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncNow());
       unawaited(_materializeRecurringNow());
-      unawaited(_cleanupNotificationReminders());
+      unawaited(_runNotificationSweep());
+      unawaited(cleanupNotificationReminders(ref));
       unawaited(_applyBiometricLockOnResume());
     }
   }
@@ -83,7 +84,7 @@ class _AppShellState extends ConsumerState<AppShell>
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(shellTabIndexProvider);
-    final accent = _accentForTab(currentIndex);
+    final accent = accentForTab(currentIndex);
     final accentSoft = accent.withValues(alpha: 0.2);
     final brightness = Theme.of(context).brightness;
     final reduceMotion = AppMotion.reduceMotion(context);
@@ -194,7 +195,7 @@ class _AppShellState extends ConsumerState<AppShell>
             ),
           ),
           if (_appLocked)
-            _BiometricLockOverlay(
+            BiometricLockOverlay(
               busy: _biometricUnlockInProgress,
               message: _biometricLockMessage,
               onUnlock: _unlockWithBiometrics,
@@ -202,19 +203,6 @@ class _AppShellState extends ConsumerState<AppShell>
         ],
       ),
     );
-  }
-
-  Color _accentForTab(int tab) {
-    const palette = [
-      Color(0xFF2D7CFF),
-      Color(0xFF45A3C9),
-      Color(0xFF2AAE9D),
-      Color(0xFF3A8AE8),
-      Color(0xFFE4895E),
-      Color(0xFF6D77E8),
-      Color(0xFF3E91D6),
-    ];
-    return palette[tab % palette.length];
   }
 
   Future<void> _startBackgroundSync() async {
@@ -229,31 +217,8 @@ class _AppShellState extends ConsumerState<AppShell>
     await _backgroundSyncCoordinator.syncNow();
   }
 
-  Future<void> _cleanupNotificationReminders() async {
-    final notifications = ref.read(localNotificationServiceProvider);
-    final tasks = await ref.read(tasksRepositoryProvider).watchTasks().first;
-    final activeTaskIds = tasks
-        .where((task) =>
-            !task.completed &&
-            task.dueDate != null &&
-            task.dueDate!.isAfter(DateTime.now()))
-        .map((task) => task.id);
-
-    final from = DateTime.now().subtract(const Duration(days: 1));
-    final to = DateTime.now().add(const Duration(days: 365 * 2));
-    final events = await ref
-        .read(calendarRepositoryProvider)
-        .watchEventsInRange(from, to)
-        .first;
-    final activeEventIds = events
-        .where((event) =>
-            !event.completed && event.startAt.isAfter(DateTime.now()))
-        .map((event) => event.id);
-
-    await notifications.cleanupOrphanedReminders(
-      activeTaskIds: activeTaskIds,
-      activeEventIds: activeEventIds,
-    );
+  Future<void> _runNotificationSweep() async {
+    await _backgroundSyncCoordinator.runNotificationSweep();
   }
 
   Future<void> _checkForAppUpdate() async {
@@ -331,82 +296,5 @@ class _AppShellState extends ConsumerState<AppShell>
       _biometricLockMessage =
           authenticated ? null : 'Authentication was not completed.';
     });
-  }
-}
-
-class _BiometricLockOverlay extends StatelessWidget {
-  const _BiometricLockOverlay({
-    required this.busy,
-    required this.message,
-    required this.onUnlock,
-  });
-
-  final bool busy;
-  final String? message;
-  final Future<void> Function() onUnlock;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: ColoredBox(
-        color: AppColors.background.withValues(alpha: 0.8),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: GlassCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.fingerprint,
-                      color: AppColors.accent,
-                      size: 56,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Unlock BELTECH',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Use your fingerprint or face to continue.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    if (message != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        message!,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.warning,
-                            ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: busy ? null : () => onUnlock(),
-                        icon: busy
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.lock_open_rounded),
-                        label: Text(busy ? 'Authenticating...' : 'Unlock'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

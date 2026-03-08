@@ -1,4 +1,4 @@
-import 'package:dart_2_0/main.dart';
+import 'package:beltech/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

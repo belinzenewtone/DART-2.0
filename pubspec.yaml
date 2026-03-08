@@ -1,4 +1,4 @@
-name: dart_2_0
+name: beltech
 description: Personal management app with clean architecture and glassmorphism UI.
 publish_to: "none"
 version: 1.0.1+2
@@ -25,6 +25,7 @@ dependencies:
   flutter_sms_inbox: ^1.0.4
   shared_preferences: ^2.5.4
   flutter_local_notifications: ^21.0.0
+  workmanager: ^0.9.0+3
   timezone: ^0.11.0
   flutter_timezone: ^5.0.1
   package_info_plus: ^8.3.0

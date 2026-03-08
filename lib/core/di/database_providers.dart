@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/platform/runtime_env.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/data/local/drift/assistant_profile_store.dart';
-import 'package:dart_2_0/data/local/drift/drift_schema.dart';
+import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/data/local/drift/assistant_profile_store.dart';
+import 'package:beltech/data/local/drift/drift_schema.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

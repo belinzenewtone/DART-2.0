@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
-import 'package:dart_2_0/features/calendar/domain/repositories/calendar_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseCalendarRepositoryImpl implements CalendarRepository {

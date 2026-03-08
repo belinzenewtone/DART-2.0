@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/features/assistant/domain/entities/assistant_message.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/features/assistant/domain/entities/assistant_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _assistantIntroMessage =

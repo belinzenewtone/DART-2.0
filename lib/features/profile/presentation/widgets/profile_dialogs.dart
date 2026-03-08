@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/theme/app_colors.dart';
-import 'package:dart_2_0/core/widgets/app_dialog.dart';
-import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
-import 'package:dart_2_0/features/profile/presentation/providers/profile_providers.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/features/profile/domain/entities/user_profile.dart';
+import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

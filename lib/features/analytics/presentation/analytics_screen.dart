@@ -1,12 +1,12 @@
-import 'package:dart_2_0/core/theme/app_spacing.dart';
-import 'package:dart_2_0/core/widgets/error_message.dart';
-import 'package:dart_2_0/core/widgets/glass_card.dart';
-import 'package:dart_2_0/features/analytics/domain/entities/analytics_snapshot.dart';
-import 'package:dart_2_0/features/analytics/presentation/providers/analytics_providers.dart';
-import 'package:dart_2_0/features/analytics/presentation/widgets/analytics_bar_chart.dart';
-import 'package:dart_2_0/features/analytics/presentation/widgets/analytics_category_breakdown.dart';
-import 'package:dart_2_0/features/analytics/presentation/widgets/analytics_overview_cards.dart';
-import 'package:dart_2_0/features/analytics/presentation/widgets/analytics_trend_chart.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:beltech/features/analytics/presentation/providers/analytics_providers.dart';
+import 'package:beltech/features/analytics/presentation/widgets/analytics_bar_chart.dart';
+import 'package:beltech/features/analytics/presentation/widgets/analytics_category_breakdown.dart';
+import 'package:beltech/features/analytics/presentation/widgets/analytics_overview_cards.dart';
+import 'package:beltech/features/analytics/presentation/widgets/analytics_trend_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

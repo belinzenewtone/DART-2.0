@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/home/domain/entities/home_overview.dart';
-import 'package:dart_2_0/features/home/domain/repositories/home_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/home/domain/entities/home_overview.dart';
+import 'package:beltech/features/home/domain/repositories/home_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseHomeRepositoryImpl implements HomeRepository {

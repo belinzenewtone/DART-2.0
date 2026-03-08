@@ -53,6 +53,15 @@
 	<string>LaunchScreen</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock BELTECH securely.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.beltech.app.sync</string>
+	</array>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>

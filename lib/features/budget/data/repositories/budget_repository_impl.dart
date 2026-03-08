@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_snapshot.dart';
-import 'package:dart_2_0/features/budget/domain/entities/budget_target.dart';
-import 'package:dart_2_0/features/budget/domain/repositories/budget_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
+import 'package:beltech/features/budget/domain/entities/budget_target.dart';
+import 'package:beltech/features/budget/domain/repositories/budget_repository.dart';
 
 class BudgetRepositoryImpl implements BudgetRepository {
   BudgetRepositoryImpl(this._store);

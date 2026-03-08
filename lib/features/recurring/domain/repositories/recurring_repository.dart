@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
+import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
 
 abstract class RecurringRepository {
   Stream<List<RecurringTemplate>> watchTemplates();

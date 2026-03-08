@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/config/supabase_config.dart';
+import 'package:beltech/core/config/supabase_config.dart';
 
 class AssistantProxyConfig {
   AssistantProxyConfig._();

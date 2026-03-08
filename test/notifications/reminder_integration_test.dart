@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/di/notification_providers.dart';
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/core/notifications/local_notification_service.dart';
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
-import 'package:dart_2_0/features/calendar/domain/repositories/calendar_repository.dart';
-import 'package:dart_2_0/features/calendar/presentation/providers/calendar_providers.dart';
-import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
-import 'package:dart_2_0/features/tasks/domain/repositories/tasks_repository.dart';
-import 'package:dart_2_0/features/tasks/presentation/providers/tasks_providers.dart';
+import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/notifications/local_notification_service.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
+import 'package:beltech/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
+import 'package:beltech/features/tasks/presentation/providers/tasks_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

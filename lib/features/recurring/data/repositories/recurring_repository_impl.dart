@@ -1,6 +1,6 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
-import 'package:dart_2_0/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
+import 'package:beltech/features/recurring/domain/repositories/recurring_repository.dart';
 
 class RecurringRepositoryImpl implements RecurringRepository {
   RecurringRepositoryImpl(this._store);

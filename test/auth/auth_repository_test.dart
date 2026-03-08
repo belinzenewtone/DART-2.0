@@ -1,5 +1,5 @@
-import 'package:dart_2_0/core/security/secure_credentials_store.dart';
-import 'package:dart_2_0/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:beltech/core/security/secure_credentials_store.dart';
+import 'package:beltech/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mocktail/mocktail.dart';

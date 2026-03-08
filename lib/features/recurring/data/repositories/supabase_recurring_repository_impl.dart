@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/remote/supabase/supabase_parsers.dart';
-import 'package:dart_2_0/data/remote/supabase/supabase_polling.dart';
-import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
-import 'package:dart_2_0/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
+import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
+import 'package:beltech/features/recurring/domain/repositories/recurring_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseRecurringRepositoryImpl implements RecurringRepository {

@@ -1,7 +1,7 @@
-import 'package:dart_2_0/core/config/app_update_config.dart';
-import 'package:dart_2_0/core/update/data/update_installer.dart';
-import 'package:dart_2_0/core/update/domain/app_update_info.dart';
-import 'package:dart_2_0/core/update/domain/update_install_progress.dart';
+import 'package:beltech/core/config/app_update_config.dart';
+import 'package:beltech/core/update/data/update_installer.dart';
+import 'package:beltech/core/update/domain/app_update_info.dart';
+import 'package:beltech/core/update/domain/update_install_progress.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';

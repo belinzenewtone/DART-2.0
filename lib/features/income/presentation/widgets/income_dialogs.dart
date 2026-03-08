@@ -1,4 +1,4 @@
-import 'package:dart_2_0/core/widgets/app_dialog.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 
 class IncomeInput {

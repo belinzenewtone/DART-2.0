@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:dart_2_0/core/platform/runtime_env.dart';
-import 'package:dart_2_0/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/features/recurring/domain/repositories/recurring_repository.dart';
 
 class RecurringMaterializerService {
   RecurringMaterializerService(this._repository);

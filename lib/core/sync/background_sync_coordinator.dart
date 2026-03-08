@@ -1,16 +1,22 @@
-import 'package:dart_2_0/core/platform/runtime_env.dart';
-import 'package:dart_2_0/core/sync/sms_auto_import_service.dart';
-import 'package:dart_2_0/features/recurring/data/services/recurring_materializer_service.dart';
+import 'package:beltech/core/notifications/notification_insights_service.dart';
+import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/core/sync/os_background_sync_scheduler.dart';
+import 'package:beltech/core/sync/sms_auto_import_service.dart';
+import 'package:beltech/features/recurring/data/services/recurring_materializer_service.dart';
 import 'package:flutter/foundation.dart';
 
 class BackgroundSyncCoordinator {
   BackgroundSyncCoordinator(
     this._smsAutoImportService,
     this._recurringMaterializerService,
+    this._notificationInsightsService,
+    this._osBackgroundSyncScheduler,
   );
 
   final SmsAutoImportService _smsAutoImportService;
   final RecurringMaterializerService _recurringMaterializerService;
+  final NotificationInsightsService _notificationInsightsService;
+  final OsBackgroundSyncScheduler _osBackgroundSyncScheduler;
 
   BackgroundSyncStrategy get _strategy => BackgroundSyncStrategy.forPlatform();
 
@@ -18,10 +24,12 @@ class BackgroundSyncCoordinator {
     if (hasRuntimeEnv('FLUTTER_TEST')) {
       return;
     }
+    await _osBackgroundSyncScheduler.initializeAndSchedule();
     await _smsAutoImportService.start(interval: _strategy.smsInterval);
     await _recurringMaterializerService.start(
       interval: _strategy.recurringInterval,
     );
+    await _notificationInsightsService.runSweep();
   }
 
   Future<void> stop() async {
@@ -35,6 +43,10 @@ class BackgroundSyncCoordinator {
 
   Future<void> materializeNow() async {
     await _recurringMaterializerService.syncNow();
+  }
+
+  Future<void> runNotificationSweep() async {
+    await _notificationInsightsService.runSweep();
   }
 }
 

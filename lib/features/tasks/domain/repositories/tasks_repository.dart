@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/domain/entities/task_item.dart';
 
 abstract class TasksRepository {
   Stream<List<TaskItem>> watchTasks();

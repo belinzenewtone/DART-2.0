@@ -1,4 +1,4 @@
-import 'package:dart_2_0/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
 
 abstract class CalendarRepository {
   Stream<List<CalendarEvent>> watchEventsForDay(DateTime day);

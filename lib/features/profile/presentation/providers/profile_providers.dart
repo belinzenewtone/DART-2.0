@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:dart_2_0/core/di/repository_providers.dart';
-import 'package:dart_2_0/features/profile/domain/entities/user_profile.dart';
+import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/features/profile/domain/entities/user_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final profileProvider = StreamProvider<UserProfile>(

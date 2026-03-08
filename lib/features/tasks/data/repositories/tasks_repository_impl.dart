@@ -1,7 +1,7 @@
-import 'package:dart_2_0/data/local/drift/app_drift_store.dart';
-import 'package:dart_2_0/data/local/drift/app_drift_store_mutations.dart';
-import 'package:dart_2_0/features/tasks/domain/entities/task_item.dart';
-import 'package:dart_2_0/features/tasks/domain/repositories/tasks_repository.dart';
+import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/data/local/drift/app_drift_store_mutations.dart';
+import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
 
 class TasksRepositoryImpl implements TasksRepository {
   TasksRepositoryImpl(this._store);

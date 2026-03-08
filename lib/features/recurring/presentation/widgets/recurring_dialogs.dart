@@ -1,5 +1,5 @@
-import 'package:dart_2_0/core/widgets/app_dialog.dart';
-import 'package:dart_2_0/features/recurring/domain/entities/recurring_template.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
 import 'package:flutter/material.dart';
 
 class RecurringTemplateInput {
