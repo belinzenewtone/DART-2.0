@@ -61,13 +61,21 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
-              child: FilledButton.tonalIcon(
+              child: OutlinedButton.icon(
                 onPressed: () => context.push('/analytics'),
-                icon: const Icon(Icons.query_stats),
-                label: const Text('Analytics'),
-                style: FilledButton.styleFrom(
-                  foregroundColor: AppColors.accent,
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                icon: const Icon(Icons.query_stats_outlined, size: 18),
+                label: const Text(
+                  'Analytics',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(132, 40),
+                  foregroundColor: AppColors.textPrimary,
+                  backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                  side: BorderSide(
+                    color: AppColors.accent.withValues(alpha: 0.7),
+                  ),
+                  shape: const StadiumBorder(),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
