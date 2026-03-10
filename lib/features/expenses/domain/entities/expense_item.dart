@@ -12,6 +12,21 @@ class ExpenseItem {
   final String category;
   final double amountKes;
   final DateTime occurredAt;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExpenseItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          category == other.category &&
+          amountKes == other.amountKes &&
+          occurredAt == other.occurredAt;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, category, amountKes, occurredAt);
 }
 
 class CategoryExpenseTotal {

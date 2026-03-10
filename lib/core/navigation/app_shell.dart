@@ -20,6 +20,7 @@ import 'package:beltech/features/home/presentation/home_screen.dart';
 import 'package:beltech/features/profile/presentation/profile_screen.dart';
 import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
+import 'package:beltech/core/widgets/offline_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -193,6 +194,13 @@ class _AppShellState extends ConsumerState<AppShell>
                 ),
               ),
             ),
+          ),
+          // Offline banner overlays everything when disconnected
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: OfflineBanner(),
           ),
           if (_appLocked)
             BiometricLockOverlay(

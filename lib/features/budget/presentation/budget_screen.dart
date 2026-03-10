@@ -195,14 +195,24 @@ class BudgetScreen extends ConsumerWidget {
   }
 }
 
-class _BudgetSummaryCard extends StatelessWidget {
+class _BudgetSummaryCard extends StatefulWidget {
   const _BudgetSummaryCard({required this.snapshot});
 
   final BudgetSnapshot snapshot;
 
   @override
+  State<_BudgetSummaryCard> createState() => _BudgetSummaryCardState();
+}
+
+class _BudgetSummaryCardState extends State<_BudgetSummaryCard> {
+  bool _showAll = false;
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final items = widget.snapshot.items;
+    final visibleItems = _showAll ? items : items.take(6).toList();
+    final hasMore = items.length > 6;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,14 +220,23 @@ class _BudgetSummaryCard extends StatelessWidget {
           Text('Monthly Budget Usage', style: textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
-            '${CurrencyFormatter.money(snapshot.totalSpentKes)} / ${CurrencyFormatter.money(snapshot.totalLimitKes)}',
+            '${CurrencyFormatter.money(widget.snapshot.totalSpentKes)} / ${CurrencyFormatter.money(widget.snapshot.totalLimitKes)}',
             style: textTheme.bodyLarge,
           ),
           const SizedBox(height: 8),
-          for (final item in snapshot.items.take(6)) ...[
+          for (final item in visibleItems) ...[
             _BudgetProgressRow(item: item),
             const SizedBox(height: 8),
           ],
+          if (hasMore)
+            TextButton(
+              onPressed: () => setState(() => _showAll = !_showAll),
+              child: Text(
+                _showAll
+                    ? 'Show fewer'
+                    : 'Show all categories (${items.length})',
+              ),
+            ),
         ],
       ),
     );

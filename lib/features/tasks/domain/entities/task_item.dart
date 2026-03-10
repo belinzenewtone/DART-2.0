@@ -16,4 +16,20 @@ class TaskItem {
   final bool completed;
   final TaskPriority priority;
   final DateTime? dueDate;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TaskItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          description == other.description &&
+          completed == other.completed &&
+          priority == other.priority &&
+          dueDate == other.dueDate;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, description, completed, priority, dueDate);
 }

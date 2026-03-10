@@ -1,6 +1,7 @@
 import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class RecurringTemplateInput {
   const RecurringTemplateInput({
@@ -25,17 +26,27 @@ class RecurringTemplateInput {
 }
 
 Future<RecurringTemplateInput?> showRecurringTemplateDialog(
-  BuildContext context,
-) async {
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-  final categoryController = TextEditingController();
-  final amountController = TextEditingController();
+  BuildContext context, {
+  RecurringTemplate? initial,
+}) async {
+  final isEdit = initial != null;
+  final titleController =
+      TextEditingController(text: initial?.title ?? '');
+  final descriptionController =
+      TextEditingController(text: initial?.description ?? '');
+  final categoryController =
+      TextEditingController(text: initial?.category ?? '');
+  final amountController = TextEditingController(
+    text: initial?.amountKes != null
+        ? initial!.amountKes!.toStringAsFixed(2)
+        : '',
+  );
   final formKey = GlobalKey<FormState>();
-  var kind = RecurringKind.expense;
-  var cadence = RecurringCadence.monthly;
-  var priority = 'medium';
-  var nextRunAt = DateTime.now().add(const Duration(hours: 1));
+  var kind = initial?.kind ?? RecurringKind.expense;
+  var cadence = initial?.cadence ?? RecurringCadence.monthly;
+  var priority = initial?.priority ?? 'medium';
+  var nextRunAt =
+      initial?.nextRunAt ?? DateTime.now().add(const Duration(hours: 1));
 
   final result = await showAppDialog<RecurringTemplateInput>(
     context: context,
@@ -46,7 +57,7 @@ Future<RecurringTemplateInput?> showRecurringTemplateDialog(
         final needsCategory = kind == RecurringKind.expense;
         final needsPriority = kind == RecurringKind.task;
         return AlertDialog(
-          title: const Text('New Recurring Item'),
+          title: Text(isEdit ? 'Edit Recurring Item' : 'New Recurring Item'),
           content: Form(
             key: formKey,
             child: SingleChildScrollView(
@@ -159,8 +170,7 @@ Future<RecurringTemplateInput?> showRecurringTemplateDialog(
                     leading: const Icon(Icons.schedule),
                     title: const Text('First run'),
                     subtitle: Text(
-                      '${nextRunAt.year}-${nextRunAt.month.toString().padLeft(2, '0')}-${nextRunAt.day.toString().padLeft(2, '0')} '
-                      '${nextRunAt.hour.toString().padLeft(2, '0')}:${nextRunAt.minute.toString().padLeft(2, '0')}',
+                      DateFormat('MMM d, yyyy HH:mm').format(nextRunAt),
                     ),
                     onTap: () async {
                       final pickedDate = await showDatePicker(

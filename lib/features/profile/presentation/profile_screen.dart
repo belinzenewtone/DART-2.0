@@ -49,11 +49,19 @@ class ProfileScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Profile', style: textTheme.titleLarge),
-                IconButton(
-                  onPressed: () {
-                    context.pushNamed('settings');
-                  },
-                  icon: const Icon(Icons.settings_outlined),
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Analytics',
+                      onPressed: () => context.pushNamed('analytics'),
+                      icon: const Icon(Icons.bar_chart_outlined),
+                    ),
+                    IconButton(
+                      tooltip: 'Settings',
+                      onPressed: () => context.pushNamed('settings'),
+                      icon: const Icon(Icons.settings_outlined),
+                    ),
+                  ],
                 ),
               ],
             ),

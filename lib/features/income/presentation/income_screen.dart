@@ -3,6 +3,7 @@ import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:intl/intl.dart';
 import 'package:beltech/features/income/domain/entities/income_item.dart';
 import 'package:beltech/features/income/presentation/providers/income_providers.dart';
 import 'package:beltech/features/income/presentation/widgets/income_dialogs.dart';
@@ -154,7 +155,7 @@ class _IncomeRow extends StatelessWidget {
               children: [
                 Text(item.title, style: textTheme.bodyLarge),
                 Text(
-                  '${item.receivedAt.year}-${item.receivedAt.month.toString().padLeft(2, '0')}-${item.receivedAt.day.toString().padLeft(2, '0')}',
+                  DateFormat('MMM d, yyyy').format(item.receivedAt),
                   style: textTheme.bodyMedium,
                 ),
               ],

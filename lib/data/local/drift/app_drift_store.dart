@@ -20,6 +20,7 @@ class AppDriftStore {
   final StreamController<int> _changes = StreamController<int>.broadcast();
 
   bool _initialized = false;
+  Future<void>? _initFuture;
   int _changeSeq = 0;
 
   QueryExecutor get executor => _db;
@@ -143,7 +144,10 @@ class AppDriftStore {
     });
   }
 
-  Future<void> _ensureInitialized() => _AppDriftSchema.ensureInitialized(this);
+  Future<void> _ensureInitialized() {
+    if (_initialized) return Future.value();
+    return _initFuture ??= _AppDriftSchema.ensureInitialized(this);
+  }
 
   Future<HomeOverviewRecord> _loadHomeOverview() =>
       _AppDriftQueries.loadHomeOverview(this);

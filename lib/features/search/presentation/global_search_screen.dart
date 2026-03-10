@@ -3,6 +3,7 @@ import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -52,27 +53,34 @@ class GlobalSearchScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         final result = results[index];
                         return GlassCard(
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                child: Icon(_iconFor(result.kind)),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(result.primaryText,
-                                        style: textTheme.bodyLarge),
-                                    Text(
-                                      result.secondaryText,
-                                      style: textTheme.bodyMedium,
-                                    ),
-                                  ],
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => _navigateTo(context, result.kind),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  child: Icon(_iconFor(result.kind)),
                                 ),
-                              ),
-                              Text(result.trailingText),
-                            ],
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(result.primaryText,
+                                          style: textTheme.bodyLarge),
+                                      Text(
+                                        result.secondaryText,
+                                        style: textTheme.bodyMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(result.trailingText),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.chevron_right, size: 18),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -102,5 +110,22 @@ class GlobalSearchScreen extends ConsumerWidget {
       GlobalSearchKind.budget => Icons.savings_outlined,
       GlobalSearchKind.recurring => Icons.autorenew,
     };
+  }
+
+  void _navigateTo(BuildContext context, GlobalSearchKind kind) {
+    switch (kind) {
+      case GlobalSearchKind.expense:
+        context.pop();
+      case GlobalSearchKind.income:
+        context.pushNamed('income');
+      case GlobalSearchKind.task:
+        context.pop();
+      case GlobalSearchKind.event:
+        context.pop();
+      case GlobalSearchKind.budget:
+        context.pushNamed('budget');
+      case GlobalSearchKind.recurring:
+        context.pushNamed('recurring');
+    }
   }
 }

@@ -10,6 +10,7 @@ import 'package:beltech/features/auth/presentation/providers/auth_providers.dart
 import 'package:beltech/features/settings/presentation/widgets/notification_preferences_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -62,6 +63,10 @@ class SettingsScreen extends ConsumerWidget {
               Text('Data and Tools', style: textTheme.titleMedium),
               const SizedBox(height: 10),
               const _ToolsCard(),
+              const SizedBox(height: 16),
+              Text('About', style: textTheme.titleMedium),
+              const SizedBox(height: 10),
+              const _AboutCard(),
             ],
           ),
         ),
@@ -250,6 +255,81 @@ class _AppearanceCard extends ConsumerWidget {
                     .setThemeMode(selected.first);
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatefulWidget {
+  const _AboutCard();
+
+  @override
+  State<_AboutCard> createState() => _AboutCardState();
+}
+
+class _AboutCardState extends State<_AboutCard> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = '${info.version} (build ${info.buildNumber})';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return GlassCard(
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.info_outline, color: AppColors.accent),
+            title: const Text('Version'),
+            trailing: Text(
+              _version.isEmpty ? '…' : _version,
+              style: textTheme.bodyMedium,
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading:
+                const Icon(Icons.delete_forever_outlined, color: Colors.red),
+            title: const Text(
+              'Delete Account',
+              style: TextStyle(color: Colors.red),
+            ),
+            subtitle: const Text('Permanently remove your account and data'),
+            onTap: () {
+              showDialog<void>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete Account'),
+                  content: const Text(
+                    'To delete your account and all associated data, '
+                    'please contact support at support@beltech.app. '
+                    'This action is irreversible.',
+                  ),
+                  actions: [
+                    FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

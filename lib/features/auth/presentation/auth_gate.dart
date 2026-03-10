@@ -6,15 +6,45 @@ import 'package:beltech/features/auth/presentation/providers/account_providers.d
 import 'package:beltech/features/auth/presentation/widgets/auth_brand_header.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_form_card.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_loading_screen.dart';
+import 'package:beltech/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  bool _checkingOnboarding = true;
+  bool _onboardingDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    hasSeenOnboarding().then((done) {
+      if (mounted) {
+        setState(() {
+          _onboardingDone = done;
+          _checkingOnboarding = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checkingOnboarding) {
+      return const AuthLoadingScreen();
+    }
+    if (!_onboardingDone) {
+      return OnboardingScreen(
+        onDone: () => setState(() => _onboardingDone = true),
+      );
+    }
     if (!ref.watch(useSupabaseProvider)) {
       return const AppShell();
     }

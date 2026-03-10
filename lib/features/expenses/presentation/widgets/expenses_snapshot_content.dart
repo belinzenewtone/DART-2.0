@@ -6,6 +6,9 @@ import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/transaction_row.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+final _txDateFormat = DateFormat('MMM d, HH:mm');
 
 class ExpensesSnapshotContent extends StatefulWidget {
   const ExpensesSnapshotContent({
@@ -91,7 +94,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             dismissKey: 'expense-${tx.id}',
             title: tx.title,
             subtitle:
-                '${tx.category} · ${tx.occurredAt.month}/${tx.occurredAt.day}, ${tx.occurredAt.hour}:${tx.occurredAt.minute.toString().padLeft(2, '0')}',
+                '${tx.category} · ${_txDateFormat.format(tx.occurredAt)}',
             amount: CurrencyFormatter.money(tx.amountKes),
             onEdit: () => widget.onEditExpense(tx),
             onDelete: () => widget.onDeleteExpense(tx),

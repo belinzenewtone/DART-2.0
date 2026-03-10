@@ -8,6 +8,18 @@ class HomeTransaction {
   final String title;
   final String category;
   final double amountKes;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HomeTransaction &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          category == other.category &&
+          amountKes == other.amountKes;
+
+  @override
+  int get hashCode => Object.hash(title, category, amountKes);
 }
 
 class HomeOverview {

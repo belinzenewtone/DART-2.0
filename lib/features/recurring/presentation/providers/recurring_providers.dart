@@ -37,6 +37,35 @@ class RecurringWriteController extends AutoDisposeAsyncNotifier<void> {
     });
   }
 
+  Future<void> updateTemplate({
+    required int templateId,
+    required RecurringKind kind,
+    required String title,
+    String? description,
+    String? category,
+    double? amountKes,
+    String? priority,
+    required RecurringCadence cadence,
+    required DateTime nextRunAt,
+    required bool enabled,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(recurringRepositoryProvider).updateTemplate(
+            templateId: templateId,
+            kind: kind,
+            title: title,
+            description: description,
+            category: category,
+            amountKes: amountKes,
+            priority: priority,
+            cadence: cadence,
+            nextRunAt: nextRunAt,
+            enabled: enabled,
+          );
+    });
+  }
+
   Future<void> deleteTemplate(int templateId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {

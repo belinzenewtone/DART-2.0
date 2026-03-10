@@ -1,8 +1,10 @@
 import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/recurring/domain/entities/recurring_template.dart';
+import 'package:intl/intl.dart';
 import 'package:beltech/features/recurring/presentation/providers/recurring_providers.dart';
 import 'package:beltech/features/recurring/presentation/widgets/recurring_dialogs.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +88,27 @@ class RecurringScreen extends ConsumerWidget {
                   return _RecurringRow(
                     template: template,
                     busy: writeState.isLoading,
+                    onEdit: () async {
+                      final input = await showRecurringTemplateDialog(
+                        context,
+                        initial: template,
+                      );
+                      if (input == null) return;
+                      await ref
+                          .read(recurringWriteControllerProvider.notifier)
+                          .updateTemplate(
+                            templateId: template.id,
+                            kind: input.kind,
+                            title: input.title,
+                            description: input.description,
+                            category: input.category,
+                            amountKes: input.amountKes,
+                            priority: input.priority,
+                            cadence: input.cadence,
+                            nextRunAt: input.nextRunAt,
+                            enabled: template.enabled,
+                          );
+                    },
                     onDelete: () async {
                       await ref
                           .read(recurringWriteControllerProvider.notifier)
@@ -111,11 +134,13 @@ class _RecurringRow extends StatelessWidget {
   const _RecurringRow({
     required this.template,
     required this.busy,
+    required this.onEdit,
     required this.onDelete,
   });
 
   final RecurringTemplate template;
   final bool busy;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -134,15 +159,16 @@ class _RecurringRow extends StatelessWidget {
               children: [
                 Text(template.title),
                 Text('${template.kind.name} · ${template.cadence.name}'),
-                Text(
-                  'Next: ${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-                  '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
-                ),
+                Text('Next: ${DateFormat('MMM d, yyyy HH:mm').format(date)}'),
               ],
             ),
           ),
           if (template.amountKes != null)
-            Text('KES ${template.amountKes!.toStringAsFixed(2)}'),
+            Text(CurrencyFormatter.money(template.amountKes!)),
+          IconButton(
+            onPressed: busy ? null : onEdit,
+            icon: const Icon(Icons.edit_outlined),
+          ),
           IconButton(
             onPressed: busy ? null : onDelete,
             icon: const Icon(Icons.delete_outline),

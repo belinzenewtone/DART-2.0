@@ -1,5 +1,6 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
@@ -18,31 +19,33 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w700,
-          fontSize: 32,
-        ),
-        titleLarge: TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 26,
-        ),
-        titleMedium: TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyLarge: TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
-        bodyMedium: TextStyle(
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.w400,
-          fontSize: 15,
+      textTheme: GoogleFonts.interTextTheme(
+        const TextTheme(
+          headlineMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 32,
+          ),
+          titleLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 26,
+          ),
+          titleMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+          bodyLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+          bodyMedium: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w400,
+            fontSize: 15,
+          ),
         ),
       ),
       iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -118,31 +121,33 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.backgroundFor(Brightness.light),
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          color: Color(0xFF11233F),
-          fontWeight: FontWeight.w700,
-          fontSize: 32,
-        ),
-        titleLarge: TextStyle(
-          color: Color(0xFF11233F),
-          fontWeight: FontWeight.w600,
-          fontSize: 26,
-        ),
-        titleMedium: TextStyle(
-          color: Color(0xFF183056),
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyLarge: TextStyle(
-          color: Color(0xFF1A335A),
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
-        bodyMedium: TextStyle(
-          color: Color(0xFF516584),
-          fontWeight: FontWeight.w400,
-          fontSize: 15,
+      textTheme: GoogleFonts.interTextTheme(
+        const TextTheme(
+          headlineMedium: TextStyle(
+            color: Color(0xFF11233F),
+            fontWeight: FontWeight.w700,
+            fontSize: 32,
+          ),
+          titleLarge: TextStyle(
+            color: Color(0xFF11233F),
+            fontWeight: FontWeight.w600,
+            fontSize: 26,
+          ),
+          titleMedium: TextStyle(
+            color: Color(0xFF183056),
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+          bodyLarge: TextStyle(
+            color: Color(0xFF1A335A),
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+          bodyMedium: TextStyle(
+            color: Color(0xFF516584),
+            fontWeight: FontWeight.w400,
+            fontSize: 15,
+          ),
         ),
       ),
       iconTheme: const IconThemeData(color: Color(0xFF183056)),

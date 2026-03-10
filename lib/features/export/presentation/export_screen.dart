@@ -5,6 +5,7 @@ import 'package:beltech/features/export/domain/entities/export_result.dart';
 import 'package:beltech/features/export/presentation/providers/export_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ExportScreen extends ConsumerWidget {
   const ExportScreen({super.key});
@@ -70,8 +71,28 @@ class ExportScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Text('Scope: ${_labelFor(latestResult.scope)}'),
                     Text('Rows: ${latestResult.rowsExported}'),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: exportState.isLoading
+                            ? null
+                            : () async {
+                                await Share.shareXFiles(
+                                  [XFile(latestResult.filePath)],
+                                  subject:
+                                      'BELTECH Export – ${_labelFor(latestResult.scope)}',
+                                );
+                              },
+                        icon: const Icon(Icons.share_outlined),
+                        label: const Text('Share File'),
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    SelectableText(latestResult.filePath),
+                    SelectableText(
+                      latestResult.filePath,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),

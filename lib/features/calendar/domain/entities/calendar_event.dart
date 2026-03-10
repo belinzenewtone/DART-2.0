@@ -22,6 +22,24 @@ class CalendarEvent {
   final CalendarEventType type;
   final DateTime? endAt;
   final String? note;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CalendarEvent &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          startAt == other.startAt &&
+          completed == other.completed &&
+          priority == other.priority &&
+          type == other.type &&
+          endAt == other.endAt &&
+          note == other.note;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, startAt, completed, priority, type, endAt, note);
 }
 
 CalendarEventType calendarEventTypeFromRaw(String raw) {

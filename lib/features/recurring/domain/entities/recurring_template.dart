@@ -35,4 +35,26 @@ class RecurringTemplate {
   final RecurringCadence cadence;
   final DateTime nextRunAt;
   final bool enabled;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecurringTemplate &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          kind == other.kind &&
+          title == other.title &&
+          description == other.description &&
+          category == other.category &&
+          amountKes == other.amountKes &&
+          priority == other.priority &&
+          cadence == other.cadence &&
+          nextRunAt == other.nextRunAt &&
+          enabled == other.enabled;
+
+  @override
+  int get hashCode => Object.hash(
+        id, kind, title, description, category, amountKes, priority, cadence,
+        nextRunAt, enabled,
+      );
 }
