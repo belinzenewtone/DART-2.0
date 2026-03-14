@@ -18,3 +18,8 @@ coverage/
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Android signing secrets
+android/key.properties
+*.jks
+*.keystore
