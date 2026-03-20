@@ -1,7 +1,9 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/category_chip.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/transaction_row.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 part 'expenses_snapshot_content_cards.dart';
+part 'expenses_snapshot_content_imports.dart';
 
 final _txDateFormat = DateFormat('MMM d, HH:mm');
 
@@ -21,6 +24,12 @@ class ExpensesSnapshotContent extends StatefulWidget {
     required this.onFilterChanged,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.importMetrics,
+    required this.reviewItems,
+    required this.quarantineItems,
+    required this.onApproveReview,
+    required this.onRejectReview,
+    required this.onDismissQuarantine,
   });
 
   final ExpensesSnapshot snapshot;
@@ -29,6 +38,12 @@ class ExpensesSnapshotContent extends StatefulWidget {
   final ValueChanged<ExpenseFilter> onFilterChanged;
   final ValueChanged<ExpenseItem> onEditExpense;
   final ValueChanged<ExpenseItem> onDeleteExpense;
+  final ExpenseImportMetrics importMetrics;
+  final List<ExpenseReviewItem> reviewItems;
+  final List<ExpenseQuarantineItem> quarantineItems;
+  final ValueChanged<ExpenseReviewItem> onApproveReview;
+  final ValueChanged<ExpenseReviewItem> onRejectReview;
+  final ValueChanged<ExpenseQuarantineItem> onDismissQuarantine;
 
   @override
   State<ExpensesSnapshotContent> createState() =>
@@ -42,9 +57,12 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final transactions = _transactionsForFilter(
-        widget.snapshot.transactions, widget.selectedFilter);
-    final visibleTransactions =
-        _showAllTransactions ? transactions : transactions.take(20).toList();
+      widget.snapshot.transactions,
+      widget.selectedFilter,
+    );
+    final visibleTransactions = _showAllTransactions
+        ? transactions
+        : transactions.take(20).toList();
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
@@ -93,6 +111,16 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
         ),
         const SizedBox(height: 14),
         _CategoryCard(categories: widget.snapshot.categories),
+        const SizedBox(height: 14),
+        _ImportPipelineCard(
+          metrics: widget.importMetrics,
+          reviewItems: widget.reviewItems,
+          quarantineItems: widget.quarantineItems,
+          busy: widget.busy,
+          onApproveReview: widget.onApproveReview,
+          onRejectReview: widget.onRejectReview,
+          onDismissQuarantine: widget.onDismissQuarantine,
+        ),
         const SizedBox(height: 16),
         Text('Transactions', style: textTheme.titleMedium),
         const SizedBox(height: 10),
@@ -117,9 +145,11 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
                   _showAllTransactions = !_showAllTransactions;
                 });
               },
-              child: Text(_showAllTransactions
-                  ? 'Show fewer transactions'
-                  : 'Show all transactions (${transactions.length})'),
+              child: Text(
+                _showAllTransactions
+                    ? 'Show fewer transactions'
+                    : 'Show all transactions (${transactions.length})',
+              ),
             ),
           ),
       ],
@@ -127,7 +157,9 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
   }
 
   List<ExpenseItem> _transactionsForFilter(
-      List<ExpenseItem> source, ExpenseFilter filter) {
+    List<ExpenseItem> source,
+    ExpenseFilter filter,
+  ) {
     final now = DateTime.now();
     final dayStart = DateTime(now.year, now.month, now.day);
     final weekStart = dayStart.subtract(Duration(days: now.weekday - 1));

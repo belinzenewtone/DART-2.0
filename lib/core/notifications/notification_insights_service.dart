@@ -1,39 +1,65 @@
 import 'dart:async';
 
+import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/feature_flags/feature_flag_store.dart';
+import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
+import 'package:beltech/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
 import 'package:beltech/features/budget/domain/repositories/budget_repository.dart';
 import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
+import 'package:beltech/features/income/domain/entities/income_item.dart';
+import 'package:beltech/features/income/domain/repositories/income_repository.dart';
+import 'package:beltech/features/review/domain/usecases/build_week_review_data_use_case.dart';
+import 'package:beltech/features/review/domain/usecases/build_week_review_ritual_use_case.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
 import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'local_notification_service.dart';
 
+part 'notification_insights_service_review.dart';
+
 class NotificationInsightsService {
   NotificationInsightsService(
     this._notifications,
     this._budgetRepository,
     this._expensesRepository,
+    this._incomeRepository,
     this._tasksRepository,
     this._calendarRepository,
+    this._analyticsRepository,
     this._accountRepository,
+    this._buildWeekReviewDataUseCase,
+    this._buildWeekReviewRitualUseCase,
+    this._telemetryService,
+    this._featureFlagStore,
   );
 
   static const String _budgetAlertsEnabledKey = 'notifications_budget_alerts';
   static const String _dailyDigestEnabledKey = 'notifications_daily_digest';
+  static const String _weeklyReviewEnabledKey =
+      'notifications_weekly_review_ritual';
   static const String _budgetStagePrefix = 'notification_budget_stage';
   static const String _dailyDigestPrefix = 'notification_daily_digest';
+  static const String _weeklyReviewPrefix = 'notification_weekly_review';
 
   final LocalNotificationService _notifications;
   final BudgetRepository _budgetRepository;
   final ExpensesRepository _expensesRepository;
+  final IncomeRepository _incomeRepository;
   final TasksRepository _tasksRepository;
   final CalendarRepository _calendarRepository;
+  final AnalyticsRepository _analyticsRepository;
   final AccountRepository _accountRepository;
+  final BuildWeekReviewDataUseCase _buildWeekReviewDataUseCase;
+  final BuildWeekReviewRitualUseCase _buildWeekReviewRitualUseCase;
+  final RevampTelemetryService _telemetryService;
+  final FeatureFlagStore _featureFlagStore;
 
   Future<bool> isBudgetAlertsEnabled() async {
     final prefs = await SharedPreferences.getInstance();
@@ -55,12 +81,23 @@ class NotificationInsightsService {
     await prefs.setBool(_dailyDigestEnabledKey, enabled);
   }
 
+  Future<bool> isWeeklyReviewEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_weeklyReviewEnabledKey) ?? true;
+  }
+
+  Future<void> setWeeklyReviewEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_weeklyReviewEnabledKey, enabled);
+  }
+
   Future<void> runSweep() async {
     if (!await _notifications.isNotificationsEnabled()) {
       return;
     }
     await _runBudgetThresholdAlerts();
     await _runDailyDigest();
+    await _runWeeklyReviewRitual();
   }
 
   Future<void> _runBudgetThresholdAlerts() async {
@@ -101,6 +138,13 @@ class NotificationInsightsService {
         title: title,
         body: body,
       );
+      await _telemetryService.track(
+        'budget_alert_sent',
+        attributes: {
+          'stage': currentStage,
+          'scope': scope,
+        },
+      );
       await prefs.setInt(key, currentStage);
     }
   }
@@ -134,6 +178,14 @@ class NotificationInsightsService {
       insightId: digestKey.hashCode.abs(),
       title: 'Daily Summary',
       body: body,
+    );
+    await _telemetryService.track(
+      'daily_digest_sent',
+      attributes: {
+        'scope': scope,
+        'pending_tasks': pendingTasks,
+        'upcoming_events': upcomingEvents.length,
+      },
     );
     await prefs.setBool(digestKey, true);
   }

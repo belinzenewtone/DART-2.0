@@ -1,3 +1,4 @@
+import 'package:beltech/core/di/review_use_case_providers.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:beltech/features/home/presentation/providers/home_providers.dart';
 import 'package:beltech/features/income/presentation/providers/income_providers.dart';
@@ -58,59 +59,12 @@ final weekReviewDataProvider = Provider<AsyncValue<WeekReviewData>>((ref) {
     return const AsyncLoading();
   }
 
-  final now = DateTime.now();
-  final dayStart = DateTime(now.year, now.month, now.day);
-  final weekStart = dayStart.subtract(Duration(days: dayStart.weekday - 1));
-  final weekEnd = weekStart.add(const Duration(days: 7));
-  final previousWeekStart = weekStart.subtract(const Duration(days: 7));
-
-  bool inRange(DateTime date, DateTime start, DateTime end) {
-    return !date.isBefore(start) && date.isBefore(end);
-  }
-
-  final weeklySpendKes = expenses.transactions
-      .where((tx) => inRange(tx.occurredAt, weekStart, weekEnd))
-      .fold<double>(0, (sum, tx) => sum + tx.amountKes);
-  final previousWeeklySpendKes = expenses.transactions
-      .where((tx) => inRange(tx.occurredAt, previousWeekStart, weekStart))
-      .fold<double>(0, (sum, tx) => sum + tx.amountKes);
-
-  final weeklyIncomeKes = incomes
-      .where((income) => inRange(income.receivedAt, weekStart, weekEnd))
-      .fold<double>(0, (sum, income) => sum + income.amountKes);
-  final previousWeeklyIncomeKes = incomes
-      .where(
-          (income) => inRange(income.receivedAt, previousWeekStart, weekStart))
-      .fold<double>(0, (sum, income) => sum + income.amountKes);
-
-  final tasksDueThisWeek = tasks.where((task) {
-    final dueDate = task.dueDate;
-    return dueDate != null && inRange(dueDate, weekStart, weekEnd);
-  }).toList();
-  final tasksDueLastWeek = tasks.where((task) {
-    final dueDate = task.dueDate;
-    return dueDate != null && inRange(dueDate, previousWeekStart, weekStart);
-  }).toList();
-
-  final completedThisWeek =
-      tasksDueThisWeek.where((task) => task.completed).length;
-  final completedLastWeek =
-      tasksDueLastWeek.where((task) => task.completed).length;
-  final pendingCount = tasks.where((task) => !task.completed).length;
-
-  final data = WeekReviewData(
-    completedThisWeek: completedThisWeek,
-    completedLastWeek: completedLastWeek,
-    pendingCount: pendingCount,
-    tasksDueThisWeek: tasksDueThisWeek.length,
-    tasksDueLastWeek: tasksDueLastWeek.length,
-    weeklySpendKes: weeklySpendKes,
-    previousWeeklySpendKes: previousWeeklySpendKes,
-    weeklyIncomeKes: weeklyIncomeKes,
-    previousWeeklyIncomeKes: previousWeeklyIncomeKes,
-    upcomingEventsCount: overview.upcomingEventsCount,
-    insights: const [],
-  );
+  final data = ref.watch(buildWeekReviewDataUseCaseProvider).call(
+        expenses: expenses,
+        incomes: incomes,
+        tasks: tasks,
+        upcomingEventsCount: overview.upcomingEventsCount,
+      );
 
   return AsyncData(
     WeekReviewData(

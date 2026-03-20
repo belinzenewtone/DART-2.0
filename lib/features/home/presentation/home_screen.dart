@@ -1,4 +1,5 @@
 import 'package:beltech/core/di/sync_providers.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_button.dart';
@@ -14,11 +15,11 @@ import 'package:beltech/features/home/domain/entities/home_overview.dart';
 import 'package:beltech/features/home/presentation/providers/home_providers.dart';
 import 'package:beltech/features/home/presentation/widgets/home_spending_cards.dart';
 import 'package:beltech/features/home/presentation/widgets/home_quick_actions.dart';
+import 'package:beltech/features/home/presentation/widgets/home_week_review_ritual_card.dart';
 import 'package:beltech/features/home/presentation/widgets/home_sync_banner.dart';
 import 'package:beltech/features/home/presentation/widgets/spending_chart.dart';
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -71,7 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             subtitle: "Here's your day at a glance",
             action: GestureDetector(
               onTap: () {
-                HapticFeedback.lightImpact();
+                AppHaptics.lightImpact();
                 ref.read(shellTabIndexProvider.notifier).state = 5;
               },
               child: CircleAvatar(
@@ -169,6 +170,11 @@ class _HomeOverviewSection extends ConsumerWidget {
         StaggerReveal(
           delay: const Duration(milliseconds: 110),
           child: HomeProductivityCard(overview: overview),
+        ),
+        const SizedBox(height: AppSpacing.sectionGap),
+        StaggerReveal(
+          delay: const Duration(milliseconds: 125),
+          child: const HomeWeekReviewRitualCard(),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
         SectionHeader(

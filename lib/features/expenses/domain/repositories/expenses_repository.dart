@@ -1,4 +1,5 @@
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 
 abstract class ExpensesRepository {
   Stream<ExpensesSnapshot> watchSnapshot();
@@ -20,12 +21,20 @@ abstract class ExpensesRepository {
 
   Future<void> deleteTransaction(int transactionId);
 
-  Future<int> importSmsMessages(
-    List<String> rawMessages, {
-    DateTime? from,
+  Future<int> importSmsMessages(List<String> rawMessages, {DateTime? from});
+
+  Future<int> importFromDevice({DateTime? from});
+
+  Future<ExpenseImportMetrics> fetchImportMetrics();
+
+  Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20});
+
+  Future<List<ExpenseQuarantineItem>> fetchQuarantineItems({int limit = 20});
+
+  Future<void> resolveReviewItem({
+    required int reviewId,
+    required bool approve,
   });
 
-  Future<int> importFromDevice({
-    DateTime? from,
-  });
+  Future<void> dismissQuarantineItem(int quarantineId);
 }

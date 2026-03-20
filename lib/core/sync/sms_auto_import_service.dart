@@ -6,14 +6,12 @@ import 'package:beltech/features/expenses/domain/repositories/expenses_repositor
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SmsAutoImportService {
-  SmsAutoImportService(
-    this._expensesRepository,
-    this._accountRepository,
-  );
+  SmsAutoImportService(this._expensesRepository, this._accountRepository);
 
   static const Duration defaultInterval = Duration(minutes: 30);
   static const Duration initialWindow = Duration(days: 90);
   static const String _keyPrefix = 'mpesa_auto_sync_last_ms';
+  static const String _errorPrefix = 'mpesa_auto_sync_last_error';
 
   final ExpensesRepository _expensesRepository;
   final AccountRepository _accountRepository;
@@ -58,7 +56,8 @@ class SmsAutoImportService {
       final imported = await _expensesRepository.importFromDevice(from: from);
       await _saveLastSync(DateTime.now());
       return imported;
-    } catch (_) {
+    } catch (error) {
+      await _saveLastError('$error');
       return 0;
     } finally {
       _syncInFlight = false;
@@ -79,6 +78,15 @@ class SmsAutoImportService {
     final prefs = await SharedPreferences.getInstance();
     final scope = _syncScopeKey();
     await prefs.setInt('$_keyPrefix.$scope', at.millisecondsSinceEpoch);
+  }
+
+  Future<void> _saveLastError(String error) async {
+    final prefs = await SharedPreferences.getInstance();
+    final scope = _syncScopeKey();
+    await prefs.setString(
+      '$_errorPrefix.$scope',
+      '${DateTime.now().toIso8601String()} | $error',
+    );
   }
 
   String _syncScopeKey() {

@@ -1,10 +1,18 @@
+import 'dart:convert';
+
+import 'package:beltech/core/sync/sync_backoff_policy.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/data/local/drift/app_drift_store_mutations.dart';
 import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_models.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
+
+part 'expenses_repository_impl_import_pipeline.dart';
+part 'expenses_repository_impl_review.dart';
 
 class ExpensesRepositoryImpl implements ExpensesRepository {
   ExpensesRepositoryImpl(
@@ -12,14 +20,17 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     this._parser, [
     MerchantLearningService? merchantLearningService,
     DeviceSmsDataSource? deviceSmsDataSource,
+    SyncBackoffPolicy? backoffPolicy,
   ])  : _merchantLearningService =
             merchantLearningService ?? MerchantLearningService(),
-        _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource();
+        _deviceSmsDataSource = deviceSmsDataSource ?? DeviceSmsDataSource(),
+        _backoffPolicy = backoffPolicy ?? const SyncBackoffPolicy();
 
   final AppDriftStore _store;
   final MpesaParserService _parser;
   final MerchantLearningService _merchantLearningService;
   final DeviceSmsDataSource _deviceSmsDataSource;
+  final SyncBackoffPolicy _backoffPolicy;
 
   @override
   Stream<ExpensesSnapshot> watchSnapshot() {
@@ -76,19 +87,18 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     required String category,
     required double amountKes,
     required DateTime occurredAt,
-  }) {
-    return _merchantLearningService
-        .learn(
-          merchantTitle: title,
-          category: category,
-        )
-        .then((_) => _store.updateTransaction(
-              id: transactionId,
-              title: title,
-              category: category,
-              amountKes: amountKes,
-              occurredAt: occurredAt,
-            ));
+  }) async {
+    await _merchantLearningService.learn(
+      merchantTitle: title,
+      category: category,
+    );
+    await _store.updateTransaction(
+      id: transactionId,
+      title: title,
+      category: category,
+      amountKes: amountKes,
+      occurredAt: occurredAt,
+    );
   }
 
   @override
@@ -102,42 +112,33 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     DateTime? from,
   }) async {
     await _store.ensureInitialized();
-    final parsedTransactions = _parser.parseMany(rawMessages).where((tx) {
-      if (from == null) {
-        return true;
-      }
-      return !tx.occurredAt.isBefore(from);
-    }).toList();
-    var inserted = 0;
-    final seenHashes = <String>{};
-    for (final tx in parsedTransactions) {
-      final hash = _parser.sourceHash(tx.rawMessage);
-      if (seenHashes.contains(hash)) {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    for (final raw in rawMessages) {
+      final message = raw.trim();
+      if (message.isEmpty) {
         continue;
       }
-      seenHashes.add(hash);
-      final exists = await _store.executor.runSelect(
-        'SELECT id FROM transactions WHERE source_hash = ? LIMIT 1',
-        [hash],
+      final candidate = _parser.parseSingleDetailed(message);
+      final sourceHash = candidate?.sourceHash ?? _parser.sourceHash(message);
+      final semanticHash = candidate?.semanticHash ?? sourceHash;
+      await _store.executor.runInsert(
+        'INSERT OR IGNORE INTO sms_import_queue('
+        'scope, raw_message, source_hash, semantic_hash, status, route, confidence, created_at, updated_at'
+        ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          'local',
+          message,
+          sourceHash,
+          semanticHash,
+          'pending',
+          candidate?.route.name ?? MpesaParseRoute.quarantine.name,
+          candidate?.confidenceScore ?? 0,
+          nowMs,
+          nowMs,
+        ],
       );
-      if (exists.isNotEmpty) {
-        continue;
-      }
-      final learnedCategory = await _merchantLearningService.resolveCategory(
-        merchantTitle: tx.title,
-        fallbackCategory: tx.category,
-      );
-      await _store.addTransaction(
-        title: tx.title,
-        category: learnedCategory,
-        amountKes: tx.amountKes,
-        occurredAt: tx.occurredAt,
-        source: 'sms',
-        sourceHash: hash,
-      );
-      inserted += 1;
     }
-    return inserted;
+    return _processDueQueueImpl(this, from: from);
   }
 
   @override
@@ -146,9 +147,56 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
   }) async {
     final messages =
         await _deviceSmsDataSource.loadLikelyMpesaMessages(from: from);
-    if (messages.isEmpty) {
-      return 0;
+    if (messages.isNotEmpty) {
+      await importSmsMessages(messages, from: from);
     }
-    return importSmsMessages(messages, from: from);
+    return _processDueQueueImpl(this, from: from);
+  }
+
+  @override
+  Future<ExpenseImportMetrics> fetchImportMetrics() =>
+      _fetchImportMetricsImpl(this);
+
+  @override
+  Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20}) =>
+      _fetchReviewQueueImpl(this, limit: limit);
+
+  @override
+  Future<List<ExpenseQuarantineItem>> fetchQuarantineItems({int limit = 20}) =>
+      _fetchQuarantineItemsImpl(this, limit: limit);
+
+  @override
+  Future<void> resolveReviewItem({
+    required int reviewId,
+    required bool approve,
+  }) =>
+      _resolveReviewItemImpl(this, reviewId: reviewId, approve: approve);
+
+  @override
+  Future<void> dismissQuarantineItem(int quarantineId) =>
+      _dismissQuarantineItemImpl(this, quarantineId);
+
+  Future<int> _count(
+    String table, {
+    required String where,
+    required List<Object?> params,
+  }) async {
+    final rows = await _store.executor.runSelect(
+      'SELECT COUNT(*) AS total FROM $table WHERE $where',
+      params,
+    );
+    return _asInt(rows.first['total']);
+  }
+
+  int _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value') ?? 0;
+  }
+
+  double _asDouble(Object? value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value') ?? 0;
   }
 }

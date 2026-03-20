@@ -7,6 +7,7 @@ class _CalendarLayout extends StatelessWidget {
     required this.visibleMonth,
     required this.selectedDay,
     required this.eventsState,
+    required this.agendaState,
     required this.monthEventTypesState,
     required this.writeState,
     required this.eventsPaneHeight,
@@ -19,6 +20,7 @@ class _CalendarLayout extends StatelessWidget {
   final DateTime visibleMonth;
   final DateTime selectedDay;
   final AsyncValue<List<CalendarEvent>> eventsState;
+  final AsyncValue<List<CalendarEvent>> agendaState;
   final AsyncValue<Map<int, CalendarEventType>> monthEventTypesState;
   final AsyncValue<void> writeState;
   final double eventsPaneHeight;
@@ -59,11 +61,11 @@ class _CalendarLayout extends StatelessWidget {
                             note: input.note,
                           );
                       if (context.mounted &&
-                          !state
-                              .ref
+                          !state.ref
                               .read(calendarWriteControllerProvider)
                               .hasError) {
-                        AppFeedback.success(context, 'Event added', ref: state.ref);
+                        AppFeedback.success(context, 'Event added',
+                            ref: state.ref);
                       }
                     },
               icon: const Icon(Icons.add_rounded),
@@ -88,6 +90,11 @@ class _CalendarLayout extends StatelessWidget {
                     value: _CalendarView.week,
                     icon: Icon(Icons.view_week_outlined, size: 18),
                     label: Text('Week'),
+                  ),
+                  ButtonSegment(
+                    value: _CalendarView.agenda,
+                    icon: Icon(Icons.view_agenda_outlined, size: 18),
+                    label: Text('Agenda'),
                   ),
                 ],
                 selected: {state._view},
@@ -127,7 +134,8 @@ class _CalendarLayout extends StatelessWidget {
                     Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
-                          maxWidth: _CalendarScreenState._calendarContentMaxWidth,
+                          maxWidth:
+                              _CalendarScreenState._calendarContentMaxWidth,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -153,10 +161,11 @@ class _CalendarLayout extends StatelessWidget {
                       eventTypes: monthEventTypesState.valueOrNull ?? const {},
                       maxWidth: _CalendarScreenState._calendarContentMaxWidth,
                       onSelect: (day) {
-                        state.ref.read(selectedDayProvider.notifier).state = day;
+                        state.ref.read(selectedDayProvider.notifier).state =
+                            day;
                       },
                     ),
-                  ] else ...[
+                  ] else if (state._view == _CalendarView.week) ...[
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final daySize = ((constraints.maxWidth / 7) - 10)
@@ -174,15 +183,15 @@ class _CalendarLayout extends StatelessWidget {
                             return Expanded(
                               child: GestureDetector(
                                 onTap: () {
-                                  state
-                                      .ref
+                                  state.ref
                                       .read(selectedDayProvider.notifier)
                                       .state = day;
                                 },
                                 child: Column(
                                   children: [
                                     Text(
-                                      _CalendarScreenState._weekDays[day.weekday - 1],
+                                      _CalendarScreenState
+                                          ._weekDays[day.weekday - 1],
                                       style: textTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 4),
@@ -206,12 +215,14 @@ class _CalendarLayout extends StatelessWidget {
                                         child: Center(
                                           child: Text(
                                             '${day.day}',
-                                            style: textTheme.bodyMedium?.copyWith(
+                                            style:
+                                                textTheme.bodyMedium?.copyWith(
                                               fontWeight: isSelected || isToday
                                                   ? FontWeight.w700
                                                   : FontWeight.w400,
-                                              color:
-                                                  isSelected ? Colors.white : null,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : null,
                                             ),
                                           ),
                                         ),
@@ -226,24 +237,50 @@ class _CalendarLayout extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 8),
+                  ] else ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.upcoming_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Upcoming 14-day agenda from ${_CalendarScreenState._months[selectedDay.month - 1]} ${selectedDay.day}',
+                            style: textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                   ],
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            '${state._weekdayName(selectedDay.weekday)}, ${_CalendarScreenState._months[selectedDay.month - 1]} ${selectedDay.day.toString().padLeft(2, '0')}',
-            style: textTheme.titleMedium,
-          ),
-          const SizedBox(height: 10),
-          _CalendarEventsPane(
-            state: state,
-            eventsState: eventsState,
-            selectedDay: selectedDay,
-            writeState: writeState,
-            eventsPaneHeight: eventsPaneHeight,
-          ),
+          if (state._view == _CalendarView.agenda)
+            _CalendarAgendaPane(
+              state: state,
+              selectedDay: selectedDay,
+              agendaState: agendaState,
+              writeState: writeState,
+            )
+          else ...[
+            Text(
+              '${state._weekdayName(selectedDay.weekday)}, ${_CalendarScreenState._months[selectedDay.month - 1]} ${selectedDay.day.toString().padLeft(2, '0')}',
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            _CalendarEventsPane(
+              state: state,
+              eventsState: eventsState,
+              selectedDay: selectedDay,
+              writeState: writeState,
+              eventsPaneHeight: eventsPaneHeight,
+            ),
+          ],
         ],
       ),
     );

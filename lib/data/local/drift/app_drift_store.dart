@@ -7,14 +7,15 @@ import 'package:drift/drift.dart' show OpeningDetails;
 
 part 'app_drift_store_queries.dart';
 part 'app_drift_store_schema.dart';
+part 'app_drift_store_schema_migrations.dart';
 part 'app_drift_store_utils.dart';
 
 class AppDriftStore {
   AppDriftStore()
-      : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite', inMemory: true);
+    : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite', inMemory: true);
 
   AppDriftStore.persistent()
-      : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite');
+    : _db = openDriftExecutor(name: 'dart_2_0_app.sqlite');
 
   final QueryExecutor _db;
   final StreamController<int> _changes = StreamController<int>.broadcast();
@@ -28,6 +29,29 @@ class AppDriftStore {
   Future<void> ensureInitialized() => _ensureInitialized();
 
   void emitChange() => _emitChange();
+
+  Future<void> resetAllData() async {
+    await _ensureInitialized();
+    const tables = [
+      'transactions',
+      'tasks',
+      'events',
+      'incomes',
+      'budgets',
+      'recurring_templates',
+      'sms_import_queue',
+      'sms_import_audit',
+      'sms_review_queue',
+      'sms_quarantine',
+      'paybill_registry',
+      'fuliza_lifecycle_events',
+    ];
+    for (final table in tables) {
+      await _db.runDelete('DELETE FROM $table', const []);
+    }
+    await _AppDriftSchema.seedDataIfEmpty(this);
+    _emitChange();
+  }
 
   Future<void> dispose() async {
     await _changes.close();
@@ -44,8 +68,9 @@ class AppDriftStore {
   Stream<List<DriftEventRecord>> watchEventsForDay(DateTime day) =>
       _watch(() => _loadEventsForDay(day));
   Stream<List<DriftEventRecord>> watchEventsInRange(
-          DateTime start, DateTime end) =>
-      _watch(() => _loadEventsInRange(start, end));
+    DateTime start,
+    DateTime end,
+  ) => _watch(() => _loadEventsInRange(start, end));
 
   Future<void> addTransaction({
     required String title,
@@ -83,10 +108,10 @@ class AppDriftStore {
     required bool completed,
   }) async {
     await _ensureInitialized();
-    await _db.runUpdate(
-      'UPDATE tasks SET completed = ? WHERE id = ?',
-      [completed ? 1 : 0, taskId],
-    );
+    await _db.runUpdate('UPDATE tasks SET completed = ? WHERE id = ?', [
+      completed ? 1 : 0,
+      taskId,
+    ]);
     _emitChange();
   }
 
@@ -119,10 +144,10 @@ class AppDriftStore {
     required bool completed,
   }) async {
     await _ensureInitialized();
-    await _db.runUpdate(
-      'UPDATE events SET completed = ? WHERE id = ?',
-      [completed ? 1 : 0, eventId],
-    );
+    await _db.runUpdate('UPDATE events SET completed = ? WHERE id = ?', [
+      completed ? 1 : 0,
+      eventId,
+    ]);
     _emitChange();
   }
 
@@ -162,8 +187,9 @@ class AppDriftStore {
       _AppDriftQueries.loadEventsForDay(this, day);
 
   Future<List<DriftEventRecord>> _loadEventsInRange(
-          DateTime start, DateTime end) =>
-      _AppDriftQueries.loadEventsInRange(this, start, end);
+    DateTime start,
+    DateTime end,
+  ) => _AppDriftQueries.loadEventsInRange(this, start, end);
 
   Future<int> _countRows(String tableName) =>
       _AppDriftQueries.countRows(this, tableName);
@@ -183,5 +209,7 @@ class _StoreQueryExecutorUser implements QueryExecutorUser {
 
   @override
   Future<void> beforeOpen(
-      QueryExecutor executor, OpeningDetails details) async {}
+    QueryExecutor executor,
+    OpeningDetails details,
+  ) async {}
 }

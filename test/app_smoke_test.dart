@@ -10,7 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   testWidgets('renders bottom navigation tabs', (tester) async {
     SharedPreferences.setMockInitialValues(
-      <String, Object>{'onboarding_done_v1': true},
+      <String, Object>{
+        'onboarding_done_v1': true,
+        'revamp_bootstrap_v2_done': true,
+      },
     );
     final fakeAccountRepository = _AuthenticatedAccountRepository();
     await tester.pumpWidget(

@@ -25,7 +25,7 @@ class _CalendarEventsPane extends StatelessWidget {
           data: (events) {
             state._consumeSearchTarget(context, state.ref, selectedDay, events);
             if (events.isEmpty) {
-              return AppEmptyState(
+              return const AppEmptyState(
                 icon: Icons.event_outlined,
                 title: 'No events',
                 subtitle: 'Add an event to get started',
@@ -38,13 +38,13 @@ class _CalendarEventsPane extends StatelessWidget {
                 if (event.completed) {
                   return;
                 }
-                await state
-                    .ref
+                await state.ref
                     .read(calendarWriteControllerProvider.notifier)
                     .setEventCompleted(eventId: event.id, completed: true);
                 if (context.mounted &&
                     !state.ref.read(calendarWriteControllerProvider).hasError) {
-                  AppFeedback.success(context, 'Event completed ✓', ref: state.ref);
+                  AppFeedback.success(context, 'Event completed ✓',
+                      ref: state.ref);
                 }
               },
               onEdit: (event) async {
@@ -56,8 +56,7 @@ class _CalendarEventsPane extends StatelessWidget {
                 if (input == null) {
                   return;
                 }
-                await state
-                    .ref
+                await state.ref
                     .read(calendarWriteControllerProvider.notifier)
                     .updateEvent(
                       eventId: event.id,
@@ -74,8 +73,7 @@ class _CalendarEventsPane extends StatelessWidget {
                 }
               },
               onDelete: (event) async {
-                await state
-                    .ref
+                await state.ref
                     .read(calendarWriteControllerProvider.notifier)
                     .deleteEvent(event.id);
                 if (context.mounted &&

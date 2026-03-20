@@ -1,12 +1,13 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/presentation/widgets/task_item_visuals.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class TaskItemCard extends StatelessWidget {
   const TaskItemCard({
@@ -37,7 +38,7 @@ class TaskItemCard extends StatelessWidget {
     final secondaryText = AppColors.textSecondaryFor(brightness);
     final swipeDuration = AppMotion.swipe(context);
     final resizeDuration = AppMotion.resize(context);
-    final priorityColor = _priorityColor(task.priority);
+    final priorityColor = taskPriorityColor(task.priority);
     final isOverdue = !task.completed &&
         task.dueDate != null &&
         task.dueDate!.isBefore(DateTime.now());
@@ -66,12 +67,12 @@ class TaskItemCard extends StatelessWidget {
         }
         return false;
       },
-      background: const _SwipeBackground(
+      background: const TaskSwipeBackground(
         color: AppColors.successMuted,
         icon: Icons.check_circle_outline,
         alignment: Alignment.centerLeft,
       ),
-      secondaryBackground: const _SwipeBackground(
+      secondaryBackground: const TaskSwipeBackground(
         color: AppColors.dangerMuted,
         icon: Icons.delete_outline,
         alignment: Alignment.centerRight,
@@ -87,7 +88,7 @@ class TaskItemCard extends StatelessWidget {
           onLongPress: busy
               ? null
               : () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   onSelectToggle();
                 },
           child: Row(
@@ -107,7 +108,7 @@ class TaskItemCard extends StatelessWidget {
                 onPressed: busy
                     ? null
                     : () {
-                        HapticFeedback.lightImpact();
+                        AppHaptics.lightImpact();
                         if (selectionMode) {
                           onSelectToggle();
                           return;
@@ -276,38 +277,5 @@ class TaskItemCard extends StatelessWidget {
       TaskPriority.medium => 'Important',
       TaskPriority.low => 'Neutral',
     };
-  }
-}
-
-Color _priorityColor(TaskPriority priority) {
-  return switch (priority) {
-    TaskPriority.high => AppColors.danger,
-    TaskPriority.medium => AppColors.warning,
-    TaskPriority.low => AppColors.accent,
-  };
-}
-
-class _SwipeBackground extends StatelessWidget {
-  const _SwipeBackground({
-    required this.color,
-    required this.icon,
-    required this.alignment,
-  });
-
-  final Color color;
-  final IconData icon;
-  final Alignment alignment;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      alignment: alignment,
-      child: Icon(icon, color: Colors.white, size: 30),
-    );
   }
 }

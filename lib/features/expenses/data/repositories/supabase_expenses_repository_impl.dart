@@ -2,10 +2,15 @@ import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
 import 'package:beltech/data/remote/supabase/supabase_polling.dart';
 import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_models.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+part 'supabase_expenses_repository_impl_review.dart';
+part 'supabase_expenses_repository_impl_support.dart';
 
 class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   SupabaseExpensesRepositoryImpl(
@@ -23,7 +28,8 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   final DeviceSmsDataSource _deviceSmsDataSource;
 
   @override
-  Stream<ExpensesSnapshot> watchSnapshot() => pollStream(_loadSnapshot);
+  Stream<ExpensesSnapshot> watchSnapshot() =>
+      pollStream(() => _loadSnapshotImpl(this));
 
   @override
   Future<void> addManualTransaction({
@@ -31,23 +37,21 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     required String category,
     required double amountKes,
     DateTime? occurredAt,
-  }) {
+  }) async {
     final userId = _requireUserId();
-    return _merchantLearningService
-        .learn(
-          merchantTitle: title,
-          category: category,
-        )
-        .then((_) => _client.from('transactions').insert({
-              'owner_id': userId,
-              'title': title,
-              'category': category,
-              'amount': amountKes,
-              'occurred_at':
-                  (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
-              'source': 'manual',
-              'source_hash': null,
-            }));
+    await _merchantLearningService.learn(
+      merchantTitle: title,
+      category: category,
+    );
+    await _client.from('transactions').insert({
+      'owner_id': userId,
+      'title': title,
+      'category': category,
+      'amount': amountKes,
+      'occurred_at': (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
+      'source': 'manual',
+      'source_hash': null,
+    });
   }
 
   @override
@@ -57,33 +61,30 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     required String category,
     required double amountKes,
     required DateTime occurredAt,
-  }) {
+  }) async {
     final userId = _requireUserId();
-    return _merchantLearningService
-        .learn(
-          merchantTitle: title,
-          category: category,
-        )
-        .then(
-          (_) => _client
-              .from('transactions')
-              .update({
-                'title': title,
-                'category': category,
-                'amount': amountKes,
-                'occurred_at': occurredAt.toUtc().toIso8601String(),
-                'source': 'manual',
-                'source_hash': null,
-              })
-              .eq('id', transactionId)
-              .eq('owner_id', userId),
-        );
+    await _merchantLearningService.learn(
+      merchantTitle: title,
+      category: category,
+    );
+    await _client
+        .from('transactions')
+        .update({
+          'title': title,
+          'category': category,
+          'amount': amountKes,
+          'occurred_at': occurredAt.toUtc().toIso8601String(),
+          'source': 'manual',
+          'source_hash': null,
+        })
+        .eq('id', transactionId)
+        .eq('owner_id', userId);
   }
 
   @override
-  Future<void> deleteTransaction(int transactionId) {
+  Future<void> deleteTransaction(int transactionId) async {
     final userId = _requireUserId();
-    return _client
+    await _client
         .from('transactions')
         .delete()
         .eq('id', transactionId)
@@ -96,118 +97,102 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     DateTime? from,
   }) async {
     final userId = _requireUserId();
-    final parsed = _parser.parseMany(rawMessages).where((tx) {
-      if (from == null) {
-        return true;
-      }
-      return !tx.occurredAt.isBefore(from);
-    }).toList();
-    if (parsed.isEmpty) {
-      return 0;
-    }
-    final seenHashes = <String>{};
-    final payload = <Map<String, dynamic>>[];
-    for (final tx in parsed) {
-      final hash = _parser.sourceHash(tx.rawMessage);
-      if (!seenHashes.add(hash)) {
+    var imported = 0;
+    for (final raw in rawMessages) {
+      final candidate = _parser.parseSingleDetailed(raw.trim());
+      if (candidate == null) {
         continue;
       }
-      final existing = await _client
-          .from('transactions')
-          .select('id')
-          .eq('owner_id', userId)
-          .eq('source_hash', hash)
-          .limit(1);
-      if ((existing as List).isNotEmpty) {
+      if (from != null && candidate.occurredAt.isBefore(from)) {
         continue;
       }
-      final learnedCategory = await _merchantLearningService.resolveCategory(
-        merchantTitle: tx.title,
-        fallbackCategory: tx.category,
+      if (await _isDuplicateImpl(this, userId, candidate)) {
+        await _safeAuditImpl(
+          this,
+          userId: userId,
+          candidate: candidate,
+          decision: 'duplicate',
+        );
+        continue;
+      }
+      if (candidate.route == MpesaParseRoute.directLedger) {
+        final learned = await _merchantLearningService.resolveCategory(
+          merchantTitle: candidate.title,
+          fallbackCategory: candidate.category,
+        );
+        await _client.from('transactions').insert({
+          'owner_id': userId,
+          'title': candidate.title,
+          'category': learned,
+          'amount': candidate.amountKes,
+          'occurred_at': candidate.occurredAt.toUtc().toIso8601String(),
+          'source': 'sms',
+          'source_hash': candidate.sourceHash,
+        });
+        await _safePaybillAndFulizaImpl(this, userId, candidate);
+        await _safeAuditImpl(
+          this,
+          userId: userId,
+          candidate: candidate,
+          decision: 'imported',
+        );
+        imported += 1;
+        continue;
+      }
+      if (candidate.route == MpesaParseRoute.reviewQueue) {
+        await _safeInsertReviewItemImpl(this, userId, candidate);
+        await _safeAuditImpl(
+          this,
+          userId: userId,
+          candidate: candidate,
+          decision: 'review_pending',
+        );
+        continue;
+      }
+      await _safeInsertQuarantineItemImpl(this, userId, candidate);
+      await _safeAuditImpl(
+        this,
+        userId: userId,
+        candidate: candidate,
+        decision: 'quarantined',
       );
-      payload.add({
-        'owner_id': userId,
-        'title': tx.title,
-        'category': learnedCategory,
-        'amount': tx.amountKes,
-        'occurred_at': tx.occurredAt.toUtc().toIso8601String(),
-        'source': 'sms',
-        'source_hash': hash,
-      });
     }
-    if (payload.isEmpty) {
-      return 0;
-    }
-    await _client.from('transactions').insert(payload);
-    return payload.length;
+    return imported;
   }
 
   @override
-  Future<int> importFromDevice({
-    DateTime? from,
-  }) async {
-    final messages =
-        await _deviceSmsDataSource.loadLikelyMpesaMessages(from: from);
+  Future<int> importFromDevice({DateTime? from}) async {
+    final messages = await _deviceSmsDataSource.loadLikelyMpesaMessages(
+      from: from,
+    );
     if (messages.isEmpty) {
       return 0;
     }
     return importSmsMessages(messages, from: from);
   }
 
-  Future<ExpensesSnapshot> _loadSnapshot() async {
-    final userId = _requireUserId();
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final tomorrowStart = todayStart.add(const Duration(days: 1));
-    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 7));
+  @override
+  Future<ExpenseImportMetrics> fetchImportMetrics() =>
+      _fetchImportMetricsImpl(this);
 
-    final rows = await _client
-        .from('transactions')
-        .select('id,title,category,amount,occurred_at')
-        .eq('owner_id', userId)
-        .order('occurred_at', ascending: false)
-        .limit(5000);
-    final transactionsRaw = (rows as List).cast<Map<String, dynamic>>();
+  @override
+  Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20}) =>
+      _fetchReviewQueueImpl(this, limit: limit);
 
-    final transactions = transactionsRaw.map((row) {
-      return ExpenseItem(
-        id: parseInt(row['id']),
-        title: '${row['title'] ?? ''}',
-        category: '${row['category'] ?? 'Other'}',
-        amountKes: parseDouble(row['amount']),
-        occurredAt: parseTimestamp(row['occurred_at']),
-      );
-    }).toList();
+  @override
+  Future<List<ExpenseQuarantineItem>> fetchQuarantineItems({int limit = 20}) =>
+      _fetchQuarantineItemsImpl(this, limit: limit);
 
-    final categoryTotals = <String, double>{};
-    for (final tx in transactions) {
-      categoryTotals[tx.category] =
-          (categoryTotals[tx.category] ?? 0) + tx.amountKes;
-    }
-    final categories = categoryTotals.entries
-        .map((entry) =>
-            CategoryExpenseTotal(category: entry.key, totalKes: entry.value))
-        .toList()
-      ..sort((a, b) => b.totalKes.compareTo(a.totalKes));
+  @override
+  Future<void> resolveReviewItem({
+    required int reviewId,
+    required bool approve,
+  }) =>
+      _resolveReviewItemImpl(this, reviewId: reviewId, approve: approve);
 
-    double sumBetween(DateTime start, DateTime end) {
-      var total = 0.0;
-      for (final tx in transactions) {
-        if (!tx.occurredAt.isBefore(start) && tx.occurredAt.isBefore(end)) {
-          total += tx.amountKes;
-        }
-      }
-      return total;
-    }
-
-    return ExpensesSnapshot(
-      todayKes: sumBetween(todayStart, tomorrowStart),
-      weekKes: sumBetween(weekStart, weekEnd),
-      categories: categories,
-      transactions: transactions,
-    );
-  }
+  @override
+  Future<void> dismissQuarantineItem(int quarantineId) =>
+      _dismissQuarantineItemImpl(this, quarantineId);
 
   String _requireUserId() {
     final userId = _client.auth.currentUser?.id;

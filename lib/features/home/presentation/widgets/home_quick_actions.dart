@@ -1,10 +1,10 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -100,7 +100,7 @@ class _HomeQuickActionTile extends ConsumerWidget {
       tone: GlassCardTone.muted,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       onTap: () {
-        HapticFeedback.lightImpact();
+        AppHaptics.lightImpact();
         if (action.tabIndex != null) {
           ref.read(shellTabIndexProvider.notifier).state = action.tabIndex!;
           return;

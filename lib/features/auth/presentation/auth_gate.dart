@@ -1,6 +1,7 @@
 import 'package:beltech/core/navigation/app_shell.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/di/bootstrap_providers.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_brand_header.dart';
@@ -25,13 +26,18 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
-    hasSeenOnboarding().then((done) {
-      if (mounted) {
-        setState(() {
-          _onboardingDone = done;
-          _checkingOnboarding = false;
-        });
-      }
+    _bootstrapAndLoadOnboarding();
+  }
+
+  Future<void> _bootstrapAndLoadOnboarding() async {
+    await ref.read(revampBootstrapServiceProvider).runIfNeeded();
+    final done = await hasSeenOnboarding();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _onboardingDone = done;
+      _checkingOnboarding = false;
     });
   }
 
@@ -88,8 +94,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final writeState = ref.watch(accountAuthControllerProvider);
-    ref.listen<AsyncValue<void>>(accountAuthControllerProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<void>>(accountAuthControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasError) {
         final message = _friendlyAuthError(next.error);
         AppFeedback.error(context, message);
@@ -208,7 +216,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
     if (_isSignUp) {
-      await ref.read(accountAuthControllerProvider.notifier).signUp(
+      await ref
+          .read(accountAuthControllerProvider.notifier)
+          .signUp(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             email: _emailController.text.trim(),
@@ -216,7 +226,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           );
       return;
     }
-    await ref.read(accountAuthControllerProvider.notifier).signIn(
+    await ref
+        .read(accountAuthControllerProvider.notifier)
+        .signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );

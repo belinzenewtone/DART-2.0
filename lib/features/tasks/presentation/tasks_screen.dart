@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'tasks_screen_layout.dart';
+part 'tasks_screen_actions.dart';
 
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
@@ -53,8 +54,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     ref.listen<AsyncValue<void>>(taskWriteControllerProvider, (previous, next) {
       if (next.hasError) {
-        AppFeedback.error(context, 'Task action failed. Please try again.',
-            ref: ref);
+        AppFeedback.error(
+          context,
+          'Task action failed. Please try again.',
+          ref: ref,
+        );
       }
     });
 
@@ -142,6 +146,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     });
   }
 
+  void _clearSelectionState() {
+    setState(() {
+      _selectionMode = false;
+      _selectedTaskIds.clear();
+    });
+  }
+
   void _syncSelectionWithTasks(List<TaskItem> allTasks) {
     if (_selectedTaskIds.isEmpty) {
       return;
@@ -199,6 +210,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     });
   }
 
+  Future<void> _completeSelected(BuildContext context) =>
+      _completeSelectedImpl(this, context);
+
+  Future<void> _archiveSelected(BuildContext context) =>
+      _archiveSelectedImpl(this, context);
+
+  Future<void> _deleteSelected(BuildContext context) =>
+      _deleteSelectedImpl(this, context);
+
   Future<void> _editTask(BuildContext context, TaskItem task) async {
     final input = await showEditTaskDialog(context, task: task);
     if (input == null) {
@@ -213,102 +233,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         );
     if (context.mounted && !ref.read(taskWriteControllerProvider).hasError) {
       AppFeedback.success(context, 'Task updated', ref: ref);
-    }
-  }
-
-  Future<void> _completeSelected(BuildContext context) async {
-    final ids = _selectedTaskIds.toList(growable: false);
-    if (ids.isEmpty) {
-      return;
-    }
-    final count =
-        await ref.read(taskWriteControllerProvider.notifier).completeTasks(ids);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ref.read(taskWriteControllerProvider).hasError) {
-      AppFeedback.success(
-        context,
-        count == 1 ? '1 task completed' : '$count tasks completed',
-        ref: ref,
-      );
-      setState(() {
-        _selectionMode = false;
-        _selectedTaskIds.clear();
-      });
-    }
-  }
-
-  Future<void> _archiveSelected(BuildContext context) async {
-    final ids = _selectedTaskIds.toList(growable: false);
-    if (ids.isEmpty) {
-      return;
-    }
-    final count =
-        await ref.read(taskWriteControllerProvider.notifier).archiveTasks(ids);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ref.read(taskWriteControllerProvider).hasError) {
-      AppFeedback.success(
-        context,
-        count == 1
-            ? '1 task archived to completed'
-            : '$count tasks archived to completed',
-        ref: ref,
-      );
-      setState(() {
-        _selectionMode = false;
-        _selectedTaskIds.clear();
-      });
-    }
-  }
-
-  Future<void> _deleteSelected(BuildContext context) async {
-    final ids = _selectedTaskIds.toList(growable: false);
-    if (ids.isEmpty) {
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete selected tasks?'),
-            content: Text(
-              ids.length == 1
-                  ? 'This action cannot be undone.'
-                  : 'This will permanently delete ${ids.length} tasks.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed) {
-      return;
-    }
-    final count =
-        await ref.read(taskWriteControllerProvider.notifier).deleteTasks(ids);
-    if (!context.mounted) {
-      return;
-    }
-    if (!ref.read(taskWriteControllerProvider).hasError) {
-      AppFeedback.success(
-        context,
-        count == 1 ? '1 task deleted' : '$count tasks deleted',
-        ref: ref,
-      );
-      setState(() {
-        _selectionMode = false;
-        _selectedTaskIds.clear();
-      });
     }
   }
 }

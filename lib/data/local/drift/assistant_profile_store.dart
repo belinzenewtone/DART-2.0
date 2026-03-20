@@ -7,10 +7,9 @@ import 'package:drift/drift.dart' show OpeningDetails;
 
 class AssistantProfileStore {
   AssistantProfileStore()
-      : _db =
-            openDriftExecutor(name: 'dart_2_0_profile.sqlite', inMemory: true);
+    : _db = openDriftExecutor(name: 'dart_2_0_profile.sqlite', inMemory: true);
   AssistantProfileStore.persistent()
-      : _db = openDriftExecutor(name: 'dart_2_0_profile.sqlite');
+    : _db = openDriftExecutor(name: 'dart_2_0_profile.sqlite');
   final QueryExecutor _db;
   final StreamController<int> _changes = StreamController<int>.broadcast();
   static const String _legacySeedName = 'testing';
@@ -18,7 +17,6 @@ class AssistantProfileStore {
   static const String _legacySeedPhone = '07000000000000';
   static const String _introMessage =
       "Hey! I'm your BELTECH assistant. Ask me about spending, tasks, or schedule.";
-
   bool _initialized = false;
   int _changeSeq = 0;
 
@@ -29,7 +27,6 @@ class AssistantProfileStore {
 
   Stream<List<DriftAssistantMessageRecord>> watchMessages() =>
       _watch(_loadMessages);
-
   Stream<DriftProfileRecord> watchProfile() => _watch(_loadProfile);
 
   Future<void> addAssistantMessage({
@@ -49,11 +46,7 @@ class AssistantProfileStore {
     await _db.runDelete('DELETE FROM assistant_messages', const []);
     await _db.runInsert(
       'INSERT INTO assistant_messages(text, is_user, created_at) VALUES (?, ?, ?)',
-      [
-        _introMessage,
-        0,
-        DateTime.now().millisecondsSinceEpoch,
-      ],
+      [_introMessage, 0, DateTime.now().millisecondsSinceEpoch],
     );
     _emitChange();
   }
@@ -73,17 +66,23 @@ class AssistantProfileStore {
 
   Future<void> updateAvatarUrl(String? avatarUrl) async {
     await _ensureInitialized();
-    await _db.runUpdate(
-      'UPDATE user_profile SET avatar_url = ? WHERE id = 1',
-      [avatarUrl],
-    );
+    await _db.runUpdate('UPDATE user_profile SET avatar_url = ? WHERE id = 1', [
+      avatarUrl,
+    ]);
+    _emitChange();
+  }
+
+  Future<void> resetProfileData() async {
+    await _ensureInitialized();
+    await _db.runDelete('DELETE FROM assistant_messages', const []);
+    await _db.runDelete('DELETE FROM user_profile', const []);
+    await _seedIfEmpty();
     _emitChange();
   }
 
   Stream<T> _watch<T>(Future<T> Function() loader) {
     return Stream<T>.multi((controller) async {
       await _ensureInitialized();
-
       Future<void> publishSnapshot() async {
         if (!controller.isClosed) {
           controller.add(await loader());
@@ -94,7 +93,6 @@ class AssistantProfileStore {
         (_) async => publishSnapshot(),
         onError: controller.addError,
       );
-
       await publishSnapshot();
       controller.onCancel = subscription.cancel;
     });
@@ -105,7 +103,6 @@ class AssistantProfileStore {
       return;
     }
     await _db.ensureOpen(const _ProfileQueryExecutorUser());
-
     await _db.runCustom(
       'CREATE TABLE IF NOT EXISTS user_profile('
       'id INTEGER PRIMARY KEY,'
@@ -126,7 +123,6 @@ class AssistantProfileStore {
       'created_at INTEGER NOT NULL'
       ')',
     );
-
     await _seedIfEmpty();
     await _sanitizeLegacySeedProfile();
     _initialized = true;
@@ -138,14 +134,7 @@ class AssistantProfileStore {
       final now = DateTime.now();
       await _db.runInsert(
         'INSERT INTO user_profile(id, name, email, phone, member_since_label, verified) VALUES (?, ?, ?, ?, ?, ?)',
-        [
-          1,
-          'User',
-          '-',
-          '-',
-          _formatMemberSinceLabel(now),
-          0,
-        ],
+        [1, 'User', '-', '-', _formatMemberSinceLabel(now), 0],
       );
     }
 
@@ -153,11 +142,7 @@ class AssistantProfileStore {
     if (messageCount == 0) {
       await _db.runInsert(
         'INSERT INTO assistant_messages(text, is_user, created_at) VALUES (?, ?, ?)',
-        [
-          _introMessage,
-          0,
-          DateTime.now().millisecondsSinceEpoch,
-        ],
+        [_introMessage, 0, DateTime.now().millisecondsSinceEpoch],
       );
     }
   }
@@ -189,16 +174,19 @@ class AssistantProfileStore {
             id: 'msg-${_asInt(row['id'])}',
             text: (row['text'] ?? '') as String,
             isUser: _asInt(row['is_user']) == 1,
-            createdAt:
-                DateTime.fromMillisecondsSinceEpoch(_asInt(row['created_at'])),
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              _asInt(row['created_at']),
+            ),
           ),
         )
         .toList();
   }
 
   Future<int> _countRows(String tableName) async {
-    final rows = await _db
-        .runSelect('SELECT COUNT(*) AS total FROM $tableName', const []);
+    final rows = await _db.runSelect(
+      'SELECT COUNT(*) AS total FROM $tableName',
+      const [],
+    );
     return _asInt(rows.first['total']);
   }
 
@@ -219,8 +207,9 @@ class AssistantProfileStore {
 
   Future<void> _tryAddAvatarUrlColumn() async {
     try {
-      await _db
-          .runCustom('ALTER TABLE user_profile ADD COLUMN avatar_url TEXT');
+      await _db.runCustom(
+        'ALTER TABLE user_profile ADD COLUMN avatar_url TEXT',
+      );
     } catch (_) {
       return;
     }
@@ -268,7 +257,8 @@ class AssistantProfileStore {
     final name = '${row['name'] ?? ''}'.trim().toLowerCase();
     final email = '${row['email'] ?? ''}'.trim().toLowerCase();
     final phone = '${row['phone'] ?? ''}'.trim();
-    final isLegacySeed = name == _legacySeedName &&
+    final isLegacySeed =
+        name == _legacySeedName &&
         email == _legacySeedEmail &&
         phone == _legacySeedPhone;
     if (!isLegacySeed) {
@@ -278,16 +268,11 @@ class AssistantProfileStore {
       'UPDATE user_profile '
       'SET name = ?, email = ?, phone = ?, member_since_label = ?, verified = ? '
       'WHERE id = 1',
-      [
-        'User',
-        '-',
-        '-',
-        _formatMemberSinceLabel(DateTime.now()),
-        0,
-      ],
+      ['User', '-', '-', _formatMemberSinceLabel(DateTime.now()), 0],
     );
   }
 }
+
 class _ProfileQueryExecutorUser implements QueryExecutorUser {
   const _ProfileQueryExecutorUser();
 
@@ -296,5 +281,7 @@ class _ProfileQueryExecutorUser implements QueryExecutorUser {
 
   @override
   Future<void> beforeOpen(
-      QueryExecutor executor, OpeningDetails details) async {}
+    QueryExecutor executor,
+    OpeningDetails details,
+  ) async {}
 }

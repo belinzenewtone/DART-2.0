@@ -5,6 +5,7 @@ import 'package:beltech/core/widgets/app_skeleton.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/expense_dialogs.dart';
@@ -14,7 +15,6 @@ import 'package:beltech/features/search/domain/entities/global_search_result.dar
 import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 class ExpensesScreen extends ConsumerWidget {
   const ExpensesScreen({super.key});
   @override
@@ -22,8 +22,14 @@ class ExpensesScreen extends ConsumerWidget {
     final snapshotState = ref.watch(expensesSnapshotProvider);
     final selectedFilter = ref.watch(expenseFilterProvider);
     final writeState = ref.watch(expenseWriteControllerProvider);
-    final contentSwitchDuration =
-        AppMotion.duration(context, normalMs: 180, reducedMs: 0);
+    final importMetricsState = ref.watch(expenseImportMetricsProvider);
+    final reviewQueueState = ref.watch(expenseReviewQueueProvider);
+    final quarantineState = ref.watch(expenseQuarantineQueueProvider);
+    final contentSwitchDuration = AppMotion.duration(
+      context,
+      normalMs: 180,
+      reducedMs: 0,
+    );
     final snapshotChild = snapshotState.when(
       data: (snapshot) {
         _consumeSearchTarget(context, ref, snapshot);
@@ -48,6 +54,45 @@ class ExpensesScreen extends ConsumerWidget {
                 AppFeedback.success(context, 'Transaction deleted', ref: ref);
               }
             },
+            importMetrics: importMetricsState.valueOrNull ??
+                const ExpenseImportMetrics(
+                  reviewQueueCount: 0,
+                  quarantineCount: 0,
+                  retryQueueCount: 0,
+                ),
+            reviewItems: reviewQueueState.valueOrNull ?? const [],
+            quarantineItems: quarantineState.valueOrNull ?? const [],
+            onApproveReview: (item) async {
+              await ref
+                  .read(expenseWriteControllerProvider.notifier)
+                  .approveReviewItem(item.id);
+              if (context.mounted &&
+                  !ref.read(expenseWriteControllerProvider).hasError) {
+                AppFeedback.success(context, 'Review item approved', ref: ref);
+              }
+            },
+            onRejectReview: (item) async {
+              await ref
+                  .read(expenseWriteControllerProvider.notifier)
+                  .rejectReviewItem(item.id);
+              if (context.mounted &&
+                  !ref.read(expenseWriteControllerProvider).hasError) {
+                AppFeedback.info(context, 'Review item rejected', ref: ref);
+              }
+            },
+            onDismissQuarantine: (item) async {
+              await ref
+                  .read(expenseWriteControllerProvider.notifier)
+                  .dismissQuarantineItem(item.id);
+              if (context.mounted &&
+                  !ref.read(expenseWriteControllerProvider).hasError) {
+                AppFeedback.info(
+                  context,
+                  'Quarantine item dismissed',
+                  ref: ref,
+                );
+              }
+            },
           ),
         );
       },
@@ -63,12 +108,16 @@ class ExpensesScreen extends ConsumerWidget {
         ),
       ),
     );
-    ref.listen<AsyncValue<void>>(expenseWriteControllerProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<void>>(expenseWriteControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasError) {
         AppFeedback.error(
-            context, 'Unable to save transaction. Please try again.',
-            ref: ref);
+          context,
+          'Unable to save transaction. Please try again.',
+          ref: ref,
+        );
       }
     });
     return PageShell(
@@ -99,9 +148,7 @@ class ExpensesScreen extends ConsumerWidget {
                             if (!context.mounted) {
                               return;
                             }
-                            final window = await showSmsWindowDialog(
-                              context,
-                            );
+                            final window = await showSmsWindowDialog(context);
                             if (window == null) {
                               return;
                             }
@@ -165,8 +212,11 @@ class ExpensesScreen extends ConsumerWidget {
                                 !ref
                                     .read(expenseWriteControllerProvider)
                                     .hasError) {
-                              AppFeedback.success(context, 'Transaction added',
-                                  ref: ref);
+                              AppFeedback.success(
+                                context,
+                                'Transaction added',
+                                ref: ref,
+                              );
                             }
                           },
                     icon: const Icon(Icons.add),
@@ -199,26 +249,25 @@ class ExpensesScreen extends ConsumerWidget {
     if (target?.kind != GlobalSearchKind.expense) {
       return;
     }
-
     ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
-
     final recordId = target?.recordId;
     if (recordId == null) {
       return;
     }
-
     final expense =
         snapshot.transactions.where((item) => item.id == recordId).firstOrNull;
     if (expense == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
-          AppFeedback.info(context, 'This expense record no longer exists.',
-              ref: ref);
+          AppFeedback.info(
+            context,
+            'This expense record no longer exists.',
+            ref: ref,
+          );
         }
       });
       return;
     }
-
     ref.read(expenseFilterProvider.notifier).state = ExpenseFilter.all;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) {

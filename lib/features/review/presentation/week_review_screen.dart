@@ -7,7 +7,9 @@ import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
 import 'package:beltech/core/widgets/secondary_page_shell.dart';
 import 'package:beltech/core/widgets/section_header.dart';
+import 'package:beltech/features/review/domain/entities/week_review_ritual.dart';
 import 'package:beltech/features/review/presentation/providers/review_providers.dart';
+import 'package:beltech/features/review/presentation/providers/review_ritual_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,12 +22,13 @@ class WeekReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reviewState = ref.watch(weekReviewDataProvider);
+    final ritualState = ref.watch(weekReviewRitualProvider);
 
     return SecondaryPageShell(
       title: 'Week Review',
       glowColor: AppColors.glowViolet,
       child: reviewState.when(
-        data: (data) => _ReviewContent(review: data),
+        data: (data) => _ReviewContent(review: data, ritualState: ritualState),
         loading: () => _LoadingReview(),
         error: (_, __) => AppEmptyState(
           icon: Icons.error_outline,
@@ -42,9 +45,10 @@ class WeekReviewScreen extends ConsumerWidget {
 }
 
 class _ReviewContent extends StatelessWidget {
-  const _ReviewContent({required this.review});
+  const _ReviewContent({required this.review, required this.ritualState});
 
   final WeekReviewData review;
+  final AsyncValue<WeekReviewRitual?> ritualState;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,36 @@ class _ReviewContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        ritualState.when(
+          data: (ritual) => ritual == null
+              ? const SizedBox.shrink()
+              : GlassCard(
+                  tone: GlassCardTone.muted,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ritual.headline,
+                        style: AppTypography.sectionTitle(context),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        ritual.summary,
+                        style: AppTypography.bodySm(context),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${ritual.focusLabel}: ${ritual.focusDetail}',
+                        style: AppTypography.bodySm(context),
+                      ),
+                    ],
+                  ),
+                ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+        if (ritualState.valueOrNull != null)
+          const SizedBox(height: AppSpacing.sectionGap),
         GlassCard(
           tone: GlassCardTone.accent,
           accentColor: AppColors.violet,

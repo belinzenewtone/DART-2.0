@@ -1,13 +1,16 @@
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/core/widgets/secondary_page_shell.dart';
 import 'package:beltech/features/budget/domain/entities/budget_snapshot.dart';
-import 'package:beltech/features/budget/domain/entities/budget_target.dart';
+import 'package:beltech/features/budget/domain/entities/budget_target_progress.dart';
 import 'package:beltech/features/budget/presentation/providers/budget_providers.dart';
 import 'package:beltech/features/budget/presentation/widgets/budget_dialogs.dart';
+import 'package:beltech/features/budget/presentation/widgets/budget_target_progress_card.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:flutter/material.dart';
@@ -22,166 +25,128 @@ class BudgetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(budgetMonthProvider);
     final snapshotState = ref.watch(budgetSnapshotProvider);
-    final targetsState = ref.watch(budgetTargetsProvider);
+    final targetProgressState = ref.watch(budgetTargetProgressProvider);
     final writeState = ref.watch(budgetWriteControllerProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    ref.listen<AsyncValue<void>>(budgetWriteControllerProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<void>>(budgetWriteControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasError) {
         AppFeedback.error(context, 'Unable to save budget changes.');
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Budgets'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              final previous = DateTime(month.year, month.month - 1, 1);
-              ref.read(budgetMonthProvider.notifier).state = previous;
-            },
-            icon: const Icon(Icons.chevron_left),
+    return SecondaryPageShell(
+      title: 'Budgets',
+      glowColor: AppColors.glowBlue,
+      actions: [
+        IconButton(
+          tooltip: 'Previous month',
+          onPressed: () {
+            final previous = DateTime(month.year, month.month - 1, 1);
+            ref.read(budgetMonthProvider.notifier).state = previous;
+          },
+          icon: const Icon(Icons.chevron_left),
+        ),
+        Center(child: Text('${_monthName(month.month)} ${month.year}')),
+        IconButton(
+          tooltip: 'Next month',
+          onPressed: () {
+            final nextMonth = DateTime(month.year, month.month + 1, 1);
+            ref.read(budgetMonthProvider.notifier).state = nextMonth;
+          },
+          icon: const Icon(Icons.chevron_right),
+        ),
+      ],
+      child: ListView(
+        padding: AppSpacing.sectionPadding(context),
+        children: [
+          snapshotState.when(
+            data: (snapshot) => _BudgetSummaryCard(snapshot: snapshot),
+            loading: () => const Center(child: LoadingIndicator()),
+            error: (_, __) => ErrorMessage(
+              label: 'Unable to load budget snapshot',
+              onRetry: () => ref.invalidate(budgetSnapshotProvider),
+            ),
           ),
-          Center(
-            child: Text('${_monthName(month.month)} ${month.year}'),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Category Targets', style: textTheme.titleMedium),
+              FilledButton.icon(
+                onPressed: writeState.isLoading
+                    ? null
+                    : () async {
+                        final input = await showBudgetTargetDialog(context);
+                        if (input == null) {
+                          return;
+                        }
+                        await ref
+                            .read(budgetWriteControllerProvider.notifier)
+                            .saveTarget(
+                              category: input.category,
+                              monthlyLimitKes: input.monthlyLimitKes,
+                            );
+                      },
+                icon: const Icon(Icons.add),
+                label: const Text('Add'),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () {
-              final nextMonth = DateTime(month.year, month.month + 1, 1);
-              ref.read(budgetMonthProvider.notifier).state = nextMonth;
+          const SizedBox(height: 8),
+          targetProgressState.when(
+            data: (targets) {
+              _consumeSearchTarget(context, ref, targets);
+              if (targets.isEmpty) {
+                return const GlassCard(child: Text('No category budgets yet'));
+              }
+              return Column(
+                children: targets
+                    .map(
+                      (target) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: BudgetTargetProgressCard(
+                          item: target,
+                          busy: writeState.isLoading,
+                          onEdit: () async {
+                            final input = await showBudgetTargetDialog(
+                              context,
+                              initialCategory: target.category,
+                              initialLimit: target.monthlyLimitKes,
+                            );
+                            if (input == null) {
+                              return;
+                            }
+                            await ref
+                                .read(
+                                  budgetWriteControllerProvider.notifier,
+                                )
+                                .saveTarget(
+                                  category: input.category,
+                                  monthlyLimitKes: input.monthlyLimitKes,
+                                );
+                          },
+                          onDelete: () async {
+                            await ref
+                                .read(budgetWriteControllerProvider.notifier)
+                                .deleteTarget(target.id);
+                          },
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
             },
-            icon: const Icon(Icons.chevron_right),
+            loading: () => const Center(child: LoadingIndicator()),
+            error: (_, __) => ErrorMessage(
+              label: 'Unable to load budget targets',
+              onRetry: () => ref.invalidate(budgetTargetsProvider),
+            ),
           ),
         ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: AppSpacing.sectionPadding(context),
-          children: [
-            snapshotState.when(
-              data: (snapshot) => _BudgetSummaryCard(snapshot: snapshot),
-              loading: () => Center(child: LoadingIndicator()),
-              error: (_, __) => ErrorMessage(
-                label: 'Unable to load budget snapshot',
-                onRetry: () => ref.invalidate(budgetSnapshotProvider),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Category Targets', style: textTheme.titleMedium),
-                FilledButton.icon(
-                  onPressed: writeState.isLoading
-                      ? null
-                      : () async {
-                          final input = await showBudgetTargetDialog(context);
-                          if (input == null) {
-                            return;
-                          }
-                          await ref
-                              .read(budgetWriteControllerProvider.notifier)
-                              .saveTarget(
-                                category: input.category,
-                                monthlyLimitKes: input.monthlyLimitKes,
-                              );
-                        },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            targetsState.when(
-              data: (targets) {
-                _consumeSearchTarget(context, ref, targets);
-                if (targets.isEmpty) {
-                  return const GlassCard(
-                    child: Text('No category budgets yet'),
-                  );
-                }
-                return Column(
-                  children: targets
-                      .map(
-                        (target) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: GlassCard(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(target.category,
-                                          style: textTheme.bodyLarge),
-                                      Text(
-                                        CurrencyFormatter.money(
-                                            target.monthlyLimitKes),
-                                        style: textTheme.bodyMedium,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        overflow: TextOverflow.fade,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: writeState.isLoading
-                                      ? null
-                                      : () async {
-                                          final input =
-                                              await showBudgetTargetDialog(
-                                            context,
-                                            initialCategory: target.category,
-                                            initialLimit:
-                                                target.monthlyLimitKes,
-                                          );
-                                          if (input == null) {
-                                            return;
-                                          }
-                                          await ref
-                                              .read(
-                                                  budgetWriteControllerProvider
-                                                      .notifier)
-                                              .saveTarget(
-                                                category: input.category,
-                                                monthlyLimitKes:
-                                                    input.monthlyLimitKes,
-                                              );
-                                        },
-                                  icon: const Icon(Icons.edit_outlined),
-                                ),
-                                IconButton(
-                                  onPressed: writeState.isLoading
-                                      ? null
-                                      : () async {
-                                          await ref
-                                              .read(
-                                                  budgetWriteControllerProvider
-                                                      .notifier)
-                                              .deleteTarget(target.id);
-                                        },
-                                  icon: const Icon(Icons.delete_outline),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-              loading: () => Center(child: LoadingIndicator()),
-              error: (_, __) => ErrorMessage(
-                label: 'Unable to load budget targets',
-                onRetry: () => ref.invalidate(budgetTargetsProvider),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -189,7 +154,7 @@ class BudgetScreen extends ConsumerWidget {
   void _consumeSearchTarget(
     BuildContext context,
     WidgetRef ref,
-    List<BudgetTarget> targets,
+    List<BudgetTargetProgress> targets,
   ) {
     final target = ref.read(globalSearchDeepLinkTargetProvider);
     if (target?.kind != GlobalSearchKind.budget) {
@@ -245,7 +210,7 @@ class BudgetScreen extends ConsumerWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return names[month - 1];
   }

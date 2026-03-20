@@ -1,8 +1,8 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// The custom animated bottom tab bar with a sliding accent pill.
 ///
@@ -121,7 +121,7 @@ class _AppTabBarState extends State<AppTabBar>
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () {
-                              HapticFeedback.lightImpact();
+                              AppHaptics.lightImpact();
                               widget.onTap(i);
                             },
                             child: AnimatedScale(

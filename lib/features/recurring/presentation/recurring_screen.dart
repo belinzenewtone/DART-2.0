@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
@@ -15,8 +16,9 @@ import 'package:intl/intl.dart';
 import 'package:beltech/features/recurring/presentation/providers/recurring_providers.dart';
 import 'package:beltech/features/recurring/presentation/widgets/recurring_dialogs.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'recurring_screen_row.dart';
 
 class RecurringScreen extends ConsumerWidget {
   const RecurringScreen({super.key});
@@ -26,11 +28,15 @@ class RecurringScreen extends ConsumerWidget {
     final templatesState = ref.watch(recurringTemplatesProvider);
     final writeState = ref.watch(recurringWriteControllerProvider);
 
-    ref.listen<AsyncValue<void>>(recurringWriteControllerProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<void>>(recurringWriteControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasError) {
         AppFeedback.error(
-            context, 'Recurring action failed. Please try again.');
+          context,
+          'Recurring action failed. Please try again.',
+        );
       }
     });
 
@@ -70,7 +76,7 @@ class RecurringScreen extends ConsumerWidget {
           onPressed: writeState.isLoading
               ? null
               : () async {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   final count = await ref
                       .read(recurringWriteControllerProvider.notifier)
                       .materializeNow();
@@ -92,36 +98,30 @@ class RecurringScreen extends ConsumerWidget {
             );
           }
           return Column(
-            children: List.generate(
-              templates.length,
-              (index) {
-                final template = templates[index];
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom:
-                        index < templates.length - 1 ? AppSpacing.listGap : 0,
-                  ),
-                  child: _RecurringRow(
-                    template: template,
-                    busy: writeState.isLoading,
-                    onEdit: () async {
-                      await _editTemplate(context, ref, template);
-                    },
-                    onDelete: () async {
-                      await ref
-                          .read(recurringWriteControllerProvider.notifier)
-                          .deleteTemplate(template.id);
-                      if (context.mounted &&
-                          !ref
-                              .read(recurringWriteControllerProvider)
-                              .hasError) {
-                        AppFeedback.success(context, 'Template deleted');
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
+            children: List.generate(templates.length, (index) {
+              final template = templates[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: index < templates.length - 1 ? AppSpacing.listGap : 0,
+                ),
+                child: _RecurringRow(
+                  template: template,
+                  busy: writeState.isLoading,
+                  onEdit: () async {
+                    await _editTemplate(context, ref, template);
+                  },
+                  onDelete: () async {
+                    await ref
+                        .read(recurringWriteControllerProvider.notifier)
+                        .deleteTemplate(template.id);
+                    if (context.mounted &&
+                        !ref.read(recurringWriteControllerProvider).hasError) {
+                      AppFeedback.success(context, 'Template deleted');
+                    }
+                  },
+                ),
+              );
+            }),
           );
         },
         loading: () => Column(
@@ -170,7 +170,9 @@ class RecurringScreen extends ConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           AppFeedback.info(
-              context, 'This recurring template no longer exists.');
+            context,
+            'This recurring template no longer exists.',
+          );
         }
       });
       return;
@@ -189,10 +191,7 @@ class RecurringScreen extends ConsumerWidget {
     WidgetRef ref,
     RecurringTemplate template,
   ) async {
-    final input = await showRecurringTemplateDialog(
-      context,
-      initial: template,
-    );
+    final input = await showRecurringTemplateDialog(context, initial: template);
     if (input == null) {
       return;
     }
@@ -212,96 +211,5 @@ class RecurringScreen extends ConsumerWidget {
         !ref.read(recurringWriteControllerProvider).hasError) {
       AppFeedback.success(context, 'Template updated');
     }
-  }
-}
-
-class _RecurringRow extends StatelessWidget {
-  const _RecurringRow({
-    required this.template,
-    required this.busy,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final RecurringTemplate template;
-  final bool busy;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final date = template.nextRunAt;
-    final typeColor = AppColors.categoryColorFor(template.category ?? 'other');
-
-    return GlassCard(
-      tone: GlassCardTone.muted,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      template.title,
-                      style: AppTypography.cardTitle(context),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        AppCapsule(
-                          label: template.kind.name,
-                          color: typeColor,
-                          variant: AppCapsuleVariant.subtle,
-                          size: AppCapsuleSize.sm,
-                        ),
-                        const SizedBox(width: 8),
-                        AppCapsule(
-                          label: template.cadence.name,
-                          color: AppColors.slate,
-                          variant: AppCapsuleVariant.subtle,
-                          size: AppCapsuleSize.sm,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (template.amountKes != null)
-                Text(
-                  CurrencyFormatter.money(template.amountKes!),
-                  style: AppTypography.amount(context),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.fade,
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Next: ${DateFormat('MMM d, yyyy HH:mm').format(date)}',
-                  style: AppTypography.bodySm(context),
-                ),
-              ),
-              IconButton(
-                onPressed: busy ? null : onEdit,
-                icon: const Icon(Icons.edit_outlined),
-                iconSize: 20,
-              ),
-              IconButton(
-                onPressed: busy ? null : onDelete,
-                icon: const Icon(Icons.delete_outline),
-                iconSize: 20,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }

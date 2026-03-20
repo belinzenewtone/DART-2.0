@@ -1,4 +1,5 @@
 import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
 import 'package:beltech/core/sync/os_background_sync_scheduler.dart';
@@ -40,6 +41,7 @@ final backgroundSyncCoordinatorProvider =
     ref.watch(recurringMaterializerServiceProvider),
     ref.watch(notificationInsightsServiceProvider),
     ref.watch(osBackgroundSyncSchedulerProvider),
+    ref.watch(featureFlagStoreProvider),
   );
   ref.onDispose(() {
     coordinator.stop();

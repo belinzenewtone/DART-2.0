@@ -23,6 +23,22 @@ final dayEventsProvider = StreamProvider<List<CalendarEvent>>(
   },
 );
 
+final agendaEventsProvider = StreamProvider<List<CalendarEvent>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  final rangeStart = DateTime(day.year, day.month, day.day);
+  final rangeEnd = rangeStart.add(const Duration(days: 14));
+  return ref
+      .watch(calendarRepositoryProvider)
+      .watchEventsInRange(rangeStart, rangeEnd)
+      .map((events) {
+    final sorted = [...events]
+      ..sort((left, right) => left.startAt.compareTo(right.startAt));
+    return sorted
+        .where((event) => !event.startAt.isBefore(rangeStart))
+        .toList(growable: false);
+  });
+});
+
 final monthEventTypesProvider = StreamProvider<Map<int, CalendarEventType>>(
   (ref) {
     final visibleMonth = ref.watch(visibleMonthProvider);

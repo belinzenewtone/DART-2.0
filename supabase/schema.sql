@@ -140,6 +140,119 @@ create table if not exists public.app_updates (
 create index if not exists idx_app_updates_active_updated
   on public.app_updates (active, updated_at desc);
 
+create table if not exists public.feature_flags (
+  id bigserial primary key,
+  flag_key text not null unique,
+  enabled boolean not null default true,
+  active boolean not null default true,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.sms_import_queue (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  raw_message text not null,
+  source_hash text not null,
+  semantic_hash text not null,
+  status text not null default 'pending',
+  route text not null default 'directLedger',
+  confidence double precision not null default 0,
+  attempt integer not null default 0,
+  next_retry_at timestamptz,
+  last_error text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_import_queue_owner_source_hash
+  on public.sms_import_queue (owner_id, source_hash);
+create index if not exists idx_sms_import_queue_owner_status
+  on public.sms_import_queue (owner_id, status, next_retry_at);
+
+create table if not exists public.sms_import_audit (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  route text not null,
+  confidence double precision not null,
+  decision text not null,
+  status text not null,
+  payload jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_sms_import_audit_owner_created
+  on public.sms_import_audit (owner_id, created_at desc);
+create index if not exists idx_sms_import_audit_owner_semantic
+  on public.sms_import_audit (owner_id, semantic_hash);
+
+create table if not exists public.sms_review_queue (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  title text not null,
+  category text not null,
+  amount double precision not null,
+  occurred_at timestamptz not null,
+  raw_message text not null,
+  confidence double precision not null,
+  status text not null default 'pending',
+  resolved_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_review_owner_source_hash
+  on public.sms_review_queue (owner_id, source_hash);
+create index if not exists idx_sms_review_owner_status
+  on public.sms_review_queue (owner_id, status, created_at desc);
+
+create table if not exists public.sms_quarantine (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  raw_message text not null,
+  reason text not null,
+  confidence double precision not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_quarantine_owner_source_hash
+  on public.sms_quarantine (owner_id, source_hash);
+create index if not exists idx_sms_quarantine_owner_status
+  on public.sms_quarantine (owner_id, status, created_at desc);
+
+create table if not exists public.paybill_registry (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  paybill text not null,
+  display_name text not null,
+  last_seen_at timestamptz not null default now(),
+  usage_count integer not null default 1
+);
+
+create unique index if not exists idx_paybill_owner_value
+  on public.paybill_registry (owner_id, paybill);
+
+create table if not exists public.fuliza_lifecycle_events (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  mpesa_code text not null,
+  event_kind text not null,
+  amount double precision not null,
+  occurred_at timestamptz not null,
+  raw_message text not null,
+  source_hash text,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_fuliza_owner_code_kind
+  on public.fuliza_lifecycle_events (owner_id, mpesa_code, event_kind);
+
 alter table public.transactions enable row level security;
 alter table public.tasks enable row level security;
 alter table public.events enable row level security;
@@ -149,6 +262,13 @@ alter table public.app_updates enable row level security;
 alter table public.incomes enable row level security;
 alter table public.budgets enable row level security;
 alter table public.recurring_templates enable row level security;
+alter table public.feature_flags enable row level security;
+alter table public.sms_import_queue enable row level security;
+alter table public.sms_import_audit enable row level security;
+alter table public.sms_review_queue enable row level security;
+alter table public.sms_quarantine enable row level security;
+alter table public.paybill_registry enable row level security;
+alter table public.fuliza_lifecycle_events enable row level security;
 
 drop policy if exists "transactions_owner_rw" on public.transactions;
 create policy "transactions_owner_rw"
@@ -212,6 +332,55 @@ create policy "app_updates_public_read"
   for select
   to anon, authenticated
   using (active = true);
+
+drop policy if exists "feature_flags_public_read" on public.feature_flags;
+create policy "feature_flags_public_read"
+  on public.feature_flags
+  for select
+  to anon, authenticated
+  using (active = true);
+
+drop policy if exists "sms_import_queue_owner_rw" on public.sms_import_queue;
+create policy "sms_import_queue_owner_rw"
+  on public.sms_import_queue
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_import_audit_owner_rw" on public.sms_import_audit;
+create policy "sms_import_audit_owner_rw"
+  on public.sms_import_audit
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_review_queue_owner_rw" on public.sms_review_queue;
+create policy "sms_review_queue_owner_rw"
+  on public.sms_review_queue
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_quarantine_owner_rw" on public.sms_quarantine;
+create policy "sms_quarantine_owner_rw"
+  on public.sms_quarantine
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "paybill_registry_owner_rw" on public.paybill_registry;
+create policy "paybill_registry_owner_rw"
+  on public.paybill_registry
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "fuliza_lifecycle_owner_rw" on public.fuliza_lifecycle_events;
+create policy "fuliza_lifecycle_owner_rw"
+  on public.fuliza_lifecycle_events
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
 
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

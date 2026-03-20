@@ -7,9 +7,9 @@ Purpose:
 Main classes:
 - `BudgetRepository`
 - `BudgetSnapshot`
+- `BuildBudgetTargetProgressesUseCase`
 - `BudgetScreen`
 
 Dependencies:
 - Expenses data (for monthly spend totals)
 - Riverpod providers
-

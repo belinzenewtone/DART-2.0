@@ -1,3 +1,5 @@
+import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/feature_flags/feature_flag_store.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/core/sync/os_background_sync_scheduler.dart';
@@ -11,17 +13,22 @@ class BackgroundSyncCoordinator {
     this._recurringMaterializerService,
     this._notificationInsightsService,
     this._osBackgroundSyncScheduler,
+    this._featureFlagStore,
   );
 
   final SmsAutoImportService _smsAutoImportService;
   final RecurringMaterializerService _recurringMaterializerService;
   final NotificationInsightsService _notificationInsightsService;
   final OsBackgroundSyncScheduler _osBackgroundSyncScheduler;
+  final FeatureFlagStore _featureFlagStore;
 
   BackgroundSyncStrategy get _strategy => BackgroundSyncStrategy.forPlatform();
 
   Future<void> start() async {
     if (hasRuntimeEnv('FLUTTER_TEST')) {
+      return;
+    }
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
       return;
     }
     await _osBackgroundSyncScheduler.initializeAndSchedule();
@@ -38,16 +45,28 @@ class BackgroundSyncCoordinator {
   }
 
   Future<void> syncNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
     await _smsAutoImportService.syncNow();
   }
 
   Future<void> materializeNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
     await _recurringMaterializerService.syncNow();
   }
 
   Future<void> runNotificationSweep() async {
+    if (!await _isEnabled(FeatureFlag.smartNotifications)) {
+      return;
+    }
     await _notificationInsightsService.runSweep();
   }
+
+  Future<bool> _isEnabled(FeatureFlag flag) =>
+      _featureFlagStore.isEnabled(flag);
 }
 
 class BackgroundSyncStrategy {

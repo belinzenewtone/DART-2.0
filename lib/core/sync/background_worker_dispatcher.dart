@@ -1,10 +1,16 @@
 import 'dart:ui' as ui;
 
 import 'package:beltech/core/config/supabase_config.dart';
+import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/feature_flags/feature_flag_store.dart';
 import 'package:beltech/core/notifications/local_notification_service.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
+import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/sync/sms_auto_import_service.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/features/analytics/data/repositories/analytics_repository_impl.dart';
+import 'package:beltech/features/analytics/data/repositories/supabase_analytics_repository_impl.dart';
+import 'package:beltech/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:beltech/features/auth/data/repositories/local_account_repository_impl.dart';
 import 'package:beltech/features/auth/data/repositories/supabase_account_repository_impl.dart';
 import 'package:beltech/features/budget/data/repositories/budget_repository_impl.dart';
@@ -19,14 +25,20 @@ import 'package:beltech/features/expenses/data/services/device_sms_data_source.d
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
+import 'package:beltech/features/income/data/repositories/income_repository_impl.dart';
+import 'package:beltech/features/income/data/repositories/supabase_income_repository_impl.dart';
+import 'package:beltech/features/income/domain/repositories/income_repository.dart';
 import 'package:beltech/features/recurring/data/repositories/recurring_repository_impl.dart';
 import 'package:beltech/features/recurring/data/repositories/supabase_recurring_repository_impl.dart';
 import 'package:beltech/features/recurring/data/services/recurring_materializer_service.dart';
 import 'package:beltech/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:beltech/features/review/domain/usecases/build_week_review_data_use_case.dart';
+import 'package:beltech/features/review/domain/usecases/build_week_review_ritual_use_case.dart';
 import 'package:beltech/features/tasks/data/repositories/supabase_tasks_repository_impl.dart';
 import 'package:beltech/features/tasks/data/repositories/tasks_repository_impl.dart';
 import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -56,25 +68,43 @@ class BackgroundWorkerRuntime {
       final repositories = _buildRepositories(useSupabase);
       localStore = repositories.localStore;
 
-      final smsService =
-          SmsAutoImportService(repositories.expenses, accountRepository);
-      final recurringService =
-          RecurringMaterializerService(repositories.recurring);
+      final smsService = SmsAutoImportService(
+        repositories.expenses,
+        accountRepository,
+      );
+      final recurringService = RecurringMaterializerService(
+        repositories.recurring,
+      );
       final notifications = LocalNotificationService();
+      final flagStore = FeatureFlagStore();
       final insights = NotificationInsightsService(
         notifications,
         repositories.budget,
         repositories.expenses,
+        repositories.income,
         repositories.tasks,
         repositories.calendar,
+        repositories.analytics,
         accountRepository,
+        const BuildWeekReviewDataUseCase(),
+        const BuildWeekReviewRitualUseCase(),
+        RevampTelemetryService(),
+        flagStore,
       );
 
-      await smsService.syncNow();
-      await recurringService.syncNow();
-      await insights.runSweep();
-    } catch (_) {
-      // Silent fail: background worker should not crash the process.
+      if (await flagStore.isEnabled(FeatureFlag.backgroundSync)) {
+        await smsService.syncNow();
+        await recurringService.syncNow();
+      }
+      if (await flagStore.isEnabled(FeatureFlag.smartNotifications)) {
+        await insights.runSweep();
+      }
+    } catch (error) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'background_worker_last_error',
+        '${DateTime.now().toIso8601String()} | $error',
+      );
     } finally {
       await localStore?.dispose();
     }
@@ -95,8 +125,10 @@ class BackgroundWorkerRuntime {
         ),
         recurring: SupabaseRecurringRepositoryImpl(client),
         budget: SupabaseBudgetRepositoryImpl(client),
+        income: SupabaseIncomeRepositoryImpl(client),
         tasks: SupabaseTasksRepositoryImpl(client),
         calendar: SupabaseCalendarRepositoryImpl(client),
+        analytics: SupabaseAnalyticsRepositoryImpl(client),
       );
     }
 
@@ -111,8 +143,10 @@ class BackgroundWorkerRuntime {
       ),
       recurring: RecurringRepositoryImpl(store),
       budget: BudgetRepositoryImpl(store),
+      income: IncomeRepositoryImpl(store),
       tasks: TasksRepositoryImpl(store),
       calendar: CalendarRepositoryImpl(store),
+      analytics: AnalyticsRepositoryImpl(store),
     );
   }
 
@@ -139,14 +173,18 @@ class _WorkerRepositories {
     required this.expenses,
     required this.recurring,
     required this.budget,
+    required this.income,
     required this.tasks,
     required this.calendar,
+    required this.analytics,
   });
 
   final AppDriftStore? localStore;
   final ExpensesRepository expenses;
   final RecurringRepository recurring;
   final BudgetRepository budget;
+  final IncomeRepository income;
   final TasksRepository tasks;
   final CalendarRepository calendar;
+  final AnalyticsRepository analytics;
 }

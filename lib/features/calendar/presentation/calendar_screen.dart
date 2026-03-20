@@ -18,9 +18,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'calendar_screen_events.dart';
+part 'calendar_screen_agenda.dart';
 part 'calendar_screen_layout.dart';
 
-enum _CalendarView { month, week }
+enum _CalendarView { month, week, agenda }
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -64,6 +65,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final visibleMonth = ref.watch(visibleMonthProvider);
     final selectedDay = ref.watch(selectedDayProvider);
     final eventsState = ref.watch(dayEventsProvider);
+    final agendaState = ref.watch(agendaEventsProvider);
     final monthEventTypesState = ref.watch(monthEventTypesProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
     final eventsPaneHeight =
@@ -77,9 +79,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
     });
 
-    final title = _view == _CalendarView.month
-        ? '${_months[visibleMonth.month - 1]} ${visibleMonth.year}'
-        : _weekRangeLabel(selectedDay);
+    final title = switch (_view) {
+      _CalendarView.month =>
+        '${_months[visibleMonth.month - 1]} ${visibleMonth.year}',
+      _CalendarView.week => _weekRangeLabel(selectedDay),
+      _CalendarView.agenda => 'Agenda · ${_weekRangeLabel(selectedDay)}',
+    };
 
     // Week strip: 7 days starting from Monday of selected week
     final weekStart =
@@ -95,6 +100,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       visibleMonth: visibleMonth,
       selectedDay: selectedDay,
       eventsState: eventsState,
+      agendaState: agendaState,
       monthEventTypesState: monthEventTypesState,
       writeState: writeState,
       eventsPaneHeight: eventsPaneHeight,

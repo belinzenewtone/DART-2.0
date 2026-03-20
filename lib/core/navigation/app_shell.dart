@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:beltech/core/di/update_providers.dart';
 import 'package:beltech/core/di/sync_providers.dart';
+import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/di/security_providers.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
+import 'package:beltech/core/feature_flags/feature_flag.dart';
 import 'package:beltech/core/navigation/app_shell_helpers.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/navigation/widgets/app_tab_bar.dart';
@@ -23,7 +27,6 @@ import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -72,12 +75,12 @@ class AppShell extends ConsumerStatefulWidget {
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
 }
-
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   late BackgroundSyncCoordinator _backgroundSyncCoordinator;
   bool _updateChecked = false;
   bool _biometricConfigured = false;
+  bool _biometricRelockEnabled = true;
   bool _appLocked = false;
   bool _biometricUnlockInProgress = false;
   String? _biometricLockMessage;
@@ -88,6 +91,7 @@ class _AppShellState extends ConsumerState<AppShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _backgroundSyncCoordinator = ref.read(backgroundSyncCoordinatorProvider);
+    unawaited(_refreshFeatureFlags());
     unawaited(_startBackgroundSync());
     unawaited(_initializeBiometricLock());
     unawaited(cleanupNotificationReminders(ref));
@@ -111,6 +115,7 @@ class _AppShellState extends ConsumerState<AppShell>
       return;
     }
     if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshFeatureFlags());
       unawaited(_syncNow());
       unawaited(_materializeRecurringNow());
       unawaited(_runNotificationSweep());
@@ -132,8 +137,11 @@ class _AppShellState extends ConsumerState<AppShell>
     final accent = accentForTab(currentIndex);
     final brightness = Theme.of(context).brightness;
     final reduceMotion = AppMotion.reduceMotion(context);
-    final overlayDuration =
-        AppMotion.duration(context, normalMs: 260, reducedMs: 0);
+    final overlayDuration = AppMotion.duration(
+      context,
+      normalMs: 260,
+      reducedMs: 0,
+    );
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return DecoratedBox(
@@ -142,7 +150,6 @@ class _AppShellState extends ConsumerState<AppShell>
       ),
       child: Stack(
         children: [
-          // Per-tab accent radial glow
           IgnorePointer(
             child: AnimatedContainer(
               duration: overlayDuration,
@@ -151,10 +158,7 @@ class _AppShellState extends ConsumerState<AppShell>
                 gradient: RadialGradient(
                   center: const Alignment(0.75, -0.9),
                   radius: 1.05,
-                  colors: [
-                    accent.withValues(alpha: 0.22),
-                    Colors.transparent,
-                  ],
+                  colors: [accent.withValues(alpha: 0.22), Colors.transparent],
                 ),
               ),
             ),
@@ -188,16 +192,8 @@ class _AppShellState extends ConsumerState<AppShell>
                     ),
             ),
           ),
-          // Offline banner
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: OfflineBanner(),
-          ),
-          // Toast overlay
+          const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
           const AppToastOverlay(),
-          // Biometric lock
           if (_appLocked)
             BiometricLockOverlay(
               busy: _biometricUnlockInProgress,
@@ -216,7 +212,6 @@ class _AppShellState extends ConsumerState<AppShell>
   Future<void> _syncNow() async => _backgroundSyncCoordinator.syncNow();
   Future<void> _runNotificationSweep() async =>
       _backgroundSyncCoordinator.runNotificationSweep();
-
   Future<void> _rebindBackgroundSyncForModeChange() async {
     await _backgroundSyncCoordinator.stop();
     ref.invalidate(backgroundSyncCoordinatorProvider);
@@ -239,15 +234,31 @@ class _AppShellState extends ConsumerState<AppShell>
     );
   }
 
+  Future<void> _refreshFeatureFlags() async {
+    try {
+      await ref.read(refreshFeatureFlagsUseCaseProvider).call();
+      final snapshot = await ref.read(featureFlagStoreProvider).snapshot();
+      final motionEnabled = snapshot[FeatureFlag.stretchMotion] ?? true;
+      AppMotion.setStretchMotionEnabled(motionEnabled);
+      AppHaptics.setEnabled(motionEnabled);
+      _biometricRelockEnabled = snapshot[FeatureFlag.biometricRelock] ?? true;
+      ref.invalidate(featureFlagSnapshotProvider);
+    } catch (_) {
+      return;
+    }
+  }
+
   Future<void> _initializeBiometricLock() async =>
       _refreshBiometricConfiguration(lockNow: true);
 
   Future<void> _applyBiometricLockOnResume() async {
-    if (_biometricUnlockInProgress) return;
+    if (_biometricUnlockInProgress || !_biometricRelockEnabled) return;
     final pausedAt = _lastPausedAt;
     _lastPausedAt = null;
     if (pausedAt == null) return;
-    if (DateTime.now().difference(pausedAt) < const Duration(seconds: 2)) {
+    final settings =
+        await ref.read(sessionLockSettingsRepositoryProvider).read();
+    if (DateTime.now().difference(pausedAt) < settings.gracePeriod) {
       return;
     }
     await _refreshBiometricConfiguration(lockNow: true);
