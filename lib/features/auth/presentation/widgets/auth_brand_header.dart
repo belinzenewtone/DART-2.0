@@ -10,6 +10,7 @@ class AuthBrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        const _RetainedAuthIcons(),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -44,6 +45,26 @@ class AuthBrandHeader extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+
+class _RetainedAuthIcons extends StatelessWidget {
+  const _RetainedAuthIcons();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Offstage(
+      offstage: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome_rounded),
+          Icon(Icons.rocket_launch_outlined),
+          Icon(Icons.lock_open_rounded),
+          Icon(Icons.shield_outlined),
+        ],
+      ),
     );
   }
 }
