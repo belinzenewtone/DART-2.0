@@ -5,6 +5,7 @@ import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/core/routing/app_router.dart';
 import 'package:beltech/core/theme/app_theme.dart';
 import 'package:beltech/core/theme/theme_mode_controller.dart';
+import 'package:beltech/core/update/presentation/global_update_host.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,6 +49,9 @@ class PersonalManagementApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) => GlobalUpdateHost(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

@@ -25,4 +25,7 @@ class ShorebirdPatchService {
 
   /// The patch number currently running in this session (null = base release).
   Future<int?> currentPatch() => _codePush.currentPatchNumber();
+
+  /// The patch number scheduled to run on next launch, if one is downloaded.
+  Future<int?> nextPatch() => _codePush.nextPatchNumber();
 }
