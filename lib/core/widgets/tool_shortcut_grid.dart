@@ -1,7 +1,6 @@
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
@@ -76,15 +75,15 @@ class ToolShortcutGrid extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth < 290 ? 2 : 3;
-        final aspectRatio = crossAxisCount == 3 ? 0.98 : 1.08;
+        final aspectRatio = crossAxisCount == 3 ? 0.94 : 1.04;
 
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: AppSpacing.listGap,
-            mainAxisSpacing: AppSpacing.listGap,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
             childAspectRatio: aspectRatio,
           ),
           itemCount: shortcuts.length,
@@ -122,14 +121,14 @@ class _ToolShortcutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       tone: GlassCardTone.muted,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: shortcut.color.withValues(alpha: 0.14),
@@ -140,18 +139,26 @@ class _ToolShortcutTile extends StatelessWidget {
             child: Icon(
               shortcut.icon,
               color: shortcut.color,
-              size: 22,
+              size: 20,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            shortcut.label,
-            textAlign: TextAlign.center,
-            style: AppTypography.cardTitle(context).copyWith(
-              fontSize: 14,
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 18,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                shortcut.label,
+                textAlign: TextAlign.center,
+                style: AppTypography.cardTitle(context).copyWith(
+                  fontSize: 13,
+                  height: 1.1,
+                  letterSpacing: -0.1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+              ),
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -111,7 +111,7 @@ class ProfileContentSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Personal Info', style: textTheme.titleMedium),
+                  Text('Personal Details', style: textTheme.titleMedium),
                   AppIconPillButton(
                     icon: Icons.edit_outlined,
                     tone: AppIconPillTone.subtle,

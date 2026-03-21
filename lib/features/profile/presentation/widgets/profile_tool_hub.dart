@@ -14,7 +14,7 @@ class ProfileToolHub extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TOOL HUB', style: AppTypography.eyebrow(context)),
+          Text('Tool Hub', style: AppTypography.eyebrow(context)),
           const SizedBox(height: 12),
           const ToolShortcutGrid(),
         ],
