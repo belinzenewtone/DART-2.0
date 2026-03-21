@@ -22,6 +22,14 @@ PatchReadyInfo patchReadyInfoFor({
           'Enabled update prompts on the sign in and sign up screen.',
         ],
       ),
+    3 => (
+        'Update Ready',
+        'A small follow-up update is ready to install.',
+        const [
+          'Fixed the restart action so it relaunches the app on Android.',
+          'Kept the improved update prompt and login-screen visibility.',
+        ],
+      ),
     _ => (
         'Update Ready',
         'A background update has been downloaded and will apply after a full app restart.',

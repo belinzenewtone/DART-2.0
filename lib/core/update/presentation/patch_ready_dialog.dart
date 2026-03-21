@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/ota/patch_ready_info.dart';
+import 'package:beltech/core/platform/app_restart_service.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
@@ -9,7 +10,6 @@ import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class PatchReadyDialog extends StatelessWidget {
   const PatchReadyDialog({
@@ -147,10 +147,10 @@ class PatchReadyDialog extends StatelessWidget {
     );
   }
 
-  void _restart(BuildContext context) {
+  Future<void> _restart(BuildContext context) async {
     AppHaptics.mediumImpact();
     if (Platform.isAndroid) {
-      SystemNavigator.pop();
+      await AppRestartService.restart();
       return;
     }
     showDialog<void>(
