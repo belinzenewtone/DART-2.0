@@ -4,13 +4,16 @@ import 'package:beltech/features/expenses/data/services/device_sms_data_source.d
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_models.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+part 'supabase_expenses_repository_impl_intelligence.dart';
 part 'supabase_expenses_repository_impl_review.dart';
 part 'supabase_expenses_repository_impl_support.dart';
+part 'supabase_expenses_repository_impl_queue.dart';
 
 class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   SupabaseExpensesRepositoryImpl(
@@ -97,67 +100,33 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
     DateTime? from,
   }) async {
     final userId = _requireUserId();
-    var imported = 0;
+    final now = DateTime.now().toUtc().toIso8601String();
     for (final raw in rawMessages) {
-      final candidate = _parser.parseSingleDetailed(raw.trim());
-      if (candidate == null) {
+      final message = raw.trim();
+      if (message.isEmpty) {
         continue;
       }
-      if (from != null && candidate.occurredAt.isBefore(from)) {
-        continue;
-      }
-      if (await _isDuplicateImpl(this, userId, candidate)) {
-        await _safeAuditImpl(
-          this,
-          userId: userId,
-          candidate: candidate,
-          decision: 'duplicate',
-        );
-        continue;
-      }
-      if (candidate.route == MpesaParseRoute.directLedger) {
-        final learned = await _merchantLearningService.resolveCategory(
-          merchantTitle: candidate.title,
-          fallbackCategory: candidate.category,
-        );
-        await _client.from('transactions').insert({
-          'owner_id': userId,
-          'title': candidate.title,
-          'category': learned,
-          'amount': candidate.amountKes,
-          'occurred_at': candidate.occurredAt.toUtc().toIso8601String(),
-          'source': 'sms',
-          'source_hash': candidate.sourceHash,
-        });
-        await _safePaybillAndFulizaImpl(this, userId, candidate);
-        await _safeAuditImpl(
-          this,
-          userId: userId,
-          candidate: candidate,
-          decision: 'imported',
-        );
-        imported += 1;
-        continue;
-      }
-      if (candidate.route == MpesaParseRoute.reviewQueue) {
-        await _safeInsertReviewItemImpl(this, userId, candidate);
-        await _safeAuditImpl(
-          this,
-          userId: userId,
-          candidate: candidate,
-          decision: 'review_pending',
-        );
-        continue;
-      }
-      await _safeInsertQuarantineItemImpl(this, userId, candidate);
-      await _safeAuditImpl(
+      final candidate = _parser.parseSingleDetailed(message);
+      final sourceHash = candidate?.sourceHash ?? _parser.sourceHash(message);
+      final semanticHash = candidate?.semanticHash ?? sourceHash;
+      await _safeInsertImpl(
         this,
-        userId: userId,
-        candidate: candidate,
-        decision: 'quarantined',
+        table: 'sms_import_queue',
+        payload: {
+          'owner_id': userId,
+          'raw_message': message,
+          'source_hash': sourceHash,
+          'semantic_hash': semanticHash,
+          'status': 'pending',
+          'route': candidate?.route.name ?? MpesaParseRoute.quarantine.name,
+          'confidence': candidate?.confidenceScore ?? 0,
+          'attempt': 0,
+          'created_at': now,
+          'updated_at': now,
+        },
       );
     }
-    return imported;
+    return _processQueuedImportsImpl(this, userId, from: from);
   }
 
   @override
@@ -174,6 +143,14 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   @override
   Future<ExpenseImportMetrics> fetchImportMetrics() =>
       _fetchImportMetricsImpl(this);
+
+  @override
+  Future<List<PaybillProfile>> fetchPaybillProfiles({int limit = 10}) =>
+      _fetchPaybillProfilesImpl(this, limit: limit);
+
+  @override
+  Future<List<FulizaLifecycleEvent>> fetchFulizaLifecycle({int limit = 12}) =>
+      _fetchFulizaLifecycleImpl(this, limit: limit);
 
   @override
   Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20}) =>
@@ -193,6 +170,12 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   @override
   Future<void> dismissQuarantineItem(int quarantineId) =>
       _dismissQuarantineItemImpl(this, quarantineId);
+
+  @override
+  Future<int> replayImportQueue() {
+    final userId = _requireUserId();
+    return _replayImportQueueImpl(this, userId);
+  }
 
   String _requireUserId() {
     final userId = _client.auth.currentUser?.id;

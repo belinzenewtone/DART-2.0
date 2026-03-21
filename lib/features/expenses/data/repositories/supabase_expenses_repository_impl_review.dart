@@ -19,10 +19,16 @@ Future<ExpenseImportMetrics> _fetchImportMetricsImpl(
     table: 'sms_import_queue',
     filters: (query) => query.eq('owner_id', userId).eq('status', 'retry'),
   );
+  final failed = await _safeCountImpl(
+    repo,
+    table: 'sms_import_queue',
+    filters: (query) => query.eq('owner_id', userId).eq('status', 'failed'),
+  );
   return ExpenseImportMetrics(
     reviewQueueCount: review,
     quarantineCount: quarantine,
     retryQueueCount: retry,
+    failedQueueCount: failed,
   );
 }
 

@@ -19,10 +19,16 @@ Future<ExpenseImportMetrics> _fetchImportMetricsImpl(
     where: 'scope = ? AND status = ?',
     params: ['local', 'retry'],
   );
+  final failed = await repo._count(
+    'sms_import_queue',
+    where: 'scope = ? AND status = ?',
+    params: ['local', 'failed'],
+  );
   return ExpenseImportMetrics(
     reviewQueueCount: review,
     quarantineCount: quarantine,
     retryQueueCount: retry,
+    failedQueueCount: failed,
   );
 }
 

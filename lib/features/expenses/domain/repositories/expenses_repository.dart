@@ -1,4 +1,5 @@
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 
 abstract class ExpensesRepository {
@@ -27,9 +28,15 @@ abstract class ExpensesRepository {
 
   Future<ExpenseImportMetrics> fetchImportMetrics();
 
+  Future<List<PaybillProfile>> fetchPaybillProfiles({int limit = 10});
+
+  Future<List<FulizaLifecycleEvent>> fetchFulizaLifecycle({int limit = 12});
+
   Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20});
 
   Future<List<ExpenseQuarantineItem>> fetchQuarantineItems({int limit = 20});
+
+  Future<int> replayImportQueue();
 
   Future<void> resolveReviewItem({
     required int reviewId,

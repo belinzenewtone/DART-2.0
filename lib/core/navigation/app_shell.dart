@@ -6,6 +6,7 @@ import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/di/security_providers.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/security/biometric_relock_policy.dart';
 import 'package:beltech/core/navigation/app_shell_helpers.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/navigation/widgets/app_tab_bar.dart';
@@ -27,6 +28,9 @@ import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'app_shell_biometric.dart';
+
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -75,6 +79,7 @@ class AppShell extends ConsumerStatefulWidget {
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
 }
+
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   late BackgroundSyncCoordinator _backgroundSyncCoordinator;
@@ -246,22 +251,6 @@ class _AppShellState extends ConsumerState<AppShell>
     } catch (_) {
       return;
     }
-  }
-
-  Future<void> _initializeBiometricLock() async =>
-      _refreshBiometricConfiguration(lockNow: true);
-
-  Future<void> _applyBiometricLockOnResume() async {
-    if (_biometricUnlockInProgress || !_biometricRelockEnabled) return;
-    final pausedAt = _lastPausedAt;
-    _lastPausedAt = null;
-    if (pausedAt == null) return;
-    final settings =
-        await ref.read(sessionLockSettingsRepositoryProvider).read();
-    if (DateTime.now().difference(pausedAt) < settings.gracePeriod) {
-      return;
-    }
-    await _refreshBiometricConfiguration(lockNow: true);
   }
 
   Future<void> _refreshBiometricConfiguration({required bool lockNow}) async {

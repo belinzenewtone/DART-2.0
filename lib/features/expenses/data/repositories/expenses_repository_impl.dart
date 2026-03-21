@@ -7,11 +7,13 @@ import 'package:beltech/features/expenses/data/services/device_sms_data_source.d
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_models.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 
 part 'expenses_repository_impl_import_pipeline.dart';
+part 'expenses_repository_impl_intelligence.dart';
 part 'expenses_repository_impl_review.dart';
 
 class ExpensesRepositoryImpl implements ExpensesRepository {
@@ -158,6 +160,14 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
       _fetchImportMetricsImpl(this);
 
   @override
+  Future<List<PaybillProfile>> fetchPaybillProfiles({int limit = 10}) =>
+      _fetchPaybillProfilesImpl(this, limit: limit);
+
+  @override
+  Future<List<FulizaLifecycleEvent>> fetchFulizaLifecycle({int limit = 12}) =>
+      _fetchFulizaLifecycleImpl(this, limit: limit);
+
+  @override
   Future<List<ExpenseReviewItem>> fetchReviewQueue({int limit = 20}) =>
       _fetchReviewQueueImpl(this, limit: limit);
 
@@ -175,6 +185,9 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
   @override
   Future<void> dismissQuarantineItem(int quarantineId) =>
       _dismissQuarantineItemImpl(this, quarantineId);
+
+  @override
+  Future<int> replayImportQueue() => _replayImportQueueImpl(this);
 
   Future<int> _count(
     String table, {

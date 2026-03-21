@@ -6,15 +6,14 @@ import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
-import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
+import 'package:beltech/features/expenses/presentation/expenses_screen_helpers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/expense_dialogs.dart';
 import 'package:beltech/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
-import 'package:beltech/features/expenses/presentation/widgets/sms_import_dialogs.dart';
-import 'package:beltech/features/search/domain/entities/global_search_result.dart';
-import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 class ExpensesScreen extends ConsumerWidget {
   const ExpensesScreen({super.key});
   @override
@@ -25,6 +24,8 @@ class ExpensesScreen extends ConsumerWidget {
     final importMetricsState = ref.watch(expenseImportMetricsProvider);
     final reviewQueueState = ref.watch(expenseReviewQueueProvider);
     final quarantineState = ref.watch(expenseQuarantineQueueProvider);
+    final paybillProfilesState = ref.watch(expensePaybillProfilesProvider);
+    final fulizaLifecycleState = ref.watch(expenseFulizaLifecycleProvider);
     final contentSwitchDuration = AppMotion.duration(
       context,
       normalMs: 180,
@@ -32,7 +33,7 @@ class ExpensesScreen extends ConsumerWidget {
     );
     final snapshotChild = snapshotState.when(
       data: (snapshot) {
-        _consumeSearchTarget(context, ref, snapshot);
+        consumeExpenseSearchTarget(context, ref, snapshot);
         return KeyedSubtree(
           key: const ValueKey<String>('expenses-data'),
           child: ExpensesSnapshotContent(
@@ -43,7 +44,7 @@ class ExpensesScreen extends ConsumerWidget {
               ref.read(expenseFilterProvider.notifier).state = filter;
             },
             onEditExpense: (expense) async {
-              await _editExpense(context, ref, expense);
+              await editExpenseEntry(context, ref, expense);
             },
             onDeleteExpense: (expense) async {
               await ref
@@ -59,9 +60,14 @@ class ExpensesScreen extends ConsumerWidget {
                   reviewQueueCount: 0,
                   quarantineCount: 0,
                   retryQueueCount: 0,
+                  failedQueueCount: 0,
                 ),
             reviewItems: reviewQueueState.valueOrNull ?? const [],
             quarantineItems: quarantineState.valueOrNull ?? const [],
+            paybillProfiles:
+                paybillProfilesState.valueOrNull ?? const <PaybillProfile>[],
+            fulizaEvents: fulizaLifecycleState.valueOrNull ??
+                const <FulizaLifecycleEvent>[],
             onApproveReview: (item) async {
               await ref
                   .read(expenseWriteControllerProvider.notifier)
@@ -92,6 +98,9 @@ class ExpensesScreen extends ConsumerWidget {
                   ref: ref,
                 );
               }
+            },
+            onReplayImportQueue: () async {
+              await replayExpenseImportQueue(context, ref);
             },
           ),
         );
@@ -137,52 +146,7 @@ class ExpensesScreen extends ConsumerWidget {
                   tooltip: 'Import SMS',
                   onPressed: writeState.isLoading
                       ? null
-                      : () async {
-                          final method = await showSmsImportMethodDialog(
-                            context,
-                          );
-                          if (method == null) {
-                            return;
-                          }
-                          if (method == SmsImportMethod.deviceInbox) {
-                            if (!context.mounted) {
-                              return;
-                            }
-                            final window = await showSmsWindowDialog(context);
-                            if (window == null) {
-                              return;
-                            }
-                            final count = await ref
-                                .read(expenseWriteControllerProvider.notifier)
-                                .importFromDevice(window: window);
-                            if (context.mounted) {
-                              final label = count == 0
-                                  ? 'No MPESA messages found in ${importWindowLabel(window)}'
-                                  : 'Imported $count MPESA transactions from device';
-                              AppFeedback.info(context, label, ref: ref);
-                            }
-                            return;
-                          }
-                          if (!context.mounted) {
-                            return;
-                          }
-                          final input = await showSmsImportDialog(context);
-                          if (input == null || input.payload.trim().isEmpty) {
-                            return;
-                          }
-                          final count = await ref
-                              .read(expenseWriteControllerProvider.notifier)
-                              .importSmsPayload(
-                                input.payload,
-                                window: input.window,
-                              );
-                          if (context.mounted) {
-                            final label = count == 0
-                                ? 'No MPESA messages found in ${importWindowLabel(input.window)}'
-                                : 'Imported $count MPESA transactions';
-                            AppFeedback.info(context, label, ref: ref);
-                          }
-                        },
+                      : () async => handleExpenseSmsImport(context, ref),
                   icon: const Icon(Icons.file_download_outlined),
                 ),
                 const SizedBox(width: 4),
@@ -238,63 +202,5 @@ class ExpensesScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  void _consumeSearchTarget(
-    BuildContext context,
-    WidgetRef ref,
-    ExpensesSnapshot snapshot,
-  ) {
-    final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.expense) {
-      return;
-    }
-    ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
-    final recordId = target?.recordId;
-    if (recordId == null) {
-      return;
-    }
-    final expense =
-        snapshot.transactions.where((item) => item.id == recordId).firstOrNull;
-    if (expense == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          AppFeedback.info(
-            context,
-            'This expense record no longer exists.',
-            ref: ref,
-          );
-        }
-      });
-      return;
-    }
-    ref.read(expenseFilterProvider.notifier).state = ExpenseFilter.all;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) {
-        return;
-      }
-      await _editExpense(context, ref, expense);
-    });
-  }
-
-  Future<void> _editExpense(
-    BuildContext context,
-    WidgetRef ref,
-    ExpenseItem expense,
-  ) async {
-    final updated = await showEditExpenseDialog(context, expense: expense);
-    if (updated == null) {
-      return;
-    }
-    await ref.read(expenseWriteControllerProvider.notifier).updateExpense(
-          transactionId: expense.id,
-          title: updated.title,
-          category: updated.category,
-          amountKes: updated.amountKes,
-          occurredAt: updated.occurredAt,
-        );
-    if (context.mounted && !ref.read(expenseWriteControllerProvider).hasError) {
-      AppFeedback.success(context, 'Transaction updated', ref: ref);
-    }
   }
 }

@@ -167,16 +167,3 @@ Future<void> _safeInsertImpl(
     return;
   }
 }
-
-Future<void> _safeUpdateImpl(
-  SupabaseExpensesRepositoryImpl repo, {
-  required String table,
-  required Map<String, Object?> payload,
-  required dynamic Function(dynamic) filters,
-}) async {
-  try {
-    await filters(repo._client.from(table).update(payload).select());
-  } catch (_) {
-    return;
-  }
-}

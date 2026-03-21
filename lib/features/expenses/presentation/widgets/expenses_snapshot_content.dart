@@ -3,6 +3,7 @@ import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/category_chip.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
@@ -27,9 +28,12 @@ class ExpensesSnapshotContent extends StatefulWidget {
     required this.importMetrics,
     required this.reviewItems,
     required this.quarantineItems,
+    required this.paybillProfiles,
+    required this.fulizaEvents,
     required this.onApproveReview,
     required this.onRejectReview,
     required this.onDismissQuarantine,
+    required this.onReplayImportQueue,
   });
 
   final ExpensesSnapshot snapshot;
@@ -41,9 +45,12 @@ class ExpensesSnapshotContent extends StatefulWidget {
   final ExpenseImportMetrics importMetrics;
   final List<ExpenseReviewItem> reviewItems;
   final List<ExpenseQuarantineItem> quarantineItems;
+  final List<PaybillProfile> paybillProfiles;
+  final List<FulizaLifecycleEvent> fulizaEvents;
   final ValueChanged<ExpenseReviewItem> onApproveReview;
   final ValueChanged<ExpenseReviewItem> onRejectReview;
   final ValueChanged<ExpenseQuarantineItem> onDismissQuarantine;
+  final Future<void> Function() onReplayImportQueue;
 
   @override
   State<ExpensesSnapshotContent> createState() =>
@@ -60,9 +67,8 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
       widget.snapshot.transactions,
       widget.selectedFilter,
     );
-    final visibleTransactions = _showAllTransactions
-        ? transactions
-        : transactions.take(20).toList();
+    final visibleTransactions =
+        _showAllTransactions ? transactions : transactions.take(20).toList();
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
@@ -116,10 +122,13 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
           metrics: widget.importMetrics,
           reviewItems: widget.reviewItems,
           quarantineItems: widget.quarantineItems,
+          paybillProfiles: widget.paybillProfiles,
+          fulizaEvents: widget.fulizaEvents,
           busy: widget.busy,
           onApproveReview: widget.onApproveReview,
           onRejectReview: widget.onRejectReview,
           onDismissQuarantine: widget.onDismissQuarantine,
+          onReplayImportQueue: widget.onReplayImportQueue,
         ),
         const SizedBox(height: 16),
         Text('Transactions', style: textTheme.titleMedium),

@@ -47,4 +47,31 @@ void main() {
     expect(one!.semanticHash, two!.semanticHash);
     expect(one.sourceHash, two.sourceHash);
   });
+
+  test('paybill messages preserve merchant title and paybill reference', () {
+    final parsed = parser.parseSingleDetailed(
+      'QW12AB34CD Confirmed. Ksh1,250.00 sent to KPLC PREPAID for account 998877 on 7/3/26 at 6:24 PM.',
+    );
+
+    expect(parsed, isNotNull);
+    expect(parsed!.transactionType, MpesaTransactionType.paybill);
+    expect(parsed.title, 'Kplc Prepaid');
+    expect(parsed.paybillAccount, '998877');
+  });
+
+  test('fuliza draw and repayment are classified directly', () {
+    final draw = parser.parseSingleDetailed(
+      'AA12BB34CC Confirmed. Ksh500.00 Fuliza M-PESA amount credited on 8/3/26 at 10:00 AM.',
+    );
+    final repayment = parser.parseSingleDetailed(
+      'DD56EE78FF Confirmed. Ksh200.00 paid from your Fuliza M-PESA on 8/3/26 at 2:30 PM.',
+    );
+
+    expect(draw, isNotNull);
+    expect(repayment, isNotNull);
+    expect(draw!.transactionType, MpesaTransactionType.fulizaDraw);
+    expect(draw.route, MpesaParseRoute.directLedger);
+    expect(repayment!.transactionType, MpesaTransactionType.fulizaRepayment);
+    expect(repayment.route, MpesaParseRoute.directLedger);
+  });
 }

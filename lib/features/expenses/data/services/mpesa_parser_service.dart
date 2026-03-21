@@ -19,15 +19,15 @@ class MpesaParserService {
     caseSensitive: false,
   );
   static final RegExp _sentToPattern = RegExp(
-    r'sent to\s+([a-z0-9 .,&-]{3,})',
+    r'sent to\s+([a-z0-9 .,&-]{3,}?)(?=\s+(?:for account|on)\b|[.]|$)',
     caseSensitive: false,
   );
   static final RegExp _receivedFromPattern = RegExp(
-    r'received from\s+([a-z0-9 .,&-]{3,})',
+    r'received from\s+([a-z0-9 .,&-]{3,}?)(?=\s+on\b|[.]|$)',
     caseSensitive: false,
   );
   static final RegExp _paidToPattern = RegExp(
-    r'paid to\s+([a-z0-9 .,&-]{3,})',
+    r'paid to\s+([a-z0-9 .,&-]{3,}?)(?=\s+on\b|[.]|$)',
     caseSensitive: false,
   );
 
@@ -230,7 +230,7 @@ class MpesaParserService {
     final pattern = switch (type) {
       MpesaTransactionType.sent => _sentToPattern,
       MpesaTransactionType.received => _receivedFromPattern,
-      MpesaTransactionType.paybill => _paybillPattern,
+      MpesaTransactionType.paybill => _sentToPattern,
       MpesaTransactionType.buyGoods => _paidToPattern,
       _ => null,
     };

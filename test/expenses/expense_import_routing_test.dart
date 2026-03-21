@@ -83,4 +83,18 @@ void main() {
     expect(payload.contains('WATER BILL'), isFalse);
     expect(payload.contains('QW12ER34TY'), isFalse);
   });
+
+  test('duplicate SMS does not create duplicate ledger rows', () async {
+    const message =
+        'QW12AB34CD Confirmed. Ksh1,250.00 sent to SKY CAFE on 7/3/26 at 6:24 PM.';
+
+    await repository.importSmsMessages(const [message, message]);
+
+    final snapshot = await repository.watchSnapshot().first;
+    final matching = snapshot.transactions
+        .where((tx) => tx.amountKes == 1250 && tx.title == 'Sky Cafe')
+        .length;
+
+    expect(matching, 1);
+  });
 }

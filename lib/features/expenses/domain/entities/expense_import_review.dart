@@ -39,9 +39,11 @@ class ExpenseImportMetrics {
     required this.reviewQueueCount,
     required this.quarantineCount,
     required this.retryQueueCount,
+    required this.failedQueueCount,
   });
 
   final int reviewQueueCount;
   final int quarantineCount;
   final int retryQueueCount;
+  final int failedQueueCount;
 }

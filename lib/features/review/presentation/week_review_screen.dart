@@ -12,6 +12,7 @@ import 'package:beltech/features/review/presentation/providers/review_providers.
 import 'package:beltech/features/review/presentation/providers/review_ritual_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 part 'week_review_screen_stats.dart';
 part 'week_review_screen_trends.dart';
@@ -151,6 +152,30 @@ class _ReviewContent extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: AppSpacing.sectionGap),
+        SectionHeader('Next Step'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => context.pushNamed('analytics'),
+              icon: const Icon(Icons.analytics_outlined),
+              label: const Text('Open Analytics'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.pushNamed('budget'),
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              label: const Text('Review Budget'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.pushNamed('income'),
+              icon: const Icon(Icons.trending_up_rounded),
+              label: const Text('Review Income'),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.sectionGap),
         SectionHeader('Trends vs Last Week'),

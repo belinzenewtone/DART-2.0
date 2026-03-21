@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_window.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/usecases/import_expenses_use_case.dart';
@@ -24,10 +25,10 @@ final importExpensesUseCaseProvider = Provider<ImportExpensesUseCase>(
 
 final manageExpenseImportReviewUseCaseProvider =
     Provider<ManageExpenseImportReviewUseCase>(
-      (ref) => ManageExpenseImportReviewUseCase(
-        ref.watch(expensesRepositoryProvider),
-      ),
-    );
+  (ref) => ManageExpenseImportReviewUseCase(
+    ref.watch(expensesRepositoryProvider),
+  ),
+);
 
 final expenseImportMetricsProvider = FutureProvider<ExpenseImportMetrics>(
   (ref) => ref.watch(manageExpenseImportReviewUseCaseProvider).fetchMetrics(),
@@ -41,10 +42,19 @@ final expenseReviewQueueProvider = FutureProvider<List<ExpenseReviewItem>>(
 
 final expenseQuarantineQueueProvider =
     FutureProvider<List<ExpenseQuarantineItem>>(
-      (ref) => ref
-          .watch(manageExpenseImportReviewUseCaseProvider)
-          .fetchQuarantine(limit: 20),
-    );
+  (ref) => ref
+      .watch(manageExpenseImportReviewUseCaseProvider)
+      .fetchQuarantine(limit: 20),
+);
+
+final expensePaybillProfilesProvider = FutureProvider<List<PaybillProfile>>(
+  (ref) => ref.watch(expensesRepositoryProvider).fetchPaybillProfiles(limit: 8),
+);
+
+final expenseFulizaLifecycleProvider =
+    FutureProvider<List<FulizaLifecycleEvent>>(
+  (ref) => ref.watch(expensesRepositoryProvider).fetchFulizaLifecycle(limit: 8),
+);
 
 class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   @override
@@ -66,9 +76,7 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref
-          .read(expensesRepositoryProvider)
-          .addManualTransaction(
+      await ref.read(expensesRepositoryProvider).addManualTransaction(
             title: title,
             category: category,
             amountKes: amountKes,
@@ -86,9 +94,7 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref
-          .read(expensesRepositoryProvider)
-          .updateTransaction(
+      await ref.read(expensesRepositoryProvider).updateTransaction(
             transactionId: transactionId,
             title: title,
             category: category,
@@ -187,10 +193,29 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
     _invalidateImportReviewCaches();
   }
 
+  Future<int> replayImportQueue() async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(
+      () => ref.read(expensesRepositoryProvider).replayImportQueue(),
+    );
+    if (result.hasError) {
+      state = AsyncError(
+        result.error!,
+        result.stackTrace ?? StackTrace.current,
+      );
+      throw result.error!;
+    }
+    state = const AsyncData(null);
+    _invalidateImportReviewCaches();
+    return result.valueOrNull ?? 0;
+  }
+
   void _invalidateImportReviewCaches() {
     ref.invalidate(expenseImportMetricsProvider);
     ref.invalidate(expenseReviewQueueProvider);
     ref.invalidate(expenseQuarantineQueueProvider);
+    ref.invalidate(expensePaybillProfilesProvider);
+    ref.invalidate(expenseFulizaLifecycleProvider);
   }
 }
 
@@ -206,5 +231,5 @@ DateTime fromWindow(ExpenseImportWindow window) {
 
 final expenseWriteControllerProvider =
     AutoDisposeAsyncNotifierProvider<ExpenseWriteController, void>(
-      ExpenseWriteController.new,
-    );
+  ExpenseWriteController.new,
+);
