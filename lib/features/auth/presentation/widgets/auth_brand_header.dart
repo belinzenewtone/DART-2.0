@@ -1,6 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_typography.dart';
-import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/beltech_logo.dart';
 import 'package:flutter/material.dart';
 
@@ -42,14 +41,7 @@ class AuthBrandHeader extends StatelessWidget {
         Text(
           'Secure personal workspace',
           style: AppTypography.bodySm(context),
-        ),
-        const SizedBox(height: 12),
-        const AppCapsule(
-          label: 'Clean. Private. Always in sync.',
-          color: AppColors.accent,
-          icon: Icons.auto_awesome_rounded,
-          variant: AppCapsuleVariant.subtle,
-          size: AppCapsuleSize.md,
+          textAlign: TextAlign.center,
         ),
       ],
     );
