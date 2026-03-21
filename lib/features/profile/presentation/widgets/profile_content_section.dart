@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/profile/domain/entities/user_profile.dart';
@@ -10,6 +11,7 @@ class ProfileContentSection extends StatelessWidget {
     super.key,
     required this.profile,
     required this.onEdit,
+    required this.onOpenSettings,
     required this.onChangePassword,
     required this.onAvatarCameraTap,
     required this.showSignOut,
@@ -18,12 +20,12 @@ class ProfileContentSection extends StatelessWidget {
   });
 
   final UserProfile profile;
-  final VoidCallback onEdit;
-  final VoidCallback onChangePassword;
-  final VoidCallback onAvatarCameraTap;
-  final bool showSignOut;
-  final bool signingOut;
-  final VoidCallback onSignOut;
+  final VoidCallback onEdit,
+      onOpenSettings,
+      onChangePassword,
+      onAvatarCameraTap,
+      onSignOut;
+  final bool showSignOut, signingOut;
 
   @override
   Widget build(BuildContext context) {
@@ -33,50 +35,72 @@ class ProfileContentSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: ProfileAvatar(
-            name: profile.name,
-            avatarUrl: profile.avatarUrl,
-            onCameraTap: onAvatarCameraTap,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Center(
-          child: Text(
-            profile.name,
-            style: textTheme.titleMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Center(
-          child: Text(
-            profile.email,
-            style: textTheme.bodyMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: AppCapsule(
-            label: profile.verified ? 'Verified Account' : 'Pending Verification',
-            color: profile.verified ? AppColors.success : AppColors.warning,
-            icon: profile.verified
-                ? Icons.shield_outlined
-                : Icons.warning_amber_rounded,
-            variant: AppCapsuleVariant.subtle,
-            size: AppCapsuleSize.sm,
-          ),
-        ),
-        const SizedBox(height: 16),
         GlassCard(
-          child: _StatusRow(
-            icon: Icons.stars_rounded,
-            iconColor: AppColors.accent,
-            title: 'Member Since',
-            subtitle: profile.memberSinceLabel,
+          tone: GlassCardTone.muted,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Spacer(),
+                  AppIconPillButton(
+                    icon: Icons.settings_outlined,
+                    tone: AppIconPillTone.subtle,
+                    onPressed: onOpenSettings,
+                  ),
+                ],
+              ),
+              Center(
+                child: ProfileAvatar(
+                  name: profile.name,
+                  avatarUrl: profile.avatarUrl,
+                  onCameraTap: onAvatarCameraTap,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                profile.name,
+                style: textTheme.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                profile.email,
+                style: textTheme.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  AppCapsule(
+                    label: profile.verified
+                        ? 'Verified Account'
+                        : 'Pending Verification',
+                    color: profile.verified
+                        ? AppColors.success
+                        : AppColors.warning,
+                    icon: profile.verified
+                        ? Icons.shield_outlined
+                        : Icons.warning_amber_rounded,
+                    variant: AppCapsuleVariant.subtle,
+                    size: AppCapsuleSize.sm,
+                  ),
+                  AppCapsule(
+                    label: 'Member since ${profile.memberSinceLabel}',
+                    color: AppColors.accent,
+                    icon: Icons.stars_rounded,
+                    variant: AppCapsuleVariant.subtle,
+                    size: AppCapsuleSize.sm,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -88,24 +112,32 @@ class ProfileContentSection extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Personal Info', style: textTheme.titleMedium),
-                  IconButton(
+                  AppIconPillButton(
+                    icon: Icons.edit_outlined,
+                    tone: AppIconPillTone.subtle,
                     onPressed: onEdit,
-                    icon: const Icon(Icons.edit, color: AppColors.accent),
                   ),
                 ],
               ),
-              _InfoLine(icon: Icons.person, label: 'Name', value: profile.name),
+              _InfoLine(
+                icon: Icons.person,
+                label: 'Name',
+                value: profile.name,
+                placeholder: 'Add your full name',
+              ),
               const SizedBox(height: 8),
               _InfoLine(
                 icon: Icons.mail_outline,
                 label: 'Email',
                 value: profile.email,
+                placeholder: 'Add your email address',
               ),
               const SizedBox(height: 8),
               _InfoLine(
                 icon: Icons.call_outlined,
                 label: 'Phone',
                 value: profile.phone,
+                placeholder: 'Add your phone number',
               ),
             ],
           ),
@@ -219,11 +251,13 @@ class _InfoLine extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.placeholder,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final String placeholder;
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +266,8 @@ class _InfoLine extends StatelessWidget {
     final infoIconBackground = brightness == Brightness.light
         ? AppColors.accent.withValues(alpha: 0.14)
         : AppColors.accentSoft;
+    final trimmedValue = value.trim();
+    final hasValue = trimmedValue.isNotEmpty && trimmedValue != '-';
     return Row(
       children: [
         CircleAvatar(
@@ -246,8 +282,13 @@ class _InfoLine extends StatelessWidget {
             children: [
               Text(label, style: textTheme.bodyMedium),
               Text(
-                value,
-                style: textTheme.bodyLarge,
+                hasValue ? trimmedValue : placeholder,
+                style: hasValue
+                    ? textTheme.bodyLarge
+                    : textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondaryFor(brightness),
+                        fontStyle: FontStyle.italic,
+                      ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -78,9 +78,15 @@ class AnalyticsBarChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 26,
+                      // For monthly data (>10 points) only label every 5th bar
+                      // to avoid the unreadable "1 2 3 4 5..." wall of numbers.
                       getTitlesWidget: (value, _) {
                         final index = value.toInt();
                         if (index < 0 || index >= points.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final isMonthly = points.length > 10;
+                        if (isMonthly && index % 5 != 0) {
                           return const SizedBox.shrink();
                         }
                         return Padding(

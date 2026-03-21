@@ -1,5 +1,5 @@
-import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
 import 'package:beltech/features/profile/domain/entities/user_profile.dart';
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
@@ -16,23 +16,72 @@ Future<void> showEditProfileDialog(
   final phoneCtrl = TextEditingController(text: profile.phone);
   final formKey = GlobalKey<FormState>();
 
-  await showAppDialog<void>(
+  await showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
-      return AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Edit Profile'),
-        content: Form(
+      return AppFormSheet(
+        title: 'Edit Profile',
+        subtitle: 'Update your name, email, and phone number.',
+        onClose: () => Navigator.pop(context),
+        footer: Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: 'Cancel',
+                variant: AppButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppButton(
+                label: 'Save',
+                onPressed: () async {
+                  if (formKey.currentState?.validate() != true) {
+                    return;
+                  }
+                  await ref
+                      .read(profileWriteControllerProvider.notifier)
+                      .updateProfile(
+                        name: nameCtrl.text.trim(),
+                        email: emailCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                      );
+                  final writeState = ref.read(profileWriteControllerProvider);
+                  if (context.mounted && !writeState.hasError) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+        child: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                maxLength: 10,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  counterText: '',
+                  helperText: 'Max 10 characters',
+                ),
+                validator: (v) {
+                  final val = v?.trim() ?? '';
+                  if (val.isEmpty) return 'Username is required';
+                  if (val.length > 10) return 'Max 10 characters';
+                  return null;
+                },
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: emailCtrl,
                 decoration: const InputDecoration(labelText: 'Email'),
@@ -40,6 +89,7 @@ Future<void> showEditProfileDialog(
                     ? 'Valid email required'
                     : null,
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
@@ -62,31 +112,6 @@ Future<void> showEditProfileDialog(
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (formKey.currentState?.validate() != true) {
-                return;
-              }
-              await ref
-                  .read(profileWriteControllerProvider.notifier)
-                  .updateProfile(
-                    name: nameCtrl.text.trim(),
-                    email: emailCtrl.text.trim(),
-                    phone: phoneCtrl.text.trim(),
-                  );
-              final writeState = ref.read(profileWriteControllerProvider);
-              if (context.mounted && !writeState.hasError) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       );
     },
   );
@@ -95,15 +120,51 @@ Future<void> showEditProfileDialog(
 Future<void> showPasswordDialog(BuildContext context, WidgetRef ref) async {
   final currentCtrl = TextEditingController();
   final newCtrl = TextEditingController();
+  final confirmCtrl = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
-  await showAppDialog<void>(
+  await showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
-      return AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text('Change Password'),
-        content: Form(
+      return AppFormSheet(
+        title: 'Change Password',
+        subtitle: 'Choose a strong password with at least 6 characters.',
+        onClose: () => Navigator.pop(context),
+        footer: Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: 'Cancel',
+                variant: AppButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppButton(
+                label: 'Update',
+                onPressed: () async {
+                  if (formKey.currentState?.validate() != true) {
+                    return;
+                  }
+                  await ref
+                      .read(profileWriteControllerProvider.notifier)
+                      .changePassword(
+                        currentPassword: currentCtrl.text,
+                        newPassword: newCtrl.text,
+                      );
+                  final writeState = ref.read(profileWriteControllerProvider);
+                  if (context.mounted && !writeState.hasError) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+        child: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -117,6 +178,7 @@ Future<void> showPasswordDialog(BuildContext context, WidgetRef ref) async {
                     ? 'Current password required'
                     : null,
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: newCtrl,
                 obscureText: true,
@@ -124,33 +186,21 @@ Future<void> showPasswordDialog(BuildContext context, WidgetRef ref) async {
                 validator: (v) =>
                     (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
               ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: confirmCtrl,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'Confirm new password'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Please confirm password';
+                  if (v != newCtrl.text) return 'Passwords do not match';
+                  return null;
+                },
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (formKey.currentState?.validate() != true) {
-                return;
-              }
-              await ref
-                  .read(profileWriteControllerProvider.notifier)
-                  .changePassword(
-                    currentPassword: currentCtrl.text,
-                    newPassword: newCtrl.text,
-                  );
-              final writeState = ref.read(profileWriteControllerProvider);
-              if (context.mounted && !writeState.hasError) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
       );
     },
   );

@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -96,10 +97,8 @@ class SpendingChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       entries[index].key,
-                      style: TextStyle(
-                        color: axisColor,
-                        fontSize: 12,
-                      ),
+                      style: AppTypography.metaText(context)
+                          .copyWith(color: axisColor),
                     ),
                   );
                 },

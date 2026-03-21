@@ -34,7 +34,7 @@ class HomeBalanceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              AppCapsule(
+              const AppCapsule(
                 label: 'Current',
                 color: AppColors.success,
                 variant: AppCapsuleVariant.subtle,

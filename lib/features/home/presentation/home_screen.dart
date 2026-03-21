@@ -1,4 +1,5 @@
 import 'package:beltech/core/di/sync_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
@@ -18,10 +19,10 @@ import 'package:beltech/features/home/presentation/widgets/home_quick_actions.da
 import 'package:beltech/features/home/presentation/widgets/home_week_review_ritual_card.dart';
 import 'package:beltech/features/home/presentation/widgets/home_sync_banner.dart';
 import 'package:beltech/features/home/presentation/widgets/spending_chart.dart';
+import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -32,14 +33,25 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // Cached once per mount — date label does not change within a session.
+  late final String _todayLabel;
+
   @override
   void initState() {
     super.initState();
-    // Trigger a foreground sync on screen mount so the banner reflects
-    // real-time status as soon as the user lands on home.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+    _todayLabel = _buildTodayLabel(DateTime.now());
+    // Trigger a foreground sync on mount, but debounce to at most once per
+    // 60 seconds so that tab-switching back to Home doesn't spam the network.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      const key = 'home_last_sync_ms';
+      final prefs = await SharedPreferences.getInstance();
+      final lastMs = prefs.getInt(key) ?? 0;
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      if (nowMs - lastMs > 60000) {
+        if (!mounted) return;
         ref.read(syncStatusProvider.notifier).runSync();
+        await prefs.setInt(key, nowMs);
       }
     });
   }
@@ -47,16 +59,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final overviewState = ref.watch(homeOverviewProvider);
-    final profileState = ref.watch(profileProvider);
-    final firstName =
-        profileState.valueOrNull?.name.trim().split(' ').first ?? '';
+    // select() — only rebuild HomeScreen when the first name or email changes,
+    // not on every unrelated profile field update (avatar, bio, phone, etc.).
+    final (firstName, email) = ref.watch(
+      profileProvider.select((s) {
+        final p = s.valueOrNull;
+        // Extract first word and cap at 10 chars so the greeting fits on
+        // all screen sizes. Accounts created before the limit was added keep
+        // their full name in storage; we just display fewer characters here.
+        final raw = p?.name.trim().split(' ').first ?? '';
+        final capped = raw.length > 10 ? raw.substring(0, 10) : raw;
+        return (capped, p?.email ?? '');
+      }),
+    );
     final greeting = _greeting(firstName);
-    final todayLabel = _todayLabel(DateTime.now());
     final initials = firstName.isNotEmpty
         ? firstName[0].toUpperCase()
-        : (profileState.valueOrNull?.email.isNotEmpty == true
-            ? profileState.valueOrNull!.email[0].toUpperCase()
-            : 'B');
+        : (email.isNotEmpty ? email[0].toUpperCase() : 'B');
 
     return PageShell(
       scrollable: true,
@@ -67,20 +86,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // ── Header ──────────────────────────────────────────────────────────
           PageHeader(
-            eyebrow: todayLabel,
+            eyebrow: _todayLabel,
             title: greeting,
             subtitle: "Here's your day at a glance",
             action: GestureDetector(
               onTap: () {
                 AppHaptics.lightImpact();
-                ref.read(shellTabIndexProvider.notifier).state = 5;
+                _showProfileSheet(context, ref, firstName, email, initials);
               },
               child: CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.accent.withValues(alpha: 0.22),
                 child: Text(
                   initials,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.accent,
@@ -126,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return firstName.isEmpty ? salutation : '$salutation, $firstName';
   }
 
-  String _todayLabel(DateTime now) {
+  String _buildTodayLabel(DateTime now) {
     final weekday = DateFormat('EEEE').format(now);
     final monthDay = DateFormat('MMMM d').format(now);
     return '$weekday, $monthDay${_ordinalSuffix(now.day)}';
@@ -143,16 +162,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _ => 'th',
     };
   }
+
+  void _showProfileSheet(
+    BuildContext context,
+    WidgetRef ref,
+    String firstName,
+    String email,
+    String initials,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ProfileQuickSheet(
+        firstName: firstName,
+        email: email,
+        initials: initials,
+        onGoToProfile: () {
+          Navigator.of(context).pop();
+          ref.read(shellTabIndexProvider.notifier).state =
+              ShellTab.profile.index;
+        },
+        onSignOut: () async {
+          Navigator.of(context).pop();
+          await ref.read(accountAuthControllerProvider.notifier).signOut();
+        },
+      ),
+    );
+  }
 }
 
 // ── Dashboard overview section ────────────────────────────────────────────────
 
-class _HomeOverviewSection extends ConsumerWidget {
+class _HomeOverviewSection extends StatelessWidget {
   const _HomeOverviewSection({required this.overview});
   final HomeOverview overview;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -160,95 +207,161 @@ class _HomeOverviewSection extends ConsumerWidget {
           delay: const Duration(milliseconds: 30),
           child: HomeSpendSnapshotStrip(overview: overview),
         ),
-        const SizedBox(height: AppSpacing.cardGap),
-        StaggerReveal(
-          delay: const Duration(milliseconds: 80),
-          child: const HomeAiInsightCard(),
-        ),
         const SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Productivity'),
+        const SectionHeader('Productivity'),
         StaggerReveal(
-          delay: const Duration(milliseconds: 110),
+          delay: const Duration(milliseconds: 55),
           child: HomeProductivityCard(overview: overview),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        StaggerReveal(
-          delay: const Duration(milliseconds: 125),
-          child: const HomeWeekReviewRitualCard(),
+        const StaggerReveal(
+          delay: Duration(milliseconds: 80),
+          child: HomeWeekReviewRitualCard(),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader(
-          'This Week',
-          action: TextButton(
-            onPressed: () => context.pushNamed('week-review'),
-            child: Text(
-              'Details',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.accent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
+        const SectionHeader('Spending Trend'),
         StaggerReveal(
-          delay: const Duration(milliseconds: 140),
-          child: HomeBalanceCard(overview: overview),
-        ),
-        const SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Spending Trend'),
-        StaggerReveal(
-          delay: const Duration(milliseconds: 170),
+          delay: const Duration(milliseconds: 110),
           child: GlassCard(
             child: SpendingChart(dayValues: overview.weeklySpendingKes),
           ),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader(
-          'Recent',
-          action: TextButton(
-            onPressed: () {
-              ref.read(shellTabIndexProvider.notifier).state = 2;
-            },
-            child: Text(
-              'See all',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.accent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-        if (overview.recentTransactions.isEmpty)
-          AppEmptyState(
-            icon: Icons.receipt_long_outlined,
-            title: 'No recent transactions',
-            subtitle: 'Your latest expenses will appear here',
-          )
-        else
-          Column(
-            children: [
-              for (int i = 0; i < overview.recentTransactions.length; i++) ...[
-                StaggerReveal(
-                  delay: Duration(milliseconds: 200 + i * 40),
-                  child: HomeDashboardTransactionTile(
-                    tx: overview.recentTransactions[i],
-                  ),
-                ),
-                if (i < overview.recentTransactions.length - 1)
-                  const SizedBox(height: AppSpacing.listGap),
-              ],
-            ],
-          ),
-        const SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Quick Actions'),
-        StaggerReveal(
-          delay: const Duration(milliseconds: 280),
-          child: const HomeQuickActionsGrid(),
+        const SectionHeader('Quick Actions'),
+        const StaggerReveal(
+          delay: Duration(milliseconds: 140),
+          child: HomeQuickActionsGrid(),
         ),
         const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+// ── Profile quick sheet ───────────────────────────────────────────────────────
+
+class _ProfileQuickSheet extends StatelessWidget {
+  const _ProfileQuickSheet({
+    required this.firstName,
+    required this.email,
+    required this.initials,
+    required this.onGoToProfile,
+    required this.onSignOut,
+  });
+
+  final String firstName;
+  final String email;
+  final String initials;
+  final VoidCallback onGoToProfile;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+        ),
+      ),
+      padding: EdgeInsets.only(
+        top: 12,
+        left: 24,
+        right: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // drag handle
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // avatar + name + email
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: AppColors.accent.withValues(alpha: 0.18),
+            child: Text(
+              initials,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: AppColors.accent,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (firstName.isNotEmpty)
+            Text(
+              firstName,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          if (email.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              email,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 28),
+          // Go to Profile
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onGoToProfile,
+              icon: const Icon(Icons.person_outline_rounded, size: 18),
+              label: const Text('Go to Profile'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Sign Out
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onSignOut,
+              icon: const Icon(
+                Icons.logout_rounded,
+                size: 18,
+                color: AppColors.danger,
+              ),
+              label: const Text(
+                'Sign Out',
+                style: TextStyle(color: AppColors.danger),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side:
+                    BorderSide(color: AppColors.danger.withValues(alpha: 0.4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

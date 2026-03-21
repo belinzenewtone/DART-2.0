@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/utils/category_visual.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
@@ -41,7 +42,7 @@ class _CategoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visual = _categoryVisual(entry.category);
+    final visual = categoryVisual(entry.category);
     final ratio = (entry.percentage / 100).clamp(0.0, 1.0).toDouble();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,41 +105,3 @@ class _CategoryRow extends StatelessWidget {
   }
 }
 
-({IconData icon, Color foreground, Color background}) _categoryVisual(
-  String category,
-) {
-  final normalized = category.trim().toLowerCase();
-  if (normalized.contains('food')) {
-    return (
-      icon: Icons.restaurant_outlined,
-      foreground: AppColors.categoryFood,
-      background: AppColors.categoryFoodBg,
-    );
-  }
-  if (normalized.contains('airtime')) {
-    return (
-      icon: Icons.phone_android_outlined,
-      foreground: AppColors.categoryAirtime,
-      background: AppColors.categoryAirtimeBg,
-    );
-  }
-  if (normalized.contains('bill')) {
-    return (
-      icon: Icons.receipt_long_outlined,
-      foreground: AppColors.categoryAirtime,
-      background: AppColors.categoryBillBg,
-    );
-  }
-  if (normalized.contains('transport')) {
-    return (
-      icon: Icons.directions_bus_outlined,
-      foreground: AppColors.categoryTransport,
-      background: AppColors.categoryTransportBg,
-    );
-  }
-  return (
-    icon: Icons.more_horiz,
-    foreground: AppColors.textSecondary,
-    background: AppColors.accentSoft,
-  );
-}

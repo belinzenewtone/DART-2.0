@@ -119,9 +119,9 @@ class TaskCardSkeleton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Row(
         children: [
-          AppSkeleton(width: 4, height: 72, borderRadius: 10),
+          const AppSkeleton(width: 4, height: 72, borderRadius: 10),
           const SizedBox(width: 10),
-          AppSkeleton(width: 24, height: 24, circular: true),
+          const AppSkeleton(width: 24, height: 24, circular: true),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -146,7 +146,7 @@ class TransactionSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AppSkeleton(width: 40, height: 40, circular: true),
+        const AppSkeleton(width: 40, height: 40, circular: true),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

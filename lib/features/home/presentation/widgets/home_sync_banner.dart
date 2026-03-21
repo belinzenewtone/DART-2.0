@@ -1,6 +1,7 @@
 import 'package:beltech/core/di/sync_providers.dart';
 import 'package:beltech/core/sync/sync_status_notifier.dart';
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,27 +69,17 @@ class _SyncPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: color,
-              height: 1.2,
-            ),
+            style: AppTypography.label(context).copyWith(color: color),
           ),
           if (status.phase == SyncPhase.failed) ...[
             const SizedBox(width: 6),
-            Text(
-              '·',
-              style: TextStyle(color: color, fontSize: 12),
-            ),
+            Text('·', style: AppTypography.label(context).copyWith(color: color)),
             const SizedBox(width: 6),
             Text(
               'Retry',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.label(context).copyWith(
                 fontWeight: FontWeight.w700,
                 color: color,
-                height: 1.2,
               ),
             ),
           ],

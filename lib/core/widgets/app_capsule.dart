@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum AppCapsuleVariant { solid, subtle, outline }
+
 enum AppCapsuleSize { sm, md, lg }
 
 /// A compact pill badge/chip used for category labels, priority levels,
@@ -22,20 +23,24 @@ class AppCapsule extends StatelessWidget {
   final AppCapsuleVariant variant;
   final AppCapsuleSize size;
   final IconData? icon;
+
   /// If non-null, wraps the chip in a [GestureDetector].
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final (hPad, vPad, fontSize) = switch (size) {
-      AppCapsuleSize.sm => (7.0, 3.0, 11.0),
-      AppCapsuleSize.md => (10.0, 5.0, 13.0),
-      AppCapsuleSize.lg => (12.0, 6.0, 14.0),
+    final brightness = Theme.of(context).brightness;
+    final (hPad, vPad, minHeight, fontSize, iconSize) = switch (size) {
+      AppCapsuleSize.sm => (9.0, 4.0, 24.0, 11.5, 13.0),
+      AppCapsuleSize.md => (11.0, 5.0, 28.0, 12.5, 14.0),
+      AppCapsuleSize.lg => (13.0, 6.0, 32.0, 13.5, 16.0),
     };
 
     final bgColor = switch (variant) {
       AppCapsuleVariant.solid => color,
-      AppCapsuleVariant.subtle => color.withValues(alpha: 0.16),
+      AppCapsuleVariant.subtle => color.withValues(
+          alpha: brightness == Brightness.dark ? 0.14 : 0.12,
+        ),
       AppCapsuleVariant.outline => Colors.transparent,
     };
 
@@ -44,11 +49,18 @@ class AppCapsule extends StatelessWidget {
       _ => color,
     };
 
-    final border = variant == AppCapsuleVariant.outline
-        ? Border.all(color: color.withValues(alpha: 0.7))
-        : null;
+    final border = switch (variant) {
+      AppCapsuleVariant.outline => Border.all(
+          color: color.withValues(alpha: 0.38),
+        ),
+      AppCapsuleVariant.subtle => Border.all(
+          color: color.withValues(alpha: 0.22),
+        ),
+      AppCapsuleVariant.solid => null,
+    };
 
     final pill = Container(
+      constraints: BoxConstraints(minHeight: minHeight),
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
         color: bgColor,
@@ -59,16 +71,19 @@ class AppCapsule extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: fontSize, color: textColor),
-            const SizedBox(width: 3),
+            Icon(icon, size: iconSize, color: textColor),
+            const SizedBox(width: 5),
           ],
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.w600,
               color: textColor,
-              height: 1.2,
+              height: 1.1,
+              letterSpacing: -0.1,
             ),
           ),
         ],
@@ -76,6 +91,13 @@ class AppCapsule extends StatelessWidget {
     );
 
     if (onTap == null) return pill;
-    return GestureDetector(onTap: onTap, child: pill);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: pill,
+      ),
+    );
   }
 }

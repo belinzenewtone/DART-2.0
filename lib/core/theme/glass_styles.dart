@@ -49,8 +49,8 @@ class GlassStyles {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Color(0x3B1E3A67),
-        Color(0x1C102542),
+        Color(0xD21A2A45),
+        Color(0xB6122036),
       ],
     );
   }
@@ -74,7 +74,7 @@ class GlassStyles {
       end: Alignment.bottomRight,
       colors: [
         accent.withValues(alpha: 0.24),
-        const Color(0x1C102542),
+        const Color(0xC2143156),
       ],
     );
   }

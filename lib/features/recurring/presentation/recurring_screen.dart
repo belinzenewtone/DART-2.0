@@ -1,11 +1,14 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
+import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/secondary_page_shell.dart';
@@ -44,9 +47,10 @@ class RecurringScreen extends ConsumerWidget {
       title: 'Recurring',
       glowColor: AppColors.glowTeal,
       actions: [
-        IconButton(
-          tooltip: 'Add template',
-          icon: const Icon(Icons.add_rounded),
+        AppIconPillButton(
+          icon: Icons.add_rounded,
+          label: 'Add',
+          tone: AppIconPillTone.accent,
           onPressed: writeState.isLoading
               ? null
               : () async {
@@ -70,9 +74,10 @@ class RecurringScreen extends ConsumerWidget {
                   }
                 },
         ),
-        IconButton(
-          tooltip: 'Run now',
-          icon: const Icon(Icons.play_arrow_rounded),
+        AppIconPillButton(
+          icon: Icons.play_arrow_rounded,
+          label: 'Run',
+          tone: AppIconPillTone.subtle,
           onPressed: writeState.isLoading
               ? null
               : () async {
@@ -90,7 +95,7 @@ class RecurringScreen extends ConsumerWidget {
         data: (templates) {
           _consumeSearchTarget(context, ref, templates);
           if (templates.isEmpty) {
-            return AppEmptyState(
+            return const AppEmptyState(
               icon: Icons.repeat_rounded,
               title: 'No recurring items',
               subtitle:
@@ -111,12 +116,33 @@ class RecurringScreen extends ConsumerWidget {
                     await _editTemplate(context, ref, template);
                   },
                   onDelete: () async {
+                    final confirmed = await showDeleteConfirmDialog(
+                      context,
+                      title: 'Delete template',
+                      body:
+                          'Remove "${template.title}"? Future auto-generated items will stop.',
+                    );
+                    if (confirmed != true || !context.mounted) return;
                     await ref
                         .read(recurringWriteControllerProvider.notifier)
                         .deleteTemplate(template.id);
                     if (context.mounted &&
                         !ref.read(recurringWriteControllerProvider).hasError) {
                       AppFeedback.success(context, 'Template deleted');
+                    }
+                  },
+                  onToggleEnabled: () async {
+                    await ref
+                        .read(recurringWriteControllerProvider.notifier)
+                        .toggleEnabled(template);
+                    if (context.mounted &&
+                        !ref.read(recurringWriteControllerProvider).hasError) {
+                      AppFeedback.info(
+                        context,
+                        template.enabled
+                            ? 'Template paused'
+                            : 'Template resumed',
+                      );
                     }
                   },
                 ),
@@ -153,36 +179,38 @@ class RecurringScreen extends ConsumerWidget {
     WidgetRef ref,
     List<RecurringTemplate> templates,
   ) {
-    final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.recurring) {
+    final pendingTarget = ref.read(globalSearchDeepLinkTargetProvider);
+    if (pendingTarget?.kind != GlobalSearchKind.recurring) {
       return;
     }
 
-    ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() async {
+        if (!context.mounted) {
+          return;
+        }
+        final target = ref.read(globalSearchDeepLinkTargetProvider);
+        if (target?.kind != GlobalSearchKind.recurring) {
+          return;
+        }
+        ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
 
-    final recordId = target?.recordId;
-    if (recordId == null) {
-      return;
-    }
-
-    final template = templates.where((item) => item.id == recordId).firstOrNull;
-    if (template == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
+        final recordId = target?.recordId;
+        if (recordId == null) {
+          return;
+        }
+        final template =
+            templates.where((item) => item.id == recordId).firstOrNull;
+        if (template == null) {
           AppFeedback.info(
             context,
             'This recurring template no longer exists.',
           );
+          return;
         }
-      });
-      return;
-    }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) {
-        return;
-      }
-      await _editTemplate(context, ref, template);
+        await _editTemplate(context, ref, template);
+      });
     });
   }
 

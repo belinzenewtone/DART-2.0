@@ -6,11 +6,13 @@ import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/di/security_providers.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/ota/shorebird_providers.dart';
 import 'package:beltech/core/security/biometric_relock_policy.dart';
 import 'package:beltech/core/navigation/app_shell_helpers.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/navigation/widgets/app_tab_bar.dart';
 import 'package:beltech/core/navigation/widgets/biometric_lock_overlay.dart';
+import 'package:beltech/core/navigation/widgets/patch_ready_banner.dart';
 import 'package:beltech/core/navigation/widgets/shell_body_switcher.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
@@ -102,6 +104,11 @@ class _AppShellState extends ConsumerState<AppShell>
     unawaited(cleanupNotificationReminders(ref));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkForAppUpdate());
+      // Check if the Shorebird auto-updater has already downloaded a patch
+      // and is waiting for a restart. We check twice — immediately and after
+      // a short delay — because the native download may complete a few seconds
+      // after the Dart layer starts. On resume we check once more.
+      unawaited(_checkShorebirdPatch());
     });
   }
 
@@ -126,6 +133,9 @@ class _AppShellState extends ConsumerState<AppShell>
       unawaited(_runNotificationSweep());
       unawaited(cleanupNotificationReminders(ref));
       unawaited(_applyBiometricLockOnResume());
+      // Re-check patch state on resume — a previous background download may
+      // have completed while the app was paused.
+      unawaited(_checkShorebirdPatch());
     }
   }
 
@@ -197,7 +207,20 @@ class _AppShellState extends ConsumerState<AppShell>
                     ),
             ),
           ),
-          const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
+          // Stack the network-status and patch-ready banners together so they
+          // expand downward naturally without fighting for the same position.
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OfflineBanner(),
+                PatchReadyBanner(),
+              ],
+            ),
+          ),
           const AppToastOverlay(),
           if (_appLocked)
             BiometricLockOverlay(
@@ -237,6 +260,44 @@ class _AppShellState extends ConsumerState<AppShell>
       barrierDismissible: !update.forceUpdate,
       builder: (context) => AppUpdateDialog(update: update, service: service),
     );
+  }
+
+  /// Queries the Shorebird auto-updater to see whether a patch has been
+  /// downloaded and is waiting to be applied on next cold restart.
+  ///
+  /// Called once immediately after the first frame (to catch patches that
+  /// were already downloaded in a previous session) and again 8 seconds later
+  /// (to catch patches the native engine downloads during the current launch).
+  /// Also called on every app resume so background-downloaded patches are
+  /// surfaced without requiring a full restart cycle.
+  Future<void> _checkShorebirdPatch() async {
+    if (!mounted) return;
+    final service = ref.read(shorebirdPatchServiceProvider);
+    try {
+      // Only attempt the query when Shorebird is compiled in (release builds).
+      final available = await service.isShorebirdAvailable();
+      if (!available || !mounted) return;
+
+      // Immediate check — catches patches already on disk from a prior session.
+      final readyNow = await service.isRestartRequired();
+      if (!mounted) return;
+      if (readyNow) {
+        ref.read(patchRestartRequiredProvider.notifier).state = true;
+        return;
+      }
+
+      // Deferred check — the native auto-updater typically downloads the patch
+      // within the first 5–10 seconds of app start. We wait 8 seconds and
+      // check again so users see the banner in the same session.
+      await Future<void>.delayed(const Duration(seconds: 8));
+      if (!mounted) return;
+      final readyAfterDelay = await service.isRestartRequired();
+      if (mounted && readyAfterDelay) {
+        ref.read(patchRestartRequiredProvider.notifier).state = true;
+      }
+    } catch (_) {
+      // Non-fatal — Shorebird may not be available in debug or CI builds.
+    }
   }
 
   Future<void> _refreshFeatureFlags() async {

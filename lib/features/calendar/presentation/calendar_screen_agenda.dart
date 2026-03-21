@@ -16,6 +16,7 @@ class _CalendarAgendaPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return agendaState.when(
+      skipLoadingOnReload: true,
       data: (events) {
         if (events.isEmpty) {
           return const AppEmptyState(

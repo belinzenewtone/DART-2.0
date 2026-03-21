@@ -1,6 +1,13 @@
 part of 'app_drift_store.dart';
 
 class _AppDriftSchemaMigrations {
+  static Future<void> removeLegacySeedIncome(AppDriftStore store) async {
+    await store._db.runDelete(
+      'DELETE FROM incomes WHERE source = ? AND title = ?',
+      ['seed', 'Salary'],
+    );
+  }
+
   static Future<void> seedDataIfEmpty(AppDriftStore store) async {
     final txCount = await store._countRows('transactions');
     if (txCount == 0) {
@@ -65,21 +72,6 @@ class _AppDriftSchemaMigrations {
           1,
           nowMs,
           'medium',
-        ],
-      );
-    }
-
-    final incomeCount = await store._countRows('incomes');
-    if (incomeCount == 0) {
-      await store._db.runInsert(
-        'INSERT INTO incomes(title, amount, received_at, source) VALUES (?, ?, ?, ?)',
-        [
-          'Salary',
-          120000.0,
-          DateTime.now()
-              .subtract(const Duration(days: 5))
-              .millisecondsSinceEpoch,
-          'seed',
         ],
       );
     }

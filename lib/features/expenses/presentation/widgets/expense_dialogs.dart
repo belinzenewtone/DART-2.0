@@ -1,6 +1,7 @@
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/utils/currency_formatter.dart';
-import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/core/utils/category_visual.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,7 @@ class ManualExpenseInput {
   final DateTime occurredAt;
 }
 
-Future<ManualExpenseInput?> showAddExpenseDialog(BuildContext context) async {
+Future<ManualExpenseInput?> showAddExpenseDialog(BuildContext context) {
   return _showExpenseDialog(context);
 }
 
@@ -32,89 +33,275 @@ Future<ManualExpenseInput?> showEditExpenseDialog(
 Future<ManualExpenseInput?> _showExpenseDialog(
   BuildContext context, {
   ExpenseItem? initialExpense,
-}) async {
-  final titleController =
-      TextEditingController(text: initialExpense?.title ?? '');
-  final amountController = TextEditingController(
+}) {
+  return showModalBottomSheet<ManualExpenseInput>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) =>
+        _ExpenseFormSheet(initialExpense: initialExpense),
+  );
+}
+
+class _ExpenseFormSheet extends StatefulWidget {
+  const _ExpenseFormSheet({this.initialExpense});
+
+  final ExpenseItem? initialExpense;
+
+  @override
+  State<_ExpenseFormSheet> createState() => _ExpenseFormSheetState();
+}
+
+class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
+  static const _categories = ['Other', 'Food', 'Transport', 'Airtime', 'Bills'];
+
+  late final TextEditingController _titleController;
+  late final TextEditingController _amountController;
+  late DateTime _occurredAt;
+  late String _selectedCategory;
+
+  bool get _isEdit => widget.initialExpense != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialExpense = widget.initialExpense;
+    _titleController = TextEditingController(text: initialExpense?.title ?? '');
+    _amountController = TextEditingController(
       text: initialExpense == null
           ? ''
-          : initialExpense.amountKes.toStringAsFixed(2));
-  final categories = ['Other', 'Food', 'Transport', 'Airtime', 'Bills'];
-  var selectedCategory = initialExpense == null
-      ? categories.first
-      : (categories.contains(initialExpense.category)
-          ? initialExpense.category
-          : 'Other');
+          : initialExpense.amountKes.toStringAsFixed(2),
+    );
+    _occurredAt = initialExpense?.occurredAt ?? DateTime.now();
+    _selectedCategory = initialExpense == null
+        ? _categories.first
+        : (_categories.contains(initialExpense.category)
+            ? initialExpense.category
+            : 'Other');
+  }
 
-  return showAppDialog<ManualExpenseInput>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-            initialExpense == null ? 'Add Transaction' : 'Edit Transaction'),
-        content: SingleChildScrollView(
-          child: Column(
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFormSheet(
+      title: _isEdit ? 'Edit Transaction' : 'Add Transaction',
+      subtitle: _isEdit ? 'Update the details below.' : 'Add a new transaction manually.',
+      onClose: () => Navigator.of(context).pop(),
+      footer: Row(
+        children: [
+          Expanded(
+            child: AppButton(
+              label: 'Cancel',
+              variant: AppButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: AppButton(
+              label: _isEdit ? 'Save' : 'Add',
+              onPressed: _submit,
+            ),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _titleController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Title',
+              hintText: 'e.g. Delitos Hotel',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Amount (KES)',
+              hintText: '0.00',
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Category',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _categories
+                .map(
+                  (category) => _ExpenseCategoryChip(
+                    category: category,
+                    selected: _selectedCategory == category,
+                    onTap: () => setState(() => _selectedCategory = category),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 18),
+          InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _pickOccurredAt,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted.withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.55),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule_rounded, color: AppColors.accent),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Occurred At',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatOccurredAt(_occurredAt),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickOccurredAt() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDate: _occurredAt,
+    );
+    if (pickedDate == null || !mounted) {
+      return;
+    }
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_occurredAt),
+    );
+    if (pickedTime == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _occurredAt = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+    });
+  }
+
+  void _submit() {
+    final title = _titleController.text.trim();
+    final amount = double.tryParse(_amountController.text.trim());
+    if (title.isEmpty || amount == null || amount <= 0) {
+      return;
+    }
+    Navigator.of(context).pop(
+      ManualExpenseInput(
+        title: title,
+        category: _selectedCategory,
+        amountKes: amount,
+        occurredAt: _occurredAt,
+      ),
+    );
+  }
+
+  String _formatOccurredAt(DateTime value) {
+    final date = '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/${value.year}';
+    final time = TimeOfDay.fromDateTime(value).format(context);
+    return '$date at $time';
+  }
+}
+
+class _ExpenseCategoryChip extends StatelessWidget {
+  const _ExpenseCategoryChip({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final visual = categoryVisual(category);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected
+                ? visual.foreground.withValues(alpha: 0.88)
+                : visual.background.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? visual.foreground
+                  : visual.foreground.withValues(alpha: 0.28),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  hintText: 'e.g. Delitos Hotel',
-                ),
+              Icon(
+                visual.icon,
+                size: 15,
+                color: selected ? Colors.white : visual.foreground,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: amountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Amount (${CurrencyFormatter.defaultSymbol})',
+              const SizedBox(width: 6),
+              Text(
+                category,
+                style: TextStyle(
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: categories
-                    .map((item) =>
-                        DropdownMenuItem(value: item, child: Text(item)))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => selectedCategory = value);
-                  }
-                },
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final title = titleController.text.trim();
-              final amount = double.tryParse(amountController.text.trim());
-              if (title.isEmpty || amount == null || amount <= 0) {
-                return;
-              }
-              Navigator.of(context).pop(
-                ManualExpenseInput(
-                  title: title,
-                  category: selectedCategory,
-                  amountKes: amount,
-                  occurredAt: initialExpense?.occurredAt ?? DateTime.now(),
-                ),
-              );
-            },
-            child: Text(initialExpense == null ? 'Save' : 'Update'),
-          ),
-        ],
       ),
-    ),
-  );
+    );
+  }
 }

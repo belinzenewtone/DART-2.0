@@ -58,16 +58,27 @@ class SecondaryPageShell extends StatelessWidget {
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
+              scrolledUnderElevation: 0,
+              titleSpacing: 8,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
               title: Text(title, style: AppTypography.sectionTitle(context)),
-              actions: actions,
+              actions: actions == null
+                  ? null
+                  : [
+                      for (final action in actions!) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: action,
+                        ),
+                      ],
+                    ],
             ),
             body: scrollable
                 ? SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenHorizontal,
                       8,
                       AppSpacing.screenHorizontal,
@@ -76,7 +87,7 @@ class SecondaryPageShell extends StatelessWidget {
                     child: child,
                   )
                 : Padding(
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenHorizontal,
                       8,
                       AppSpacing.screenHorizontal,

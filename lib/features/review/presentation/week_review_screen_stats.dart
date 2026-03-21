@@ -93,12 +93,15 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: AppTypography.amountLg(context),
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.fade,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTypography.amountLg(context),
+              maxLines: 1,
+              softWrap: false,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -124,6 +127,8 @@ class _StatCard extends StatelessWidget {
 }
 
 class _LoadingReview extends StatelessWidget {
+  const _LoadingReview();
+
   @override
   Widget build(BuildContext context) {
     return Column(

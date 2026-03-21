@@ -1,3 +1,4 @@
+import 'package:beltech/core/utils/legacy_seed_data.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/domain/repositories/global_search_repository.dart';
@@ -44,11 +45,16 @@ class GlobalSearchRepositoryImpl implements GlobalSearchRepository {
       [pattern, pattern, pattern],
     );
     for (final row in incomes) {
+      final title = '${row['title'] ?? ''}';
+      final source = '${row['source'] ?? 'manual'}';
+      if (isLegacySeedIncome(title: title, source: source)) {
+        continue;
+      }
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.income,
-          primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['source'] ?? 'manual'}',
+          primaryText: title,
+          secondaryText: source,
           trailingText: 'KES ${_asDouble(row['amount']).toStringAsFixed(2)}',
           recordId: _asInt(row['id']),
           recordDate: _asDate(row['received_at']),

@@ -1,3 +1,4 @@
+import 'package:beltech/core/utils/legacy_seed_data.dart';
 import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/domain/repositories/global_search_repository.dart';
@@ -48,11 +49,16 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
         .or('title.ilike.%$q%,source.ilike.%$q%')
         .limit(15);
     for (final row in (incomeRows as List).cast<Map<String, dynamic>>()) {
+      final title = '${row['title'] ?? ''}';
+      final source = '${row['source'] ?? 'manual'}';
+      if (isLegacySeedIncome(title: title, source: source)) {
+        continue;
+      }
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.income,
-          primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['source'] ?? 'manual'}',
+          primaryText: title,
+          secondaryText: source,
           trailingText: 'KES ${parseDouble(row['amount']).toStringAsFixed(2)}',
           recordId: parseInt(row['id']),
           recordDate: row['received_at'] == null

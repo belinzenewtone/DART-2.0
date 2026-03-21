@@ -196,8 +196,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           });
                         },
                         onSubmit: _submit,
-                        onToggleMode: () {
-                          setState(() => _isSignUp = !_isSignUp);
+                        onModeChanged: (value) {
+                          if (_isSignUp == value) {
+                            return;
+                          }
+                          setState(() => _isSignUp = value);
                         },
                       ),
                     ],
@@ -216,9 +219,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
     if (_isSignUp) {
-      await ref
-          .read(accountAuthControllerProvider.notifier)
-          .signUp(
+      await ref.read(accountAuthControllerProvider.notifier).signUp(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             email: _emailController.text.trim(),
@@ -226,9 +227,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           );
       return;
     }
-    await ref
-        .read(accountAuthControllerProvider.notifier)
-        .signIn(
+    await ref.read(accountAuthControllerProvider.notifier).signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );

@@ -3,6 +3,7 @@ import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/security/session_lock_settings_repository.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_dropdown_field.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/auth/domain/entities/auth_state.dart';
 import 'package:beltech/features/auth/presentation/providers/auth_providers.dart';
@@ -26,7 +27,7 @@ class SettingsSecurityCard extends ConsumerWidget {
           tone: GlassCardTone.muted,
           child: Row(
             children: [
-              Icon(Icons.fingerprint_outlined, color: AppColors.accent),
+              const Icon(Icons.fingerprint_outlined, color: AppColors.accent),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -60,27 +61,34 @@ class SettingsSecurityCard extends ConsumerWidget {
         const SizedBox(height: AppSpacing.listGap),
         GlassCard(
           tone: GlassCardTone.muted,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.timer_outlined, color: AppColors.accent),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Relock Delay',
-                        style: AppTypography.cardTitle(context)),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Choose how long the app can stay in the background before biometric relock is required.',
-                      style: AppTypography.bodySm(context),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, color: AppColors.accent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Relock Delay',
+                            style: AppTypography.cardTitle(context)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Choose how long the app can stay in the background before biometric relock is required.',
+                          style: AppTypography.bodySm(context),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              DropdownButton<int>(
+              const SizedBox(height: 14),
+              AppDropdownField<int>(
+                label: 'Grace Period',
                 value: sessionLockState.valueOrNull?.gracePeriodSeconds,
-                hint: const Text('Delay'),
+                hintText: 'Select delay',
                 onChanged: sessionLockWriteState.isLoading
                     ? null
                     : (value) async {

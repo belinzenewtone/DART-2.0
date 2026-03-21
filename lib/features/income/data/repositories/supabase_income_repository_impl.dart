@@ -1,3 +1,4 @@
+import 'package:beltech/core/utils/legacy_seed_data.dart';
 import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
 import 'package:beltech/data/remote/supabase/supabase_polling.dart';
 import 'package:beltech/features/income/domain/entities/income_item.dart';
@@ -75,6 +76,12 @@ class SupabaseIncomeRepositoryImpl implements IncomeRepository {
             amountKes: parseDouble(row['amount']),
             receivedAt: parseTimestamp(row['received_at']),
             source: '${row['source'] ?? 'manual'}',
+          ),
+        )
+        .where(
+          (item) => !isLegacySeedIncome(
+            title: item.title,
+            source: item.source,
           ),
         )
         .toList();

@@ -97,10 +97,9 @@ class _TrendCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: AppTypography.amount(context),
+            style: AppTypography.amount(context).copyWith(fontSize: 18),
             maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.fade,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(label, style: AppTypography.bodySm(context)),
@@ -112,8 +111,7 @@ class _TrendCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.fade,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -181,11 +179,12 @@ class _InsightCard extends StatelessWidget {
 }
 
 String _deltaMoney(double delta) {
-  final sign = delta >= 0 ? '+' : '-';
-  return '$sign${CurrencyFormatter.money(delta.abs())} vs last week';
+  final sign = delta >= 0 ? '+' : '−';
+  // Keep short so it fits in a half-width card — no "vs last week" suffix
+  return '$sign${CurrencyFormatter.money(delta.abs())}';
 }
 
 String _deltaPercent(double delta) {
-  final sign = delta >= 0 ? '+' : '-';
-  return '$sign${(delta.abs() * 100).toStringAsFixed(0)}% vs last week';
+  final sign = delta >= 0 ? '+' : '−';
+  return '$sign${(delta.abs() * 100).toStringAsFixed(0)}%';
 }

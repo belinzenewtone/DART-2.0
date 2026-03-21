@@ -7,7 +7,7 @@ class AppSpacing {
   static const double screenHorizontal = 20;
   static const double screenTop = 16; // slightly more breathing room
   static const double shellHorizontal = 12;
-  static const double contentBottomSafe = 120;
+  static const double contentBottomSafe = 90;
   static const double sectionBottom = 24;
   static const double navBottomMargin = 6;
   static const double fabBottomOffset = 104;

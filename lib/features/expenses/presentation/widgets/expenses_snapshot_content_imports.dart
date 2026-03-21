@@ -31,17 +31,10 @@ class _ImportPipelineCard extends StatelessWidget {
         metrics.quarantineCount == 0 &&
         metrics.retryQueueCount == 0 &&
         metrics.failedQueueCount == 0 &&
-        paybillProfiles.isEmpty &&
-        fulizaEvents.isEmpty) {
+        paybillProfiles.isEmpty) {
       return const SizedBox.shrink();
     }
     final textTheme = Theme.of(context).textTheme;
-    final fulizaBalance = fulizaEvents.fold<double>(
-      0,
-      (sum, item) => item.kind == FulizaLifecycleKind.draw
-          ? sum + item.amountKes
-          : sum - item.amountKes,
-    );
     return GlassCard(
       tone: GlassCardTone.muted,
       child: Column(
@@ -199,50 +192,6 @@ class _ImportPipelineCard extends StatelessWidget {
                         ),
                         Text(
                           _txDateFormat.format(item.lastSeenAt),
-                          style: textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-          ],
-          if (fulizaEvents.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('Fuliza Lifecycle', style: textTheme.bodyLarge),
-            const SizedBox(height: 6),
-            Text(
-              'Outstanding ${CurrencyFormatter.money(fulizaBalance)}',
-              style: textTheme.bodySmall?.copyWith(
-                color:
-                    fulizaBalance > 0 ? AppColors.warning : AppColors.success,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...fulizaEvents.take(3).map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          item.kind == FulizaLifecycleKind.draw
-                              ? Icons.north_east_rounded
-                              : Icons.south_west_rounded,
-                          color: item.kind == FulizaLifecycleKind.draw
-                              ? AppColors.warning
-                              : AppColors.success,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item.kind == FulizaLifecycleKind.draw
-                                ? 'Fuliza draw'
-                                : 'Fuliza repayment',
-                            style: textTheme.bodyMedium,
-                          ),
-                        ),
-                        Text(
-                          CurrencyFormatter.money(item.amountKes),
                           style: textTheme.bodySmall,
                         ),
                       ],

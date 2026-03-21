@@ -3,6 +3,7 @@ import 'package:beltech/core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
+
 enum AppButtonSize { sm, md, lg }
 
 class AppButton extends StatelessWidget {
@@ -47,7 +48,7 @@ class AppButton extends StatelessWidget {
           Colors.transparent,
         ),
       AppButtonVariant.secondary => (
-          Colors.transparent,
+          accent.withValues(alpha: 0.1),
           accent,
           accent.withValues(alpha: isEnabled ? 0.8 : 0.4),
         ),
@@ -57,7 +58,9 @@ class AppButton extends StatelessWidget {
           Colors.transparent,
         ),
       AppButtonVariant.danger => (
-          isEnabled ? AppColors.danger : AppColors.danger.withValues(alpha: 0.5),
+          isEnabled
+              ? AppColors.danger
+              : AppColors.danger.withValues(alpha: 0.5),
           Colors.white,
           Colors.transparent,
         ),
@@ -101,7 +104,8 @@ class AppButton extends StatelessWidget {
     Widget button = SizedBox(
       height: height,
       width: fullWidth ? double.infinity : null,
-      child: variant == AppButtonVariant.secondary || variant == AppButtonVariant.ghost
+      child: variant == AppButtonVariant.secondary ||
+              variant == AppButtonVariant.ghost
           ? OutlinedButton(
               onPressed: isEnabled ? onPressed : null,
               style: OutlinedButton.styleFrom(
@@ -122,6 +126,7 @@ class AppButton extends StatelessWidget {
                 shape: shape,
                 padding: EdgeInsets.symmetric(horizontal: hPad),
                 disabledBackgroundColor: bgColor.withValues(alpha: 0.5),
+                elevation: isEnabled ? 0 : 0,
               ),
               child: content,
             ),

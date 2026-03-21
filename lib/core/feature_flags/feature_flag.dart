@@ -5,7 +5,9 @@ enum FeatureFlag {
   stretchMotion(key: 'stretch_motion', defaultEnabled: true),
   backgroundSync(key: 'background_sync', defaultEnabled: true),
   weeklyReviewRitual(key: 'weekly_review_ritual', defaultEnabled: true),
-  biometricRelock(key: 'biometric_relock', defaultEnabled: true);
+  biometricRelock(key: 'biometric_relock', defaultEnabled: true),
+  /// Controls haptic feedback globally. Disable to silence all vibrations.
+  haptics(key: 'haptics', defaultEnabled: true);
 
   const FeatureFlag({required this.key, required this.defaultEnabled});
 

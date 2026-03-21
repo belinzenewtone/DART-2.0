@@ -22,6 +22,7 @@ class _CalendarEventsPane extends StatelessWidget {
       child: AbsorbPointer(
         absorbing: state._swiping,
         child: eventsState.when(
+          skipLoadingOnReload: true,
           data: (events) {
             state._consumeSearchTarget(context, state.ref, selectedDay, events);
             if (events.isEmpty) {

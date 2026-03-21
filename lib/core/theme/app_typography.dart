@@ -99,6 +99,31 @@ class AppTypography {
         color: Theme.of(context).colorScheme.onSurface,
       );
 
+  // ── Meta / label ─────────────────────────────────────────────────────────
+
+  /// 12px w400 — chart axis labels, timestamp chips, fine-print metadata
+  ///
+  /// Use this instead of inline `TextStyle(fontSize: 12)` calls.
+  static TextStyle metaText(BuildContext context) => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        height: 18 / 12,
+        color: Theme.of(context).brightness == Brightness.light
+            ? const Color(0xFF8AA0BF)
+            : const Color(0xFF74839A),
+      );
+
+  /// 12px w500 — small uppercase labels, form section headers
+  static TextStyle label(BuildContext context) => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 18 / 12,
+        letterSpacing: 0.3,
+        color: Theme.of(context).brightness == Brightness.light
+            ? const Color(0xFF516584)
+            : const Color(0xFFA8B9D6),
+      );
+
   // ── Utility ──────────────────────────────────────────────────────────────────
 
   /// Copy a style and apply a specific color without losing the rest.

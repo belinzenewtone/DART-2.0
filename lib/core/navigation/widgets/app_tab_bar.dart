@@ -1,5 +1,6 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
+import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class AppTabBar extends StatefulWidget {
     required this.selectedIndex,
     required this.onTap,
     required this.items,
-    this.height = 66,
+    this.height = 68,
   });
 
   final int selectedIndex;
@@ -74,12 +75,24 @@ class _AppTabBarState extends State<AppTabBar>
     final accent = Theme.of(context).colorScheme.primary;
     final mutedColor = AppColors.textMutedFor(brightness);
     final count = widget.items.length;
+    final pillDuration = AppMotion.duration(
+      context,
+      normalMs: 180,
+      reducedMs: 0,
+    );
+    final itemDuration = AppMotion.duration(
+      context,
+      normalMs: 140,
+      reducedMs: 0,
+    );
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final resolvedHeight =
         widget.height + ((textScale - 1) * 18).clamp(0.0, 14.0);
+    _pillCtrl.duration = pillDuration;
 
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      tone: GlassCardTone.muted,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       borderRadius: AppRadius.xxl,
       child: SizedBox(
         height: resolvedHeight,
@@ -96,18 +109,32 @@ class _AppTabBarState extends State<AppTabBar>
                   children: [
                     // Sliding pill background
                     Positioned(
-                      left: pillLeft,
-                      top: 0,
-                      bottom: 0,
-                      width: itemWidth,
+                      left: pillLeft + 3,
+                      top: 3,
+                      bottom: 3,
+                      width: itemWidth - 6,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.18),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              accent.withValues(alpha: 0.24),
+                              accent.withValues(alpha: 0.12),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(AppRadius.xl),
                           border: Border.all(
-                            color: accent.withValues(alpha: 0.30),
+                            color: accent.withValues(alpha: 0.34),
                             width: 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.12),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -118,15 +145,15 @@ class _AppTabBarState extends State<AppTabBar>
                         final selected = i == widget.selectedIndex;
                         final iconColor = selected ? accent : mutedColor;
                         return Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
                             onTap: () {
                               AppHaptics.lightImpact();
                               widget.onTap(i);
                             },
                             child: AnimatedScale(
                               scale: selected ? 1.0 : 0.95,
-                              duration: const Duration(milliseconds: 120),
+                              duration: itemDuration,
                               curve: Curves.easeOutBack,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -135,8 +162,7 @@ class _AppTabBarState extends State<AppTabBar>
                                     height: 24,
                                     child: Center(
                                       child: AnimatedSwitcher(
-                                        duration:
-                                            const Duration(milliseconds: 120),
+                                        duration: itemDuration,
                                         child: Icon(
                                           selected
                                               ? item.selectedIcon
@@ -152,18 +178,18 @@ class _AppTabBarState extends State<AppTabBar>
                                   SizedBox(
                                     height: 13,
                                     child: AnimatedOpacity(
-                                      duration:
-                                          const Duration(milliseconds: 120),
+                                      duration: itemDuration,
                                       opacity: selected ? 1 : 0,
                                       child: SizedBox(
                                         width: itemWidth - 8,
                                         child: Text(
                                           item.label,
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 10.5,
                                             fontWeight: FontWeight.w600,
                                             color: accent,
                                             height: 1.1,
+                                            letterSpacing: -0.1,
                                           ),
                                           textAlign: TextAlign.center,
                                           maxLines: 1,

@@ -1,7 +1,9 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
@@ -10,12 +12,12 @@ import 'package:beltech/features/income/domain/entities/income_item.dart';
 import 'package:beltech/features/income/presentation/providers/income_providers.dart';
 import 'package:beltech/features/income/presentation/widgets/income_dialogs.dart';
 import 'package:beltech/features/income/presentation/widgets/income_overview_cards.dart';
+import 'package:beltech/features/income/presentation/widgets/income_row.dart';
 import 'package:beltech/features/income/presentation/widgets/income_trend_chart.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 class IncomeScreen extends ConsumerWidget {
   const IncomeScreen({super.key});
@@ -31,18 +33,29 @@ class IncomeScreen extends ConsumerWidget {
       next,
     ) {
       if (next.hasError) {
-        AppFeedback.error(context, 'Unable to save income changes.');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            AppFeedback.error(context, 'Unable to save income changes.');
+          }
+        });
       } else if (previous is AsyncLoading && next is AsyncData<void>) {
-        AppFeedback.success(context, 'Income changes saved successfully.');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            AppFeedback.success(context, 'Income changes saved successfully.');
+          }
+        });
       }
     });
 
     return SecondaryPageShell(
       title: 'Income',
       glowColor: AppColors.glowTeal,
+      scrollable: false,
       actions: [
-        IconButton(
-          tooltip: 'Add income',
+        AppIconPillButton(
+          icon: Icons.add_rounded,
+          label: 'Add',
+          tone: AppIconPillTone.accent,
           onPressed: writeState.isLoading
               ? null
               : () async {
@@ -58,7 +71,6 @@ class IncomeScreen extends ConsumerWidget {
                         receivedAt: input.receivedAt,
                       );
                 },
-          icon: const Icon(Icons.add_rounded),
         ),
       ],
       child: incomesState.when(
@@ -95,7 +107,7 @@ class IncomeScreen extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final item = incomes[index];
-                    return _IncomeRow(
+                    return IncomeRow(
                       item: item,
                       busy: writeState.isLoading,
                       onEdit: () async {
@@ -118,6 +130,13 @@ class IncomeScreen extends ConsumerWidget {
                             );
                       },
                       onDelete: () async {
+                        final confirmed = await showDeleteConfirmDialog(
+                          context,
+                          title: 'Delete income',
+                          body:
+                              'Remove "${item.title}" (${CurrencyFormatter.money(item.amountKes)})? This cannot be undone.',
+                        );
+                        if (confirmed != true || !context.mounted) return;
                         await ref
                             .read(incomeWriteControllerProvider.notifier)
                             .deleteIncome(item.id);
@@ -143,99 +162,48 @@ class IncomeScreen extends ConsumerWidget {
     WidgetRef ref,
     List<IncomeItem> incomes,
   ) {
-    final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.income) {
+    final pendingTarget = ref.read(globalSearchDeepLinkTargetProvider);
+    if (pendingTarget?.kind != GlobalSearchKind.income) {
       return;
     }
-    ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
-    final recordId = target?.recordId;
-    if (recordId == null) {
-      return;
-    }
-    final item = incomes.where((income) => income.id == recordId).firstOrNull;
-    if (item == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          AppFeedback.info(context, 'This income record no longer exists.');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() async {
+        if (!context.mounted) {
+          return;
         }
+        final target = ref.read(globalSearchDeepLinkTargetProvider);
+        if (target?.kind != GlobalSearchKind.income) {
+          return;
+        }
+        ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
+
+        final recordId = target?.recordId;
+        if (recordId == null) {
+          return;
+        }
+        final item =
+            incomes.where((income) => income.id == recordId).firstOrNull;
+        if (item == null) {
+          AppFeedback.info(context, 'This income record no longer exists.');
+          return;
+        }
+
+        final input = await showIncomeDialog(
+          context,
+          initialTitle: item.title,
+          initialAmount: item.amountKes,
+          initialDate: item.receivedAt,
+        );
+        if (input == null) {
+          return;
+        }
+        await ref.read(incomeWriteControllerProvider.notifier).updateIncome(
+              incomeId: item.id,
+              title: input.title,
+              amountKes: input.amountKes,
+              receivedAt: input.receivedAt,
+            );
       });
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) {
-        return;
-      }
-      final input = await showIncomeDialog(
-        context,
-        initialTitle: item.title,
-        initialAmount: item.amountKes,
-        initialDate: item.receivedAt,
-      );
-      if (input == null) {
-        return;
-      }
-      await ref.read(incomeWriteControllerProvider.notifier).updateIncome(
-            incomeId: item.id,
-            title: input.title,
-            amountKes: input.amountKes,
-            receivedAt: input.receivedAt,
-          );
     });
-  }
-}
-
-class _IncomeRow extends StatelessWidget {
-  const _IncomeRow({
-    required this.item,
-    required this.busy,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final IncomeItem item;
-  final bool busy;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return GlassCard(
-      child: Row(
-        children: [
-          const CircleAvatar(
-            child: Icon(Icons.account_balance_wallet_outlined),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title, style: textTheme.bodyLarge),
-                Text(
-                  DateFormat('MMM d, yyyy').format(item.receivedAt),
-                  style: textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            CurrencyFormatter.money(item.amountKes),
-            style: textTheme.bodyLarge,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.fade,
-          ),
-          IconButton(
-            onPressed: busy ? null : onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            onPressed: busy ? null : onDelete,
-            icon: const Icon(Icons.delete_outline),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -26,7 +26,7 @@ class ProfileAvatar extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         CircleAvatar(
-          radius: 58,
+          radius: 46,
           backgroundColor: AppColors.accent,
           backgroundImage: image,
           child: image == null
@@ -34,7 +34,7 @@ class ProfileAvatar extends StatelessWidget {
                   name.isEmpty ? 'U' : name.substring(0, 1).toUpperCase(),
                   style: TextStyle(
                     color: onSurface,
-                    fontSize: 56,
+                    fontSize: 38,
                     fontWeight: FontWeight.w500,
                   ),
                 )

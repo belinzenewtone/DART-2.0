@@ -1,4 +1,5 @@
 import 'package:beltech/core/config/supabase_config.dart';
+import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/core/routing/app_router.dart';
@@ -36,6 +37,8 @@ class PersonalManagementApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Activate haptics feature flag gate — syncs AppHaptics.setEnabled globally.
+    ref.watch(hapticsFeatureFlagProvider);
     final themeMode = ref.watch(currentThemeModeProvider);
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(

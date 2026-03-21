@@ -71,36 +71,33 @@ class _CalendarLayout extends StatelessWidget {
               icon: const Icon(Icons.add_rounded),
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              SegmentedButton<_CalendarView>(
-                showSelectedIcon: false,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
-                segments: const [
-                  ButtonSegment(
-                    value: _CalendarView.month,
-                    icon: Icon(Icons.calendar_month_outlined, size: 18),
-                    label: Text('Month'),
-                  ),
-                  ButtonSegment(
-                    value: _CalendarView.week,
-                    icon: Icon(Icons.view_week_outlined, size: 18),
-                    label: Text('Week'),
-                  ),
-                  ButtonSegment(
-                    value: _CalendarView.agenda,
-                    icon: Icon(Icons.view_agenda_outlined, size: 18),
-                    label: Text('Agenda'),
-                  ),
-                ],
-                selected: {state._view},
-                onSelectionChanged: (v) => state._setView(v.first),
+          Center(
+            child: SegmentedButton<_CalendarView>(
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
               ),
-            ],
+              segments: const [
+                ButtonSegment(
+                  value: _CalendarView.month,
+                  icon: Icon(Icons.calendar_month_outlined, size: 18),
+                  label: Text('Month'),
+                ),
+                ButtonSegment(
+                  value: _CalendarView.week,
+                  icon: Icon(Icons.view_week_outlined, size: 18),
+                  label: Text('Week'),
+                ),
+                ButtonSegment(
+                  value: _CalendarView.agenda,
+                  icon: Icon(Icons.view_agenda_outlined, size: 18),
+                  label: Text('Agenda'),
+                ),
+              ],
+              selected: {state._view},
+              onSelectionChanged: (v) => state._setView(v.first),
+            ),
           ),
           const SizedBox(height: 12),
           GestureDetector(
@@ -112,7 +109,6 @@ class _CalendarLayout extends StatelessWidget {
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
                         onPressed: () => state._view == _CalendarView.month
@@ -120,7 +116,18 @@ class _CalendarLayout extends StatelessWidget {
                             : state._changeWeek(state.ref, -1),
                         icon: const Icon(Icons.chevron_left),
                       ),
-                      Text(title, style: textTheme.titleMedium),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleMedium,
+                          ),
+                        ),
+                      ),
                       IconButton(
                         onPressed: () => state._view == _CalendarView.month
                             ? state._changeMonth(state.ref, 1)

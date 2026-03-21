@@ -2,7 +2,6 @@ import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
@@ -10,6 +9,7 @@ import 'package:beltech/features/auth/presentation/providers/account_providers.d
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:beltech/features/profile/presentation/widgets/profile_content_section.dart';
 import 'package:beltech/features/profile/presentation/widgets/profile_dialogs.dart';
+import 'package:beltech/features/profile/presentation/widgets/profile_tool_hub.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +48,7 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PageHeader(
+          const PageHeader(
             eyebrow: 'ACCOUNT',
             title: 'Profile',
           ),
@@ -59,6 +59,7 @@ class ProfileScreen extends ConsumerWidget {
                 ProfileContentSection(
                   profile: profile,
                   onEdit: () => showEditProfileDialog(context, ref, profile),
+                  onOpenSettings: () => context.pushNamed('settings'),
                   onChangePassword: () => showPasswordDialog(context, ref),
                   onAvatarCameraTap: () async {
                     try {
@@ -109,11 +110,11 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                _ToolHubGrid(ref: ref),
+                const ProfileToolHub(),
                 const SizedBox(height: AppSpacing.sectionGap),
               ],
             ),
-            loading: () => Center(child: LoadingIndicator()),
+            loading: () => const Center(child: LoadingIndicator()),
             error: (_, __) => ErrorMessage(
               label: 'Unable to load profile',
               onRetry: () => ref.invalidate(profileProvider),
@@ -121,59 +122,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ToolHubGrid extends StatelessWidget {
-  const _ToolHubGrid({required this.ref});
-
-  final WidgetRef ref;
-
-  @override
-  Widget build(BuildContext context) {
-    final tools = [
-      (label: 'Analytics', icon: Icons.query_stats_rounded, route: 'analytics'),
-      (label: 'Recurring', icon: Icons.repeat_rounded, route: 'recurring'),
-      (label: 'Export', icon: Icons.download_rounded, route: 'export'),
-      (label: 'Search', icon: Icons.search_rounded, route: 'search'),
-      (label: 'Settings', icon: Icons.settings_rounded, route: 'settings'),
-      (label: 'Budget', icon: Icons.account_balance_outlined, route: 'budget'),
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: AppSpacing.listGap,
-        mainAxisSpacing: AppSpacing.listGap,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: tools.length,
-      itemBuilder: (context, index) {
-        final tool = tools[index];
-        return GlassCard(
-          tone: GlassCardTone.muted,
-          onTap: () {
-            context.pushNamed(tool.route);
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(tool.icon, color: AppColors.accent, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                tool.label,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

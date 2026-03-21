@@ -3,6 +3,7 @@ import 'package:beltech/core/feature_flags/feature_flag.dart';
 import 'package:beltech/core/feature_flags/feature_flag_remote_data_source.dart';
 import 'package:beltech/core/feature_flags/feature_flag_store.dart';
 import 'package:beltech/core/feature_flags/refresh_feature_flags_use_case.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -35,4 +36,12 @@ final featureFlagProvider = FutureProvider.family<bool, FeatureFlag>((
 ) async {
   final snapshot = await ref.watch(featureFlagSnapshotProvider.future);
   return snapshot[flag] ?? flag.defaultEnabled;
+});
+
+/// Watches the haptics feature flag and keeps [AppHaptics.setEnabled] in sync.
+/// Consume this provider at the root widget to activate the gate app-wide.
+final hapticsFeatureFlagProvider = Provider<void>((ref) {
+  ref.watch(featureFlagProvider(FeatureFlag.haptics)).whenData(
+        (enabled) => AppHaptics.setEnabled(enabled),
+      );
 });

@@ -213,6 +213,7 @@ class _AppDriftSchema {
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_fuliza_scope_code_kind ON fuliza_lifecycle_events(scope, mpesa_code, event_kind)',
     );
 
+    await _AppDriftSchemaMigrations.removeLegacySeedIncome(store);
     await _AppDriftSchemaMigrations.seedDataIfEmpty(store);
     store._initialized = true;
   }

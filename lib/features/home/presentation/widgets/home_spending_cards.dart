@@ -1,11 +1,13 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/utils/category_visual.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/home/domain/entities/home_overview.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'home_spending_cards_balance.dart';
 part 'home_spending_cards_insights.dart';
@@ -80,7 +82,7 @@ class HomeDashboardTransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final catColor = AppColors.categoryColorFor(tx.category);
+    final visual = categoryVisual(tx.category);
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -89,10 +91,10 @@ class HomeDashboardTransactionTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: catColor.withValues(alpha: 0.18),
+              color: visual.background,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.payments_outlined, color: catColor, size: 20),
+            child: Icon(visual.icon, color: visual.foreground, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

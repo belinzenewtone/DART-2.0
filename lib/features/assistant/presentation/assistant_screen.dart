@@ -84,7 +84,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           ),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 0,
                 0,
                 0,
@@ -92,7 +92,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
               ),
               children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.screenHorizontal,
                   ),
                   child: Text(
@@ -102,7 +102,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                 ),
                 const SizedBox(height: 10),
                 Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.screenHorizontal,
                   ),
                   child: AssistantPromptGrid(
@@ -114,7 +114,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                 messagesState.when(
                   data: (messages) =>
                       AssistantConversationList(messages: messages),
-                  loading: () => Center(child: LoadingIndicator()),
+                  loading: () => const Center(child: LoadingIndicator()),
                   error: (_, __) => ErrorMessage(
                     label: 'Unable to load assistant',
                     onRetry: () => ref.invalidate(assistantMessagesProvider),
@@ -126,7 +126,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           AnimatedPadding(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,
-            padding: EdgeInsets.fromLTRB(
+            padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenHorizontal,
               12,
               AppSpacing.screenHorizontal,

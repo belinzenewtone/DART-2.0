@@ -147,9 +147,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (_isSameDate(normalized, selectedDay)) {
       return;
     }
-    ref.read(selectedDayProvider.notifier).state = normalized;
-    ref.read(visibleMonthProvider.notifier).state =
-        DateTime(normalized.year, normalized.month, 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() {
+        if (!mounted) {
+          return;
+        }
+        ref.read(selectedDayProvider.notifier).state = normalized;
+        ref.read(visibleMonthProvider.notifier).state =
+            DateTime(normalized.year, normalized.month, 1);
+      });
+    });
   }
 
   void _consumeSearchTarget(
@@ -158,57 +165,63 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     DateTime selectedDay,
     List<CalendarEvent> events,
   ) {
-    final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.event) {
+    final pendingTarget = ref.read(globalSearchDeepLinkTargetProvider);
+    if (pendingTarget?.kind != GlobalSearchKind.event) {
       return;
     }
-    final recordDate = target?.recordDate;
+    final recordDate = pendingTarget?.recordDate;
     if (recordDate != null && !_isSameDate(recordDate, selectedDay)) {
       return;
     }
 
-    ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() async {
+        if (!context.mounted) {
+          return;
+        }
+        final target = ref.read(globalSearchDeepLinkTargetProvider);
+        if (target?.kind != GlobalSearchKind.event) {
+          return;
+        }
+        final callbackDate = target?.recordDate;
+        if (callbackDate != null && !_isSameDate(callbackDate, selectedDay)) {
+          return;
+        }
+        ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
 
-    final recordId = target?.recordId;
-    if (recordId == null) {
-      return;
-    }
-    final event = events.where((item) => item.id == recordId).firstOrNull;
-    if (event == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
+        final recordId = target?.recordId;
+        if (recordId == null) {
+          return;
+        }
+        final event = events.where((item) => item.id == recordId).firstOrNull;
+        if (event == null) {
           AppFeedback.info(context, 'This calendar event no longer exists.',
               ref: ref);
+          return;
+        }
+
+        final input = await showEditEventDialog(
+          context,
+          selectedDay: selectedDay,
+          event: event,
+        );
+        if (input == null) {
+          return;
+        }
+        await ref.read(calendarWriteControllerProvider.notifier).updateEvent(
+              eventId: event.id,
+              title: input.title,
+              startAt: input.startAt,
+              priority: input.priority,
+              type: input.type,
+              endAt: input.endAt,
+              note: input.note,
+            );
+        if (context.mounted &&
+            !ref.read(calendarWriteControllerProvider).hasError) {
+          AppFeedback.success(context, 'Event updated', ref: ref);
         }
       });
-      return;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) {
-        return;
-      }
-      final input = await showEditEventDialog(
-        context,
-        selectedDay: selectedDay,
-        event: event,
-      );
-      if (input == null) {
-        return;
-      }
-      await ref.read(calendarWriteControllerProvider.notifier).updateEvent(
-            eventId: event.id,
-            title: input.title,
-            startAt: input.startAt,
-            priority: input.priority,
-            type: input.type,
-            endAt: input.endAt,
-            note: input.note,
-          );
-      if (context.mounted &&
-          !ref.read(calendarWriteControllerProvider).hasError) {
-        AppFeedback.success(context, 'Event updated', ref: ref);
-      }
     });
   }
 

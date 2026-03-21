@@ -1,10 +1,13 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
@@ -20,7 +23,11 @@ class ExpensesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshotState = ref.watch(expensesSnapshotProvider);
     final selectedFilter = ref.watch(expenseFilterProvider);
-    final writeState = ref.watch(expenseWriteControllerProvider);
+    // select() narrows rebuild scope: only rebuild this screen when isLoading
+    // actually flips — not on every intermediate writeState emission.
+    final writeBusy = ref.watch(
+      expenseWriteControllerProvider.select((s) => s.isLoading),
+    );
     final importMetricsState = ref.watch(expenseImportMetricsProvider);
     final reviewQueueState = ref.watch(expenseReviewQueueProvider);
     final quarantineState = ref.watch(expenseQuarantineQueueProvider);
@@ -39,7 +46,7 @@ class ExpensesScreen extends ConsumerWidget {
           child: ExpensesSnapshotContent(
             snapshot: snapshot,
             selectedFilter: selectedFilter,
-            busy: writeState.isLoading,
+            busy: writeBusy,
             onFilterChanged: (filter) {
               ref.read(expenseFilterProvider.notifier).state = filter;
             },
@@ -50,9 +57,39 @@ class ExpensesScreen extends ConsumerWidget {
               await ref
                   .read(expenseWriteControllerProvider.notifier)
                   .deleteExpense(expense.id);
-              if (context.mounted &&
-                  !ref.read(expenseWriteControllerProvider).hasError) {
-                AppFeedback.success(context, 'Transaction deleted', ref: ref);
+              if (!context.mounted) return;
+              if (ref.read(expenseWriteControllerProvider).hasError) return;
+              // Undo snackbar
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              if (messenger == null) return;
+              messenger.hideCurrentSnackBar();
+              final keyboardInset =
+                  MediaQuery.maybeOf(context)?.viewInsets.bottom ?? 0;
+              final closed = await messenger
+                  .showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Transaction deleted',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      action: SnackBarAction(label: 'Undo', onPressed: () {}),
+                      behavior: SnackBarBehavior.floating,
+                      margin:
+                          EdgeInsets.fromLTRB(16, 0, 16, 88 + keyboardInset),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  )
+                  .closed;
+              if (closed == SnackBarClosedReason.action && context.mounted) {
+                await ref
+                    .read(expenseWriteControllerProvider.notifier)
+                    .addExpense(
+                      title: expense.title,
+                      category: expense.category,
+                      amountKes: expense.amountKes,
+                      occurredAt: expense.occurredAt,
+                    );
               }
             },
             importMetrics: importMetricsState.valueOrNull ??
@@ -142,53 +179,51 @@ class ExpensesScreen extends ConsumerWidget {
             action: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  tooltip: 'Import SMS',
-                  onPressed: writeState.isLoading
+                AppIconPillButton(
+                  icon: Icons.phone_android_rounded,
+                  label: 'Import',
+                  tone: AppIconPillTone.subtle,
+                  onPressed: writeBusy
                       ? null
-                      : () async => handleExpenseSmsImport(context, ref),
-                  icon: const Icon(Icons.file_download_outlined),
+                      : () => handleExpenseSmsImport(context, ref),
                 ),
-                const SizedBox(width: 4),
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.accent.withValues(alpha: 0.12),
-                  ),
-                  child: IconButton(
-                    tooltip: 'Add expense',
-                    onPressed: writeState.isLoading
-                        ? null
-                        : () async {
-                            final input = await showAddExpenseDialog(context);
-                            if (input == null) {
-                              return;
-                            }
-                            await ref
-                                .read(expenseWriteControllerProvider.notifier)
-                                .addExpense(
-                                  title: input.title,
-                                  category: input.category,
-                                  amountKes: input.amountKes,
-                                  occurredAt: input.occurredAt,
-                                );
-                            if (context.mounted &&
-                                !ref
-                                    .read(expenseWriteControllerProvider)
-                                    .hasError) {
-                              AppFeedback.success(
-                                context,
-                                'Transaction added',
-                                ref: ref,
+                const SizedBox(width: 8),
+                AppIconPillButton(
+                  icon: Icons.add_rounded,
+                  label: 'Add',
+                  tone: AppIconPillTone.accent,
+                  onPressed: writeBusy
+                      ? null
+                      : () async {
+                          final input = await showAddExpenseDialog(context);
+                          if (input == null) {
+                            return;
+                          }
+                          await ref
+                              .read(expenseWriteControllerProvider.notifier)
+                              .addExpense(
+                                title: input.title,
+                                category: input.category,
+                                amountKes: input.amountKes,
+                                occurredAt: input.occurredAt,
                               );
-                            }
-                          },
-                    icon: const Icon(Icons.add),
-                  ),
+                          if (context.mounted &&
+                              !ref
+                                  .read(expenseWriteControllerProvider)
+                                  .hasError) {
+                            AppFeedback.success(
+                              context,
+                              'Transaction added',
+                              ref: ref,
+                            );
+                          }
+                        },
                 ),
               ],
             ),
           ),
+          const _DataFreshPill(),
+          const SizedBox(height: AppSpacing.listGap),
           Expanded(
             child: AnimatedSwitcher(
               duration: contentSwitchDuration,
@@ -197,6 +232,79 @@ class ExpensesScreen extends ConsumerWidget {
               transitionBuilder: (child, animation) =>
                   FadeTransition(opacity: animation, child: child),
               child: snapshotChild,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Data-fresh indicator ──────────────────────────────────────────────────────
+
+class _DataFreshPill extends StatefulWidget {
+  const _DataFreshPill();
+
+  @override
+  State<_DataFreshPill> createState() => _DataFreshPillState();
+}
+
+class _DataFreshPillState extends State<_DataFreshPill> {
+  String? _label;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSyncTime();
+  }
+
+  Future<void> _loadSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastMs = prefs.getInt('home_last_sync_ms') ?? 0;
+    if (lastMs == 0 || !mounted) return;
+    final diff =
+        DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(lastMs));
+    final label = switch (diff.inMinutes) {
+      0 => 'Just synced',
+      1 => 'Synced 1m ago',
+      final m when m < 60 => 'Synced ${m}m ago',
+      final m when m < 120 => 'Synced 1h ago',
+      final m => 'Synced ${(m / 60).floor()}h ago',
+    };
+    if (mounted) setState(() => _label = label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _label;
+    if (text == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.success.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.circle, size: 6, color: AppColors.success),
+                const SizedBox(width: 5),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

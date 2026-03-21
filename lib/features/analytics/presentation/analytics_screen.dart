@@ -1,6 +1,7 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/category_chip.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/secondary_page_shell.dart';
 import 'package:beltech/core/widgets/section_header.dart';
@@ -10,6 +11,7 @@ import 'package:beltech/features/analytics/presentation/widgets/analytics_bar_ch
 import 'package:beltech/features/analytics/presentation/widgets/analytics_category_breakdown.dart';
 import 'package:beltech/features/analytics/presentation/widgets/analytics_overview_cards.dart';
 import 'package:beltech/features/analytics/presentation/widgets/analytics_trend_chart.dart';
+import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +31,7 @@ class AnalyticsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PeriodSelector(period: period),
-          SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap),
           snapshotState.when(
             data: (snapshot) => _AnalyticsContent(
               snapshot: snapshot,
@@ -40,16 +42,17 @@ class AnalyticsScreen extends ConsumerWidget {
               tone: GlassCardTone.muted,
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, color: AppColors.danger),
+                  const Icon(Icons.error_outline, color: AppColors.danger),
                   const SizedBox(height: 8),
                   Text(
                     'Unable to load analytics',
                     style: AppTypography.bodySm(context),
                   ),
                   const SizedBox(height: 12),
-                  TextButton(
+                  AppButton(
                     onPressed: () => ref.invalidate(analyticsSnapshotProvider),
-                    child: const Text('Retry'),
+                    label: 'Retry',
+                    variant: AppButtonVariant.secondary,
                   ),
                 ],
               ),
@@ -71,52 +74,24 @@ class _PeriodSelector extends ConsumerWidget {
     return Row(
       children: [
         Expanded(
-          child: GlassCard(
-            tone: period == AnalyticsPeriod.week
-                ? GlassCardTone.accent
-                : GlassCardTone.muted,
+          child: CategoryChip(
+            label: 'Weekly',
+            selected: period == AnalyticsPeriod.week,
             onTap: () {
               ref.read(analyticsPeriodProvider.notifier).state =
                   AnalyticsPeriod.week;
             },
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Weekly',
-                  style: AppTypography.cardTitle(context).copyWith(
-                    color: period == AnalyticsPeriod.week
-                        ? AppColors.accent
-                        : AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
         const SizedBox(width: AppSpacing.listGap),
         Expanded(
-          child: GlassCard(
-            tone: period == AnalyticsPeriod.month
-                ? GlassCardTone.accent
-                : GlassCardTone.muted,
+          child: CategoryChip(
+            label: 'Monthly',
+            selected: period == AnalyticsPeriod.month,
             onTap: () {
               ref.read(analyticsPeriodProvider.notifier).state =
                   AnalyticsPeriod.month;
             },
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Monthly',
-                  style: AppTypography.cardTitle(context).copyWith(
-                    color: period == AnalyticsPeriod.month
-                        ? AppColors.accent
-                        : AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
       ],
@@ -137,7 +112,7 @@ class _LoadingAnalytics extends StatelessWidget {
             child: const LoadingIndicator(),
           ),
         ),
-        SizedBox(height: AppSpacing.cardGap),
+        const SizedBox(height: AppSpacing.cardGap),
         GlassCard(
           tone: GlassCardTone.muted,
           child: Container(
@@ -146,7 +121,7 @@ class _LoadingAnalytics extends StatelessWidget {
             child: const LoadingIndicator(),
           ),
         ),
-        SizedBox(height: AppSpacing.cardGap),
+        const SizedBox(height: AppSpacing.cardGap),
         GlassCard(
           tone: GlassCardTone.muted,
           child: Container(
@@ -155,7 +130,7 @@ class _LoadingAnalytics extends StatelessWidget {
             child: const LoadingIndicator(),
           ),
         ),
-        SizedBox(height: AppSpacing.cardGap),
+        const SizedBox(height: AppSpacing.cardGap),
         GlassCard(
           tone: GlassCardTone.muted,
           child: Container(
@@ -169,7 +144,7 @@ class _LoadingAnalytics extends StatelessWidget {
   }
 }
 
-class _AnalyticsContent extends StatelessWidget {
+class _AnalyticsContent extends StatefulWidget {
   const _AnalyticsContent({
     required this.snapshot,
     required this.period,
@@ -179,38 +154,76 @@ class _AnalyticsContent extends StatelessWidget {
   final AnalyticsPeriod period;
 
   @override
+  State<_AnalyticsContent> createState() => _AnalyticsContentState();
+}
+
+class _AnalyticsContentState extends State<_AnalyticsContent> {
+  /// Which chart mode is active: 0 = Trend (line), 1 = Distribution (bar)
+  int _chartMode = 0;
+
+  @override
   Widget build(BuildContext context) {
-    final trendPoints = switch (period) {
-      AnalyticsPeriod.week => snapshot.weeklySpending,
-      AnalyticsPeriod.month => snapshot.monthlySpending,
+    final trendPoints = switch (widget.period) {
+      AnalyticsPeriod.week => widget.snapshot.weeklySpending,
+      AnalyticsPeriod.month => widget.snapshot.monthlySpending,
     };
-    final trendTitle = period == AnalyticsPeriod.week
+    final trendTitle = widget.period == AnalyticsPeriod.week
         ? 'Weekly Spending Trend'
         : 'Monthly Spending Trend';
+    final distTitle = widget.period == AnalyticsPeriod.week
+        ? 'Weekly Distribution'
+        : 'Daily Distribution';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader('Overview', topPadding: 0),
-        AnalyticsOverviewCards(snapshot: snapshot),
-        SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Spending Trends'),
-        AnalyticsTrendChart(
-          title: trendTitle,
-          points: trendPoints,
+        const SectionHeader('Overview', topPadding: 0),
+        AnalyticsOverviewCards(snapshot: widget.snapshot),
+        const SizedBox(height: AppSpacing.sectionGap),
+        // Single chart with Trend / Distribution toggle
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Spending',
+                style: AppTypography.sectionTitle(context),
+              ),
+            ),
+            SegmentedButton<int>(
+              showSelectedIcon: false,
+              style: SegmentedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                textStyle: AppTypography.bodySm(context)
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+              segments: const [
+                ButtonSegment<int>(value: 0, label: Text('Trend')),
+                ButtonSegment<int>(value: 1, label: Text('Distribution')),
+              ],
+              selected: {_chartMode},
+              onSelectionChanged: (s) => setState(() => _chartMode = s.first),
+            ),
+          ],
         ),
-        SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Distribution'),
-        AnalyticsBarChart(
-          title: period == AnalyticsPeriod.week
-              ? 'Weekly Spend Distribution'
-              : 'Daily Spend Distribution',
-          points: trendPoints,
+        const SizedBox(height: 10),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: _chartMode == 0
+              ? AnalyticsTrendChart(
+                  key: const ValueKey('trend'),
+                  title: trendTitle,
+                  points: trendPoints,
+                )
+              : AnalyticsBarChart(
+                  key: const ValueKey('dist'),
+                  title: distTitle,
+                  points: trendPoints,
+                ),
         ),
-        SizedBox(height: AppSpacing.sectionGap),
-        SectionHeader('Categories'),
+        const SizedBox(height: AppSpacing.sectionGap),
+        const SectionHeader('Categories'),
         AnalyticsCategoryBreakdown(
-          categories: snapshot.categoryBreakdown,
+          categories: widget.snapshot.categoryBreakdown,
         ),
       ],
     );

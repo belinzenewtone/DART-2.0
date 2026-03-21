@@ -1,7 +1,11 @@
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/widgets/app_capsule.dart';
+import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
+import 'package:beltech/core/widgets/category_chip.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/app_search_bar.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
@@ -62,9 +66,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       }
     });
 
-    final countSubtitle = _selectionMode
-        ? '${_selectedTaskIds.length} selected'
-        : _buildCountSubtitle(allTasksState);
+    final countSubtitle = _buildCountSubtitle(allTasksState);
 
     return _TasksLayout(
       state: this,
@@ -176,37 +178,41 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 
   void _consumeSearchTarget(BuildContext context, List<TaskItem> allTasks) {
-    final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.task) {
+    final pendingTarget = ref.read(globalSearchDeepLinkTargetProvider);
+    if (pendingTarget?.kind != GlobalSearchKind.task) {
       return;
     }
-
-    ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
-
-    final recordId = target?.recordId;
-    if (recordId == null) {
-      return;
-    }
-    final task = allTasks.where((item) => item.id == recordId).firstOrNull;
-    if (task == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          AppFeedback.info(context, 'This task no longer exists.', ref: ref);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() async {
+        if (!context.mounted) {
+          return;
         }
-      });
-      return;
-    }
+        final target = ref.read(globalSearchDeepLinkTargetProvider);
+        if (target?.kind != GlobalSearchKind.task) {
+          return;
+        }
+        ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
 
-    ref.read(taskFilterProvider.notifier).state = TaskFilter.all;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) {
-        return;
-      }
-      setState(() {
-        _selectionMode = false;
-        _selectedTaskIds.clear();
+        final recordId = target?.recordId;
+        if (recordId == null) {
+          return;
+        }
+        final task = allTasks.where((item) => item.id == recordId).firstOrNull;
+        if (task == null) {
+          AppFeedback.info(context, 'This task no longer exists.', ref: ref);
+          return;
+        }
+
+        ref.read(taskFilterProvider.notifier).state = TaskFilter.all;
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _selectionMode = false;
+          _selectedTaskIds.clear();
+        });
+        await _editTask(context, task);
       });
-      await _editTask(context, task);
     });
   }
 

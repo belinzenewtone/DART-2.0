@@ -38,7 +38,7 @@ class _SettingsAboutCardState extends State<SettingsAboutCard> {
           tone: GlassCardTone.muted,
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.accent),
+              const Icon(Icons.info_outline, color: AppColors.accent),
               const SizedBox(width: 12),
               Expanded(
                 child:
@@ -75,7 +75,7 @@ class _SettingsAboutCardState extends State<SettingsAboutCard> {
           },
           child: Row(
             children: [
-              Icon(Icons.delete_forever_outlined, color: AppColors.danger),
+              const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

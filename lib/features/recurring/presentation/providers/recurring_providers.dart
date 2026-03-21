@@ -66,6 +66,21 @@ class RecurringWriteController extends AutoDisposeAsyncNotifier<void> {
     });
   }
 
+  Future<void> toggleEnabled(RecurringTemplate template) async {
+    await updateTemplate(
+      templateId: template.id,
+      kind: template.kind,
+      title: template.title,
+      description: template.description,
+      category: template.category,
+      amountKes: template.amountKes,
+      priority: template.priority,
+      cadence: template.cadence,
+      nextRunAt: template.nextRunAt,
+      enabled: !template.enabled,
+    );
+  }
+
   Future<void> deleteTemplate(int templateId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {

@@ -20,7 +20,6 @@ import 'package:beltech/features/settings/presentation/widgets/notification_pref
 import 'package:beltech/features/settings/presentation/widgets/settings_about_card.dart';
 import 'package:beltech/features/settings/presentation/widgets/settings_appearance_card.dart';
 import 'package:beltech/features/settings/presentation/widgets/settings_security_card.dart';
-import 'package:beltech/features/settings/presentation/widgets/settings_tools_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,7 +33,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final accountWriteState = ref.watch(accountAuthControllerProvider);
     final useSupabase = ref.watch(useSupabaseProvider);
     final cloudAvailable = ref.watch(cloudModeAvailableProvider);
     final preferredDataMode = ref.watch(preferredDataModeProvider);
@@ -60,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader('Data Mode', topPadding: 0),
+          const SectionHeader('Data Mode', topPadding: 0),
           GlassCard(
             tone: GlassCardTone.muted,
             child: Column(
@@ -134,39 +132,15 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap),
 
-          // Account banner — sign out or local-mode notice
-          if (useSupabase)
-            GlassCard(
-              tone: GlassCardTone.muted,
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: accountWriteState.isLoading
-                      ? null
-                      : () async {
-                          await ref
-                              .read(accountAuthControllerProvider.notifier)
-                              .signOut();
-                        },
-                  icon: accountWriteState.isLoading
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.logout_rounded),
-                  label: const Text('Sign Out'),
-                ),
-              ),
-            )
-          else
+          // Data mode status banner (offline-only users)
+          if (!useSupabase)
             GlassCard(
               tone: GlassCardTone.muted,
               child: Row(
                 children: [
-                  Icon(Icons.cloud_off_outlined,
+                  const Icon(Icons.cloud_off_outlined,
                       color: AppColors.textMuted, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
@@ -185,7 +159,7 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  AppCapsule(
+                  const AppCapsule(
                     label: 'Offline',
                     color: AppColors.textMuted,
                     variant: AppCapsuleVariant.outline,
@@ -194,22 +168,22 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          SizedBox(height: AppSpacing.sectionGap),
+          if (!useSupabase) const SizedBox(height: AppSpacing.sectionGap),
 
           // Appearance
-          SectionHeader('Appearance', topPadding: 0),
+          const SectionHeader('Appearance', topPadding: 0),
           const SettingsAppearanceCard(),
-          SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // Security
-          SectionHeader('Security'),
+          const SectionHeader('Security'),
           authState.when(
             data: (state) => SettingsSecurityCard(state: state),
-            loading: () => GlassCard(
+            loading: () => const GlassCard(
               tone: GlassCardTone.muted,
               child: SizedBox(
                 height: 200,
-                child: const Center(
+                child: Center(
                   child: LoadingIndicator(),
                 ),
               ),
@@ -218,7 +192,7 @@ class SettingsScreen extends ConsumerWidget {
               tone: GlassCardTone.muted,
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, color: AppColors.danger),
+                  const Icon(Icons.error_outline, color: AppColors.danger),
                   const SizedBox(height: 8),
                   Text(
                     'Unable to load security settings',
@@ -233,23 +207,18 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // Notifications
-          SectionHeader('Notifications'),
-          GlassCard(
+          const SectionHeader('Notifications'),
+          const GlassCard(
             tone: GlassCardTone.muted,
-            child: const NotificationPreferencesSection(),
+            child: NotificationPreferencesSection(),
           ),
-          SizedBox(height: AppSpacing.sectionGap),
-
-          // Workspace Tools
-          SectionHeader('Workspace Tools'),
-          const SettingsToolsCard(),
-          SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // About
-          SectionHeader('About'),
+          const SectionHeader('About'),
           const SettingsAboutCard(),
         ],
       ),

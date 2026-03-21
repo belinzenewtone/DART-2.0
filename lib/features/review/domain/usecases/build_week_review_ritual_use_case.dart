@@ -6,7 +6,7 @@ class BuildWeekReviewRitualUseCase {
 
   WeekReviewRitual call(WeekReviewData data) {
     if (data.netKes >= 0 && data.completionRateThisWeek >= 0.7) {
-      return WeekReviewRitual(
+      return const WeekReviewRitual(
         headline: 'Protect your momentum',
         summary:
             'You kept cash flow positive and followed through on your priorities. Close the week with a quick reset.',
@@ -17,7 +17,7 @@ class BuildWeekReviewRitualUseCase {
       );
     }
     if (data.netKes < 0) {
-      return WeekReviewRitual(
+      return const WeekReviewRitual(
         headline: 'Reset your spending rhythm',
         summary:
             'This week leaned negative, so the ritual should focus on one category to tighten before Monday.',
@@ -28,7 +28,7 @@ class BuildWeekReviewRitualUseCase {
       );
     }
     if (data.tasksDueThisWeek > 0 && data.completionRateThisWeek < 0.7) {
-      return WeekReviewRitual(
+      return const WeekReviewRitual(
         headline: 'Tighten your task cadence',
         summary:
             'A short ritual now will help you cut carry-over work and start the next week with a cleaner slate.',

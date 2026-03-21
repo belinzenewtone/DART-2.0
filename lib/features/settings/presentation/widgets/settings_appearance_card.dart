@@ -19,7 +19,7 @@ class SettingsAppearanceCard extends ConsumerWidget {
           tone: GlassCardTone.muted,
           child: Row(
             children: [
-              Icon(Icons.palette_outlined, color: AppColors.accent),
+              const Icon(Icons.palette_outlined, color: AppColors.accent),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

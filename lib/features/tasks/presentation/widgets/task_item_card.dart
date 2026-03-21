@@ -2,7 +2,6 @@ import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_radius.dart';
-import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
@@ -39,10 +38,6 @@ class TaskItemCard extends StatelessWidget {
     final swipeDuration = AppMotion.swipe(context);
     final resizeDuration = AppMotion.resize(context);
     final priorityColor = taskPriorityColor(task.priority);
-    final isOverdue = !task.completed &&
-        task.dueDate != null &&
-        task.dueDate!.isBefore(DateTime.now());
-
     final countdownBadge = _buildCountdownBadge(task);
 
     return Dismissible(
@@ -91,114 +86,114 @@ class TaskItemCard extends StatelessWidget {
                   AppHaptics.lightImpact();
                   onSelectToggle();
                 },
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 4,
-                height: 76,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: priorityColor,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: priorityColor,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                onPressed: busy
-                    ? null
-                    : () {
-                        AppHaptics.lightImpact();
-                        if (selectionMode) {
-                          onSelectToggle();
-                          return;
-                        }
-                        onToggle();
-                      },
-                icon: Icon(
-                  selectionMode
-                      ? (selected
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded)
-                      : (task.completed
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked),
-                  color: selectionMode
-                      ? (selected ? AppColors.accent : secondaryText)
-                      : (task.completed ? AppColors.success : secondaryText),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      style: textTheme.bodyLarge?.copyWith(
-                        decoration:
-                            task.completed ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                    if (task.description != null &&
-                        task.description!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          task.description!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: secondaryText,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        AppCapsule(
-                          label: _priorityLabel(task.priority),
-                          color: priorityColor,
-                          variant: AppCapsuleVariant.subtle,
-                          size: AppCapsuleSize.sm,
-                        ),
-                        const SizedBox(width: AppSpacing.listGap),
-                        if (countdownBadge != null)
-                          Expanded(child: countdownBadge)
-                        else
-                          Expanded(
-                            child: Text(
-                              task.completed
-                                  ? 'Completed'
-                                  : task.dueDate == null
-                                      ? 'No due date'
-                                      : 'Due on ${_formatDate(task.dueDate!)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: task.completed
-                                    ? AppColors.success
-                                    : (isOverdue
-                                        ? AppColors.danger
-                                        : secondaryText),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (!selectionMode)
+                const SizedBox(width: 10),
                 IconButton(
                   onPressed: busy
                       ? null
                       : () {
-                          onEdit();
+                          AppHaptics.lightImpact();
+                          if (selectionMode) {
+                            onSelectToggle();
+                            return;
+                          }
+                          onToggle();
                         },
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: Icon(
+                    selectionMode
+                        ? (selected
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded)
+                        : (task.completed
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked),
+                    color: selectionMode
+                        ? (selected ? AppColors.accent : secondaryText)
+                        : (task.completed ? AppColors.success : secondaryText),
+                  ),
                 ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: textTheme.bodyLarge?.copyWith(
+                          decoration: task.completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      if (task.description != null &&
+                          task.description!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            task.description!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: secondaryText,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          AppCapsule(
+                            label: _priorityLabel(task.priority),
+                            color: priorityColor,
+                            variant: AppCapsuleVariant.subtle,
+                            size: AppCapsuleSize.sm,
+                          ),
+                          if (countdownBadge != null)
+                            countdownBadge
+                          else if (task.completed)
+                            const AppCapsule(
+                              label: 'Completed',
+                              color: AppColors.success,
+                              variant: AppCapsuleVariant.subtle,
+                              size: AppCapsuleSize.sm,
+                              icon: Icons.check_rounded,
+                            )
+                          else if (task.dueDate != null)
+                            AppCapsule(
+                              label: _formatDate(task.dueDate!),
+                              color: secondaryText,
+                              variant: AppCapsuleVariant.subtle,
+                              size: AppCapsuleSize.sm,
+                              icon: Icons.schedule_rounded,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (!selectionMode)
+                  IconButton(
+                    onPressed: busy
+                        ? null
+                        : () {
+                            onEdit();
+                          },
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -217,36 +212,41 @@ class TaskItemCard extends StatelessWidget {
     if (difference.isNegative) {
       // Overdue
       final days = (-difference.inDays).abs();
+      final label = days == 0 ? 'Due today' : '${days}d overdue';
       return AppCapsule(
-        label: 'Overdue ${days}d',
+        label: label,
         color: AppColors.danger,
-        variant: AppCapsuleVariant.solid,
+        variant: AppCapsuleVariant.subtle,
         size: AppCapsuleSize.sm,
+        icon: Icons.warning_amber_rounded,
       );
     } else if (difference.inDays == 0) {
       // Due today
-      return AppCapsule(
-        label: 'Due today',
+      return const AppCapsule(
+        label: 'Today',
         color: AppColors.warning,
         variant: AppCapsuleVariant.subtle,
         size: AppCapsuleSize.sm,
+        icon: Icons.schedule_rounded,
       );
     } else if (difference.inHours < 3 && difference.inHours > 0) {
       // Due in less than 3 hours
       final hours = difference.inHours;
       return AppCapsule(
-        label: 'Due in ${hours}h',
+        label: 'In ${hours}h',
         color: AppColors.warning,
         variant: AppCapsuleVariant.subtle,
         size: AppCapsuleSize.sm,
+        icon: Icons.schedule_rounded,
       );
     } else if (difference.inDays == 1) {
       // Due tomorrow
-      return AppCapsule(
-        label: 'Due tomorrow',
+      return const AppCapsule(
+        label: 'Tomorrow',
         color: AppColors.accent,
         variant: AppCapsuleVariant.subtle,
         size: AppCapsuleSize.sm,
+        icon: Icons.event_rounded,
       );
     }
 

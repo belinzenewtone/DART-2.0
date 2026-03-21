@@ -1,12 +1,9 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/beltech_logo.dart';
 import 'package:flutter/material.dart';
 
-/// The brand hero block shown above the auth form.
-///
-/// Renders the BELTECH logo inside a soft radial glow halo,
-/// followed by the wordmark and tagline using design tokens.
 class AuthBrandHeader extends StatelessWidget {
   const AuthBrandHeader({super.key});
 
@@ -14,11 +11,9 @@ class AuthBrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Logo + atmospheric glow halo
         Stack(
           alignment: Alignment.center,
           children: [
-            // Radial glow behind logo
             IgnorePointer(
               child: Container(
                 width: 130,
@@ -36,7 +31,6 @@ class AuthBrandHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 18),
-        // Wordmark
         Text(
           'BELTECH',
           style: AppTypography.pageTitle(context).copyWith(
@@ -45,10 +39,17 @@ class AuthBrandHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 5),
-        // Tagline
         Text(
-          'Innovate and Create',
+          'Secure personal workspace',
           style: AppTypography.bodySm(context),
+        ),
+        const SizedBox(height: 12),
+        const AppCapsule(
+          label: 'Clean. Private. Always in sync.',
+          color: AppColors.accent,
+          icon: Icons.auto_awesome_rounded,
+          variant: AppCapsuleVariant.subtle,
+          size: AppCapsuleSize.md,
         ),
       ],
     );

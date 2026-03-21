@@ -58,25 +58,37 @@ Future<void> _deleteSelectedImpl(
   if (ids.isEmpty) {
     return;
   }
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showModalBottomSheet<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete selected tasks?'),
-          content: Text(
-            ids.length == 1
-                ? 'This action cannot be undone.'
-                : 'This will permanently delete ${ids.length} tasks.',
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetCtx) => AppFormSheet(
+          title: ids.length == 1 ? 'Delete Task?' : 'Delete ${ids.length} Tasks?',
+          subtitle: ids.length == 1
+              ? 'This action cannot be undone.'
+              : 'This will permanently delete ${ids.length} tasks. This cannot be undone.',
+          onClose: () => Navigator.of(sheetCtx).pop(false),
+          footer: Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Cancel',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => Navigator.of(sheetCtx).pop(false),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  label: 'Delete',
+                  variant: AppButtonVariant.danger,
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: () => Navigator.of(sheetCtx).pop(true),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
-            ),
-          ],
+          child: const SizedBox.shrink(),
         ),
       ) ??
       false;
