@@ -124,6 +124,7 @@ class _ToolShortcutTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       onTap: onTap,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
@@ -144,19 +145,22 @@ class _ToolShortcutTile extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           SizedBox(
+            width: double.infinity,
             height: 18,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                shortcut.label,
-                textAlign: TextAlign.center,
-                style: AppTypography.cardTitle(context).copyWith(
-                  fontSize: 13,
-                  height: 1.1,
-                  letterSpacing: -0.1,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  shortcut.label,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.cardTitle(context).copyWith(
+                    fontSize: 13,
+                    height: 1.1,
+                    letterSpacing: -0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.visible,
               ),
             ),
           ),
