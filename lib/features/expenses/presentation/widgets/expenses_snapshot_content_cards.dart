@@ -169,16 +169,20 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return GlassCard(
       tone: tone,
       accentColor: accentColor,
       child: SizedBox(
-        height: 72,
+        height: 80,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: textTheme.bodyMedium),
+            Text(
+              title,
+              style: AppTypography.bodySm(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 6),
             Expanded(
               child: Align(
@@ -188,7 +192,7 @@ class _SummaryCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     amount,
-                    style: textTheme.titleMedium,
+                    style: AppTypography.amount(context),
                     maxLines: 1,
                     softWrap: false,
                   ),
@@ -459,13 +463,13 @@ class _CategoryRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Icon with tinted background
+              // Icon with tinted background — circle matches transaction row
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   color: visual.background,
-                  borderRadius: BorderRadius.circular(12),
+                  shape: BoxShape.circle,
                   border: Border.all(
                     color: visual.foreground.withValues(alpha: 0.15),
                     width: 1,

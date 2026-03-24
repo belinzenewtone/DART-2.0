@@ -6,62 +6,6 @@ import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
 
-enum _TxTagKind { received, sent, paybill, goods, auto }
-
-class _TxTag {
-  const _TxTag(this.kind);
-
-  final _TxTagKind kind;
-
-  String get label => switch (kind) {
-        _TxTagKind.received => 'Received',
-        _TxTagKind.sent => 'Sent',
-        _TxTagKind.paybill => 'Paybill',
-        _TxTagKind.goods => 'Goods',
-        _TxTagKind.auto => 'Auto',
-      };
-
-  Color get color => switch (kind) {
-        _TxTagKind.received => AppColors.success,
-        _TxTagKind.sent => AppColors.accent,
-        _TxTagKind.paybill => AppColors.categoryBill,
-        _TxTagKind.goods => AppColors.teal,
-        _TxTagKind.auto => AppColors.warning,
-      };
-
-  IconData get icon => switch (kind) {
-        _TxTagKind.received => Icons.arrow_downward_rounded,
-        _TxTagKind.sent => Icons.arrow_upward_rounded,
-        _TxTagKind.paybill => Icons.receipt_long_rounded,
-        _TxTagKind.goods => Icons.shopping_bag_outlined,
-        _TxTagKind.auto => Icons.flash_on_rounded,
-      };
-
-  static _TxTag? infer(String title) {
-    final lower = title.toLowerCase();
-    if (lower.contains('received') || lower.contains('you have received')) {
-      return const _TxTag(_TxTagKind.received);
-    }
-    if (lower.contains('fuliza') || lower.contains('m-shwari')) {
-      return const _TxTag(_TxTagKind.auto);
-    }
-    if (lower.contains('paybill') || lower.contains('pay bill')) {
-      return const _TxTag(_TxTagKind.paybill);
-    }
-    if (lower.contains('buy goods') ||
-        lower.contains('buygoods') ||
-        lower.contains(' till ')) {
-      return const _TxTag(_TxTagKind.goods);
-    }
-    if (lower.contains('sent to') ||
-        lower.contains('send money') ||
-        lower.contains('transferred')) {
-      return const _TxTag(_TxTagKind.sent);
-    }
-    return null;
-  }
-}
-
 class ExpenseTransactionRow extends StatelessWidget {
   const ExpenseTransactionRow({
     super.key,
@@ -87,7 +31,6 @@ class ExpenseTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visual = categoryVisual(category);
-    final tag = _TxTag.infer(title);
 
     return RepaintBoundary(
       child: Dismissible(
@@ -147,25 +90,20 @@ class ExpenseTransactionRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
+                    const SizedBox(height: 6),
+                    // Minimal row: category chip + time only.
+                    // The direction tag (Sent/Received/Paybill) is removed —
+                    // it's inferrable from the icon and amount sign, and was
+                    // the primary source of clutter on the Finance screen.
+                    Row(
                       children: [
-                        if (tag != null)
-                          AppCapsule(
-                            label: tag.label,
-                            color: tag.color,
-                            variant: AppCapsuleVariant.subtle,
-                            size: AppCapsuleSize.sm,
-                            icon: tag.icon,
-                          ),
                         AppCapsule(
                           label: category,
                           color: visual.foreground,
                           variant: AppCapsuleVariant.subtle,
                           size: AppCapsuleSize.sm,
                         ),
+                        const SizedBox(width: 6),
                         _TimeChip(occurredAt: occurredAt),
                       ],
                     ),

@@ -84,27 +84,33 @@ class AppColors {
   }
 
   // ── Brightness-aware helpers ─────────────────────────────────────────────────
+  // Light mode mirrors iOS Human Interface Guidelines system palette:
+  //   background  → #F2F2F7  (systemGroupedBackground)
+  //   surface     → #FFFFFF  (secondarySystemGroupedBackground)
+  //   surfaceMuted→ #EFEFF4  (tertiarySystemGroupedBackground)
+  //   border      → #E5E5EA  (iOS separator)
+
   static Color backgroundFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFFF2F6FC) : background;
+      brightness == Brightness.light ? const Color(0xFFF2F2F7) : background;
 
   static Color surfaceFor(Brightness brightness) =>
       brightness == Brightness.light ? const Color(0xFFFFFFFF) : surface;
 
   static Color surfaceMutedFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFFF1F5FB) : surfaceMuted;
+      brightness == Brightness.light ? const Color(0xFFEFEFF4) : surfaceMuted;
 
   static Color surfaceSubtleFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFFEBF1FA) : surfaceSubtle;
+      brightness == Brightness.light ? const Color(0xFFE5E5EA) : surfaceSubtle;
 
   static Color borderFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFFB7C6DC) : border;
+      brightness == Brightness.light ? const Color(0xFFE5E5EA) : border;
 
   static Color textPrimaryFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFF11233F) : textPrimary;
+      brightness == Brightness.light ? const Color(0xFF0A0A0F) : textPrimary;
 
   static Color textSecondaryFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFF516584) : textSecondary;
+      brightness == Brightness.light ? const Color(0xFF515167) : textSecondary;
 
   static Color textMutedFor(Brightness brightness) =>
-      brightness == Brightness.light ? const Color(0xFF8AA0BF) : textMuted;
+      brightness == Brightness.light ? const Color(0xFF8E8EA0) : textMuted;
 }

@@ -257,12 +257,18 @@ class _ProfileQuickSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final sheetBg = AppColors.surfaceFor(brightness);
+    final handleColor = AppColors.borderFor(brightness);
+    final nameColor = AppColors.textPrimaryFor(brightness);
+    final emailColor = AppColors.textSecondaryFor(brightness);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(
-          top: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          top: BorderSide(color: AppColors.borderFor(brightness).withValues(alpha: 0.5)),
         ),
       ),
       padding: EdgeInsets.only(
@@ -280,7 +286,7 @@ class _ProfileQuickSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 24),
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: handleColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -301,19 +307,19 @@ class _ProfileQuickSheet extends StatelessWidget {
           if (firstName.isNotEmpty)
             Text(
               firstName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: nameColor,
               ),
             ),
           if (email.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               email,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: emailColor,
               ),
             ),
           ],

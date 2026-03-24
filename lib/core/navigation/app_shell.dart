@@ -148,19 +148,25 @@ class _AppShellState extends ConsumerState<AppShell>
       ),
       child: Stack(
         children: [
-          IgnorePointer(
-            child: AnimatedContainer(
-              duration: overlayDuration,
-              curve: Curves.easeOutCubic,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0.75, -0.9),
-                  radius: 1.05,
-                  colors: [accent.withValues(alpha: 0.22), Colors.transparent],
+          // Accent radial glow — dark mode only.
+          // Light mode uses a clean #F2F2F7 background, no overlays needed.
+          if (brightness == Brightness.dark)
+            IgnorePointer(
+              child: AnimatedContainer(
+                duration: overlayDuration,
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.75, -0.9),
+                    radius: 1.05,
+                    colors: [
+                      accent.withValues(alpha: 0.22),
+                      Colors.transparent
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           IgnorePointer(
             ignoring: _appLocked,
             child: Scaffold(

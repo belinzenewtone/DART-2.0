@@ -114,9 +114,18 @@ class _PageShellState extends State<PageShell>
       );
     }
 
+    // In light mode: clean white background, no atmospheric glow orbs.
+    // In dark mode: keep the accent + secondary glow orbs for depth.
+    final isLight =
+        Theme.of(context).brightness == Brightness.light;
+
+    if (isLight) {
+      return SafeArea(bottom: false, child: content);
+    }
+
     return Stack(
       children: [
-        // Top-right accent glow
+        // Top-right accent glow (dark mode only)
         Positioned(
           top: -60,
           right: -60,
@@ -134,7 +143,7 @@ class _PageShellState extends State<PageShell>
             ),
           ),
         ),
-        // Bottom-left secondary glow
+        // Bottom-left secondary glow (dark mode only)
         Positioned(
           bottom: 100,
           left: -80,

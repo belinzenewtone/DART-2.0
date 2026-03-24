@@ -3,126 +3,153 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Semantic text style helpers.
 ///
-/// Use these instead of raw `Theme.of(context).textTheme.*` calls so that
-/// intent is self-documenting and consistent across every screen.
+/// All styles are brightness-aware — light mode uses the iOS Human Interface
+/// Guidelines letter-spacing and weight conventions (tighter tracking on large
+/// text, medium weight for labels). Dark mode retains the original values.
 ///
-/// Example:
+/// Usage:
 /// ```dart
 /// Text('Good Morning', style: AppTypography.pageTitle(context))
-/// Text('YOUR DAY', style: AppTypography.eyebrow(context))
-/// Text('KES 4,200', style: AppTypography.amountLg(context))
+/// Text('YOUR DAY',     style: AppTypography.eyebrow(context))
+/// Text('KES 4,200',    style: AppTypography.amountLg(context))
 /// ```
 class AppTypography {
   AppTypography._();
 
+  static bool _isLight(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light;
+
   // ── Page-level ───────────────────────────────────────────────────────────────
 
-  /// 28px w700 — screen main title
-  static TextStyle pageTitle(BuildContext context) => GoogleFonts.inter(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        height: 34 / 28,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  /// 28 / 34px w700 — screen main title
+  static TextStyle pageTitle(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: light ? 30 : 28,
+      fontWeight: FontWeight.w700,
+      height: light ? 36 / 30 : 34 / 28,
+      letterSpacing: light ? 0.35 : 0,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+  }
 
   /// 11px w600 uppercase + letter-spacing — label above a title
-  static TextStyle eyebrow(BuildContext context) => GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.9,
-        height: 1.4,
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFF8AA0BF)
-            : const Color(0xFF74839A),
-      ).copyWith(
-        // uppercase via a workaround: use the text itself — callers should
-        // pass UPPER text, or wrap with .toUpperCase()
-      );
+  static TextStyle eyebrow(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      letterSpacing: light ? 0.5 : 0.9,
+      height: 1.4,
+      color: light ? const Color(0xFF8E8EA0) : const Color(0xFF74839A),
+    );
+  }
 
   // ── Section-level ────────────────────────────────────────────────────────────
 
   /// 17px w600 — section label
-  static TextStyle sectionTitle(BuildContext context) => GoogleFonts.inter(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        height: 24 / 17,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  static TextStyle sectionTitle(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      height: 24 / 17,
+      letterSpacing: light ? -0.4 : 0,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+  }
 
   // ── Card-level ───────────────────────────────────────────────────────────────
 
   /// 15px w600 — card heading
-  static TextStyle cardTitle(BuildContext context) => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        height: 22 / 15,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  static TextStyle cardTitle(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 22 / 15,
+      letterSpacing: light ? -0.23 : 0,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+  }
 
   // ── Body ─────────────────────────────────────────────────────────────────────
 
   /// 15px w400 — default body copy
-  static TextStyle bodyMd(BuildContext context) => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
-        height: 22 / 15,
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFF516584)
-            : const Color(0xFFA8B9D6),
-      );
+  static TextStyle bodyMd(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 15,
+      fontWeight: FontWeight.w400,
+      height: 22 / 15,
+      letterSpacing: light ? -0.23 : 0,
+      color: light ? const Color(0xFF515167) : const Color(0xFFA8B9D6),
+    );
+  }
 
   /// 13px w400 — small supporting text, metadata
-  static TextStyle bodySm(BuildContext context) => GoogleFonts.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        height: 20 / 13,
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFF8AA0BF)
-            : const Color(0xFF74839A),
-      );
+  static TextStyle bodySm(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 13,
+      fontWeight: FontWeight.w400,
+      height: 20 / 13,
+      letterSpacing: light ? -0.08 : 0,
+      color: light ? const Color(0xFF8E8EA0) : const Color(0xFF74839A),
+    );
+  }
 
   // ── Numeric / financial ──────────────────────────────────────────────────────
 
   /// 22px w700 — inline amounts on cards
-  static TextStyle amount(BuildContext context) => GoogleFonts.inter(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        height: 28 / 22,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  static TextStyle amount(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      height: 28 / 22,
+      letterSpacing: light ? -0.5 : 0,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+  }
 
   /// 30px w700 — hero amounts (balance, total)
-  static TextStyle amountLg(BuildContext context) => GoogleFonts.inter(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        height: 36 / 30,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  static TextStyle amountLg(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: light ? 32 : 30,
+      fontWeight: FontWeight.w700,
+      height: 38 / 32,
+      letterSpacing: light ? -0.5 : 0,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+  }
 
-  // ── Meta / label ─────────────────────────────────────────────────────────
+  // ── Meta / label ─────────────────────────────────────────────────────────────
 
   /// 12px w400 — chart axis labels, timestamp chips, fine-print metadata
-  ///
-  /// Use this instead of inline `TextStyle(fontSize: 12)` calls.
-  static TextStyle metaText(BuildContext context) => GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        height: 18 / 12,
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFF8AA0BF)
-            : const Color(0xFF74839A),
-      );
+  static TextStyle metaText(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 18 / 12,
+      letterSpacing: light ? 0 : 0,
+      color: light ? const Color(0xFF8E8EA0) : const Color(0xFF74839A),
+    );
+  }
 
   /// 12px w500 — small uppercase labels, form section headers
-  static TextStyle label(BuildContext context) => GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 18 / 12,
-        letterSpacing: 0.3,
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFF516584)
-            : const Color(0xFFA8B9D6),
-      );
+  static TextStyle label(BuildContext context) {
+    final light = _isLight(context);
+    return GoogleFonts.inter(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      height: 18 / 12,
+      letterSpacing: light ? 0.06 : 0.3,
+      color: light ? const Color(0xFF515167) : const Color(0xFFA8B9D6),
+    );
+  }
 
   // ── Utility ──────────────────────────────────────────────────────────────────
 
@@ -131,8 +158,7 @@ class AppTypography {
       style.copyWith(color: color);
 
   /// Copy a style and reduce opacity (for disabled / muted states).
-  static TextStyle muted(TextStyle style) =>
-      style.copyWith(
+  static TextStyle muted(TextStyle style) => style.copyWith(
         color: style.color?.withValues(alpha: 0.5),
       );
 }

@@ -122,74 +122,96 @@ class HomeWeeklyMoneyBrief extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header row — icon + title + week amount inline
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.18),
+                  color: AppColors.teal.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.insights_rounded,
                   color: AppColors.teal,
-                  size: 16,
+                  size: 15,
                 ),
               ),
               const SizedBox(width: 10),
-              Text(
-                'Weekly Brief',
-                style: AppTypography.cardTitle(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
               Expanded(
-                child: _BriefStat(
-                  label: 'This Week',
-                  value: CurrencyFormatter.compact(overview.weekKes),
+                child: Text(
+                  'Weekly Brief',
+                  style: AppTypography.cardTitle(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Week spend — shown inline to save vertical space
+              Text(
+                CurrencyFormatter.compact(overview.weekKes),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.accent,
                 ),
               ),
-              const SizedBox(width: 8),
-              if (topCategory != null)
-                Expanded(
-                  child: _BriefStat(
-                    label: 'Top Category',
-                    value: topCategory,
+            ],
+          ),
+          // Top category row (only shown when available)
+          if (topCategory != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.category_outlined,
+                  size: 12,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'Top category: ',
+                  style: AppTypography.bodySm(context),
+                ),
+                Text(
+                  topCategory,
+                  style: AppTypography.bodySm(context).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.teal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ],
+          // Tip — kept but more compact, shown only when present
+          if (tip != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 12,
                     color: AppColors.teal,
                   ),
                 ),
-            ],
-          ),
-          if (tip != null) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: AppColors.teal.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb_outline_rounded,
-                      size: 13, color: AppColors.teal),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.teal,
-                        fontWeight: FontWeight.w500,
-                      ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    tip,
+                    style: AppTypography.bodySm(context).copyWith(
+                      color: AppColors.teal,
+                      fontWeight: FontWeight.w500,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ],
@@ -221,47 +243,6 @@ class HomeWeeklyMoneyBrief extends StatelessWidget {
   }
 }
 
-class _BriefStat extends StatelessWidget {
-  const _BriefStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Task completion progress bar card.
 class HomeProductivityCard extends StatelessWidget {
