@@ -4,27 +4,26 @@ import 'package:flutter/material.dart';
 class GlassStyles {
   GlassStyles._();
 
-  // In dark mode we keep the frosted glass look.
-  // In light mode we use clean iOS-style solid white surfaces — no blur needed.
   static const double blurSigma = 12;
-  static const double borderRadius = 20;
+  static const double borderRadius = 16;
   static const EdgeInsets cardPadding = EdgeInsets.all(16);
 
   static double blurSigmaFor(Brightness brightness) {
-    // Light mode: zero blur — iOS uses solid white cards, not glass
-    if (brightness == Brightness.light) return 0;
+    if (brightness == Brightness.light) {
+      return 6;
+    }
     return blurSigma;
   }
 
   static LinearGradient backgroundGradientFor(Brightness brightness) {
     if (brightness == Brightness.light) {
-      // Solid iOS systemGroupedBackground — no gradient needed
       return const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Color(0xFFF2F2F7),
-          Color(0xFFF2F2F7),
+          Color(0xFFF9FBFF),
+          Color(0xFFF0F5FC),
+          Color(0xFFEAF1FB),
         ],
       );
     }
@@ -37,22 +36,22 @@ class GlassStyles {
 
   static LinearGradient glassGradientFor(Brightness brightness) {
     if (brightness == Brightness.light) {
-      // Pure white — no tinting, clean iOS card surface
       return const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFFFFFFFF),
-          Color(0xFFFFFFFF),
+          Color(0xF7FFFFFF),
+          Color(0xE7F2FAFF),
         ],
       );
     }
     return const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
+      // Neutral dark glass — no heavy blue tint, matches RN card surfaces
       colors: [
-        Color(0xD21A2A45),
-        Color(0xB6122036),
+        Color(0xD2151D28),
+        Color(0xB60D1520),
       ],
     );
   }
@@ -62,13 +61,12 @@ class GlassStyles {
     Color accent,
   ) {
     if (brightness == Brightness.light) {
-      // Soft tinted card — accent at 8% opacity, fading to white
       return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          accent.withValues(alpha: 0.08),
-          const Color(0xFFFFFFFF),
+          accent.withValues(alpha: 0.2),
+          const Color(0xF7FFFFFF),
         ],
       );
     }
@@ -77,7 +75,7 @@ class GlassStyles {
       end: Alignment.bottomRight,
       colors: [
         accent.withValues(alpha: 0.24),
-        const Color(0xC2143156),
+        const Color(0xC20E1622), // dark neutral base for accent cards
       ],
     );
   }

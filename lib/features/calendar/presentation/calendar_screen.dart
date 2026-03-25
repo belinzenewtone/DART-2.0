@@ -1,7 +1,9 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/app_fab.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
@@ -32,6 +34,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   _CalendarView _view = _CalendarView.month;
+  bool _showAllEvents = false;
   bool _swiping = false; // blocks events list during a calendar swipe
   static const double _calendarContentMaxWidth = 360;
 
@@ -111,6 +114,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   void _setView(_CalendarView view) {
     setState(() => _view = view);
+  }
+
+  void _toggleAllEvents() {
+    setState(() => _showAllEvents = !_showAllEvents);
   }
 
   void _beginSwipe() {

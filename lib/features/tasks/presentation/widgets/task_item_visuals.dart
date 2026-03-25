@@ -31,7 +31,7 @@ class TaskSwipeBackground extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       alignment: alignment,
-      child: Icon(icon, color: Colors.white, size: 30),
+      child: ExcludeSemantics(child: Icon(icon, color: Colors.white, size: 30)),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:beltech/core/logger/app_logger.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
+import 'package:beltech/core/sync/sync_circuit_breaker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,12 +40,14 @@ class SyncStatus {
 /// [SyncPhase.syncing] → [SyncPhase.done] / [SyncPhase.failed] and
 /// auto-resets to [SyncPhase.idle] after [_resetDelay].
 class SyncStatusNotifier extends StateNotifier<SyncStatus> {
-  SyncStatusNotifier(this._coordinator)
-      : super(const SyncStatus(phase: SyncPhase.idle)) {
+  SyncStatusNotifier(this._coordinator, {SyncCircuitBreaker? circuitBreaker})
+      : _circuitBreaker = circuitBreaker ?? SyncCircuitBreaker(),
+        super(const SyncStatus(phase: SyncPhase.idle)) {
     _loadPersistedLastSync();
   }
 
   final BackgroundSyncCoordinator _coordinator;
+  final SyncCircuitBreaker _circuitBreaker;
 
   // SharedPreferences key prefix written by SmsAutoImportService.
   static const String _smsKeyPrefix = 'mpesa_auto_sync_last_ms';
@@ -71,17 +75,29 @@ class SyncStatusNotifier extends StateNotifier<SyncStatus> {
       if (latest != null && mounted) {
         state = SyncStatus(phase: SyncPhase.idle, lastSyncedAt: latest);
       }
-    } catch (_) {
-      // Non-critical; silently ignore.
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to load persisted last-sync timestamp',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'SyncStatus',
+      );
     }
   }
 
   /// Triggers an on-demand sync through the coordinator and tracks progress.
   ///
   /// Safe to call concurrently: re-entrant calls are silently dropped while a
-  /// sync is already [SyncPhase.syncing].
+  /// sync is already [SyncPhase.syncing]. Skipped when the circuit breaker is
+  /// open (too many consecutive failures).
   Future<void> runSync() async {
     if (state.phase == SyncPhase.syncing) return;
+
+    if (await _circuitBreaker.isOpen()) {
+      AppLogger.warning('Sync skipped — circuit breaker is open', tag: 'SyncStatus');
+      return;
+    }
+
     _resetTimer?.cancel();
 
     state = SyncStatus(
@@ -91,6 +107,7 @@ class SyncStatusNotifier extends StateNotifier<SyncStatus> {
 
     try {
       await _coordinator.syncNow();
+      await _circuitBreaker.recordSuccess();
       if (!mounted) return;
       final now = DateTime.now();
       state = SyncStatus(phase: SyncPhase.done, lastSyncedAt: now);
@@ -102,7 +119,14 @@ class SyncStatusNotifier extends StateNotifier<SyncStatus> {
           );
         }
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      await _circuitBreaker.recordFailure();
+      AppLogger.error(
+        'Foreground sync failed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'SyncStatus',
+      );
       if (!mounted) return;
       state = SyncStatus(
         phase: SyncPhase.failed,

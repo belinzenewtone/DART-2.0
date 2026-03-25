@@ -1,6 +1,7 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/app_fab.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/app_icon_pill_button.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
@@ -14,8 +15,10 @@ import 'package:beltech/features/expenses/presentation/providers/expenses_provid
 import 'package:beltech/features/expenses/presentation/expenses_screen_helpers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/expense_dialogs.dart';
 import 'package:beltech/features/expenses/presentation/widgets/expenses_snapshot_content.dart';
+import 'package:beltech/features/expenses/presentation/widgets/import_health_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ExpensesScreen extends ConsumerWidget {
   const ExpensesScreen({super.key});
@@ -166,76 +169,112 @@ class ExpensesScreen extends ConsumerWidget {
         );
       }
     });
-    return PageShell(
-      scrollable: false,
-      glowColor: AppColors.glowTeal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          PageHeader(
-            eyebrow: 'MONEY',
-            title: 'Finance',
-            subtitle: 'Your financial picture',
-            action: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIconPillButton(
-                  icon: Icons.phone_android_rounded,
-                  label: 'Import',
-                  tone: AppIconPillTone.subtle,
-                  onPressed: writeBusy
-                      ? null
-                      : () => handleExpenseSmsImport(context, ref),
+    // Resolve import metrics for the health banner (safe fallback to zeros).
+    final importMetrics = ref.watch(expenseImportMetricsProvider).valueOrNull ??
+        const ExpenseImportMetrics(
+          reviewQueueCount: 0,
+          quarantineCount: 0,
+          retryQueueCount: 0,
+          failedQueueCount: 0,
+        );
+
+    return Stack(
+      children: [
+        // horizontalPadding: 0 so the ImportHealthBanner can bleed edge-to-edge.
+        // Each child that needs horizontal padding applies it directly.
+        PageShell(
+          scrollable: false,
+          glowColor: AppColors.glowTeal,
+          horizontalPadding: 0,
+          topPadding: 0, // banner sits above the page title
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Import Health Banner (RN-style full-width top strip) ────────
+              ImportHealthBanner(
+                metrics: importMetrics,
+                onTap: importMetrics.failedQueueCount > 0 ||
+                        importMetrics.quarantineCount > 0
+                    ? () => context.pushNamed('analytics')
+                    : null,
+              ),
+              // ── Standard content with horizontal padding ────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenHorizontal,
+                  AppSpacing.screenTop,
+                  AppSpacing.screenHorizontal,
+                  0,
                 ),
-                const SizedBox(width: 8),
-                AppIconPillButton(
-                  icon: Icons.add_rounded,
-                  label: 'Add',
-                  tone: AppIconPillTone.accent,
-                  onPressed: writeBusy
-                      ? null
-                      : () async {
-                          final input = await showAddExpenseDialog(context);
-                          if (input == null) {
-                            return;
-                          }
-                          await ref
-                              .read(expenseWriteControllerProvider.notifier)
-                              .addExpense(
-                                title: input.title,
-                                category: input.category,
-                                amountKes: input.amountKes,
-                                occurredAt: input.occurredAt,
-                              );
-                          if (context.mounted &&
-                              !ref
-                                  .read(expenseWriteControllerProvider)
-                                  .hasError) {
-                            AppFeedback.success(
-                              context,
-                              'Transaction added',
-                              ref: ref,
-                            );
-                          }
-                        },
+                child: PageHeader(
+                  title: 'Finance',
+                  action: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppIconPillButton(
+                        icon: Icons.upload_file_rounded,
+                        label: 'Export',
+                        tone: AppIconPillTone.subtle,
+                        onPressed: writeBusy
+                            ? null
+                            : () => context.pushNamed('export'),
+                      ),
+                      const SizedBox(width: 8),
+                      AppIconPillButton(
+                        icon: Icons.phone_android_rounded,
+                        label: 'Import',
+                        tone: AppIconPillTone.subtle,
+                        onPressed: writeBusy
+                            ? null
+                            : () => handleExpenseSmsImport(context, ref),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal),
+                child: const _DataFreshPill(),
+              ),
+              const SizedBox(height: AppSpacing.listGap),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: contentSwitchDuration,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: snapshotChild,
+                ),
+              ),
+            ],
           ),
-          const _DataFreshPill(),
-          const SizedBox(height: AppSpacing.listGap),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: contentSwitchDuration,
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
-              child: snapshotChild,
-            ),
+        ),
+        Positioned(
+          right: 20,
+          bottom: AppSpacing.fabBottom(context),
+          child: AppFab(
+            busy: writeBusy,
+            onPressed: () async {
+              final input = await showAddExpenseDialog(context);
+              if (input == null) return;
+              await ref
+                  .read(expenseWriteControllerProvider.notifier)
+                  .addExpense(
+                    title: input.title,
+                    category: input.category,
+                    amountKes: input.amountKes,
+                    occurredAt: input.occurredAt,
+                  );
+              if (context.mounted &&
+                  !ref.read(expenseWriteControllerProvider).hasError) {
+                AppFeedback.success(context, 'Transaction added', ref: ref);
+              }
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -265,11 +304,11 @@ class _DataFreshPillState extends State<_DataFreshPill> {
     final diff =
         DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(lastMs));
     final label = switch (diff.inMinutes) {
-      0 => 'Just synced',
-      1 => 'Synced 1m ago',
-      final m when m < 60 => 'Synced ${m}m ago',
-      final m when m < 120 => 'Synced 1h ago',
-      final m => 'Synced ${(m / 60).floor()}h ago',
+      0 => 'Data fresh: updated just now',
+      1 => 'Data fresh: updated 1m ago',
+      final m when m < 60 => 'Data fresh: updated ${m}m ago',
+      final m when m < 120 => 'Data fresh: updated 1h ago',
+      final m => 'Data fresh: updated ${(m / 60).floor()}h ago',
     };
     if (mounted) setState(() => _label = label);
   }
@@ -278,36 +317,42 @@ class _DataFreshPillState extends State<_DataFreshPill> {
   Widget build(BuildContext context) {
     final text = _label;
     if (text == null) return const SizedBox.shrink();
+    final brightness = Theme.of(context).brightness;
+    final border = AppColors.borderFor(brightness).withValues(alpha: 0.8);
+    final background =
+        AppColors.surfaceMutedFor(brightness).withValues(alpha: 0.75);
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.success.withValues(alpha: 0.25),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.circle, size: 6, color: AppColors.success),
-                const SizedBox(width: 5),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

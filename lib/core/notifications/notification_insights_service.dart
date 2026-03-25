@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:beltech/core/feature_flags/feature_flag.dart';
 import 'package:beltech/core/feature_flags/feature_flag_store.dart';
+import 'package:beltech/core/logger/app_logger.dart';
 import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
@@ -196,7 +197,13 @@ class NotificationInsightsService {
           .watchMonthlySnapshot(DateTime.now())
           .first
           .timeout(const Duration(seconds: 8));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Budget snapshot unavailable for notification sweep',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'NotificationInsights',
+      );
       return null;
     }
   }
@@ -207,7 +214,13 @@ class NotificationInsightsService {
           .watchSnapshot()
           .first
           .timeout(const Duration(seconds: 8));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Expenses snapshot unavailable for daily digest',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'NotificationInsights',
+      );
       return null;
     }
   }
@@ -218,7 +231,13 @@ class NotificationInsightsService {
           .watchTasks()
           .first
           .timeout(const Duration(seconds: 8));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Tasks unavailable for daily digest',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'NotificationInsights',
+      );
       return const [];
     }
   }
@@ -233,7 +252,13 @@ class NotificationInsightsService {
           .first
           .timeout(const Duration(seconds: 8));
       return events.where((event) => !event.completed).toList();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Calendar events unavailable for daily digest',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'NotificationInsights',
+      );
       return const [];
     }
   }

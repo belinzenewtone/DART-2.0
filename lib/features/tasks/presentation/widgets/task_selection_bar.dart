@@ -1,3 +1,6 @@
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
 
@@ -29,27 +32,62 @@ class TaskSelectionBar extends StatelessWidget {
         children: [
           Text(
             '$selectedCount selected',
-            style: Theme.of(context).textTheme.titleSmall,
+            style: AppTypography.bodySm(context).copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              FilledButton.icon(
+              OutlinedButton.icon(
                 onPressed: disabled ? null : onComplete,
-                icon: const Icon(Icons.done_all_rounded),
+                icon: const Icon(Icons.done_all_rounded, size: 16),
                 label: const Text('Complete'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.6)),
+                  minimumSize: const Size(0, 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                ),
               ),
-              FilledButton.icon(
+              OutlinedButton.icon(
                 onPressed: disabled ? null : onArchive,
-                icon: const Icon(Icons.archive_outlined),
+                icon: const Icon(Icons.archive_outlined, size: 16),
                 label: const Text('Archive'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.6)),
+                  minimumSize: const Size(0, 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: disabled ? null : onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const Icon(Icons.delete_outline_rounded, size: 16),
                 label: const Text('Delete'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  side: BorderSide(
+                      color: AppColors.danger.withValues(alpha: 0.44)),
+                  minimumSize: const Size(0, 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                ),
               ),
             ],
           ),

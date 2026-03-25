@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/routing/deep_link_router.dart';
 import 'package:beltech/core/di/sync_providers.dart';
 import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
@@ -80,6 +82,7 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   late BackgroundSyncCoordinator _backgroundSyncCoordinator;
+  StreamSubscription<String>? _notificationTapSub;
   bool _biometricConfigured = false;
   bool _biometricRelockEnabled = true;
   bool _appLocked = false;
@@ -96,12 +99,14 @@ class _AppShellState extends ConsumerState<AppShell>
     unawaited(_startBackgroundSync());
     unawaited(_initializeBiometricLock());
     unawaited(cleanupNotificationReminders(ref));
+    unawaited(_initNotificationDeepLink());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _backgroundSyncCoordinator.stop();
+    _notificationTapSub?.cancel();
     super.dispose();
   }
 
@@ -148,25 +153,19 @@ class _AppShellState extends ConsumerState<AppShell>
       ),
       child: Stack(
         children: [
-          // Accent radial glow — dark mode only.
-          // Light mode uses a clean #F2F2F7 background, no overlays needed.
-          if (brightness == Brightness.dark)
-            IgnorePointer(
-              child: AnimatedContainer(
-                duration: overlayDuration,
-                curve: Curves.easeOutCubic,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.75, -0.9),
-                    radius: 1.05,
-                    colors: [
-                      accent.withValues(alpha: 0.22),
-                      Colors.transparent
-                    ],
-                  ),
+          IgnorePointer(
+            child: AnimatedContainer(
+              duration: overlayDuration,
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0.75, -0.9),
+                  radius: 1.05,
+                  colors: [accent.withValues(alpha: 0.22), Colors.transparent],
                 ),
               ),
             ),
+          ),
           IgnorePointer(
             ignoring: _appLocked,
             child: Scaffold(
@@ -212,6 +211,27 @@ class _AppShellState extends ConsumerState<AppShell>
         ],
       ),
     );
+  }
+
+  Future<void> _initNotificationDeepLink() async {
+    final svc = ref.read(localNotificationServiceProvider);
+    await svc.initialize();
+
+    final launchRoute = await svc.getNotificationLaunchRoute();
+    if (launchRoute != null && mounted) {
+      final tab = DeepLinkRouter.tabForRoute(launchRoute);
+      if (tab != null) {
+        ref.read(shellTabIndexProvider.notifier).state = tab.index;
+      }
+    }
+
+    _notificationTapSub = svc.notificationTapRoutes.listen((route) {
+      if (!mounted) return;
+      final tab = DeepLinkRouter.tabForRoute(route);
+      if (tab != null) {
+        ref.read(shellTabIndexProvider.notifier).state = tab.index;
+      }
+    });
   }
 
   Future<void> _startBackgroundSync() async =>

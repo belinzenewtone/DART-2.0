@@ -29,22 +29,16 @@ class _CategoryChipState extends State<CategoryChip> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final isLight = brightness == Brightness.light;
 
-    // Light mode: solid white unselected → solid accent selected (iOS HIG style)
-    // Dark mode: original tinted glass style
-    final selectedBg = isLight ? AppColors.accent : AppColors.accent.withValues(alpha: 0.22);
-    final unselectedBg = isLight
-        ? Colors.white
-        : AppColors.surfaceSubtle.withValues(alpha: 0.92);
+    final selectedBg = AppColors.accent.withValues(alpha: 0.22);
+    final unselectedBg = brightness == Brightness.dark
+        ? AppColors.surfaceSubtle.withValues(alpha: 0.92)
+        : const Color(0xFFE8EEF8);
 
-    final selectedBorder = isLight ? AppColors.accent : AppColors.accent.withValues(alpha: 0.82);
-    final unselectedBorder = isLight
-        ? const Color(0xFFE5E5EA)
-        : AppColors.border.withValues(alpha: 0.42);
-
-    final selectedTextColor = isLight ? Colors.white : AppColors.textPrimary;
-    final unselectedTextColor = isLight ? AppColors.textSecondary : AppColors.textSecondary;
+    final selectedBorder = AppColors.accent.withValues(alpha: 0.82);
+    final unselectedBorder = brightness == Brightness.dark
+        ? AppColors.border.withValues(alpha: 0.42)
+        : const Color(0xFFCBD8EE);
 
     return AnimatedScale(
       scale: _pressed ? 0.96 : 1.0,
@@ -52,14 +46,17 @@ class _CategoryChipState extends State<CategoryChip> {
       curve: Curves.easeOutBack,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: widget.onTap,
-          onHighlightChanged: (value) => setState(() => _pressed = value),
-          child: AnimatedContainer(
+        child: Semantics(
+          selected: widget.selected,
+          button: true,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(999),
+            onTap: widget.onTap,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeInOut,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               color: widget.selected ? selectedBg : unselectedBg,
               borderRadius: BorderRadius.circular(999),
@@ -67,22 +64,20 @@ class _CategoryChipState extends State<CategoryChip> {
                 color: widget.selected ? selectedBorder : unselectedBorder,
                 width: 1,
               ),
-              // Light mode: no shadow on chips — iOS style
-              // Dark mode: subtle lift shadow
-              boxShadow: isLight
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Text(
               widget.label,
               style: AppTypography.bodySm(context).copyWith(
-                color: widget.selected ? selectedTextColor : unselectedTextColor,
+                color: widget.selected
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
@@ -92,6 +87,7 @@ class _CategoryChipState extends State<CategoryChip> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

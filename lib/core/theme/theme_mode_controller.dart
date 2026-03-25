@@ -25,9 +25,9 @@ class ThemeModeController extends AsyncNotifier<ThemeMode> {
 
   ThemeMode _decode(String? raw) {
     return switch (raw) {
-      'dark' => ThemeMode.dark,
+      'light' => ThemeMode.light,
       'system' => ThemeMode.system,
-      _ => ThemeMode.light, // default to light — iOS-style design language
+      _ => ThemeMode.dark,
     };
   }
 }
@@ -40,6 +40,6 @@ final themeModeControllerProvider =
 final currentThemeModeProvider = Provider<ThemeMode>((ref) {
   return ref.watch(themeModeControllerProvider).maybeWhen(
         data: (mode) => mode,
-        orElse: () => ThemeMode.light,
+        orElse: () => ThemeMode.dark,
       );
 });

@@ -12,65 +12,63 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'home_spending_cards_balance.dart';
 part 'home_spending_cards_insights.dart';
 
-/// Two-tile strip: Today spend + This Week spend.
 class HomeSpendSnapshotStrip extends StatelessWidget {
   const HomeSpendSnapshotStrip({super.key, required this.overview});
   final HomeOverview overview;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: GlassCard(
-            tone: GlassCardTone.accent,
-            accentColor: AppColors.accent,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Today', style: AppTypography.bodySm(context)),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    CurrencyFormatter.money(overview.todayKes),
-                    style: AppTypography.amount(context),
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                ),
-              ],
+    // Determine month approximation since data layer doesn't expose it directly yet
+    final approxMonthKes = overview.weekKes * 4.2;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildColumn(context, 'Today', overview.todayKes),
+          _buildDivider(),
+          _buildColumn(context, 'Week', overview.weekKes),
+          _buildDivider(),
+          _buildColumn(context, 'Month', approxMonthKes),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColumn(BuildContext context, String label, double amount) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: AppTypography.bodySm(context)
+                  .copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              CurrencyFormatter.money(amount),
+              style: AppTypography.bodyMd(context).copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+              maxLines: 1,
+              softWrap: false,
             ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.cardGap),
-        Expanded(
-          child: GlassCard(
-            tone: GlassCardTone.accent,
-            accentColor: AppColors.violet,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('This Week', style: AppTypography.bodySm(context)),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    CurrencyFormatter.money(overview.weekKes),
-                    style: AppTypography.amount(context),
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      height: 24,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      color: AppColors.border.withValues(alpha: 0.5),
     );
   }
 }

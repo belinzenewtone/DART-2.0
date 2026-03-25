@@ -1,6 +1,7 @@
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/widgets/app_fab.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
@@ -33,7 +34,6 @@ class TasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
-  bool _showSearch = false;
   bool _selectionMode = false;
   final Set<int> _selectedTaskIds = <int>{};
   final TextEditingController _searchController = TextEditingController();
@@ -78,15 +78,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     );
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _showSearch = !_showSearch;
-    });
-    if (!_showSearch) {
-      _searchController.clear();
-    }
-  }
-
   void _toggleSelectionMode() {
     setState(() {
       _selectionMode = !_selectionMode;
@@ -115,7 +106,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
     final pending = tasks.where((task) => !task.completed).length;
     final completed = tasks.where((task) => task.completed).length;
-    return '$pending pending · $completed completed';
+    return '$pending pending · $completed done';
   }
 
   void _toggleTaskSelection(int taskId) {

@@ -7,6 +7,7 @@ import 'package:beltech/core/notifications/local_notification_service.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
 import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/sync/sms_auto_import_service.dart';
+import 'package:beltech/core/sync/sync_circuit_breaker.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/analytics/data/repositories/analytics_repository_impl.dart';
 import 'package:beltech/features/analytics/data/repositories/supabase_analytics_repository_impl.dart';
@@ -93,8 +94,18 @@ class BackgroundWorkerRuntime {
       );
 
       if (await flagStore.isEnabled(FeatureFlag.backgroundSync)) {
-        await smsService.syncNow();
-        await recurringService.syncNow();
+        final circuit = SyncCircuitBreaker();
+        if (await circuit.isOpen()) {
+          return; // circuit tripped — skip this run
+        }
+        try {
+          await smsService.syncNow();
+          await recurringService.syncNow();
+          await circuit.recordSuccess();
+        } catch (e) {
+          await circuit.recordFailure();
+          rethrow;
+        }
       }
       if (await flagStore.isEnabled(FeatureFlag.smartNotifications)) {
         await insights.runSweep();

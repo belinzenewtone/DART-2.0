@@ -1,29 +1,30 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class AppSpacing {
   AppSpacing._();
 
   // ── Layout ───────────────────────────────────────────────────────────────────
-  static const double screenHorizontal = 20;
-  static const double screenTop = 16; // slightly more breathing room
-  static const double shellHorizontal = 12;
-  static const double contentBottomSafe = 90;
-  static const double sectionBottom = 24;
-  static const double navBottomMargin = 6;
-  static const double fabBottomOffset = 104;
+  static const double screenHorizontal = 24;
+  static const double screenTop = 16;
+  static const double shellHorizontal = 16;
+  static const double contentBottomSafe = 152;
+  static const double sectionBottom = 20;
+  static const double fabBottomOffset = 96;
 
   // ── Gaps ─────────────────────────────────────────────────────────────────────
   /// Between two sibling section blocks
-  static const double sectionGap = 24;
+  static const double sectionGap = 20;
 
   /// Between a section header and its first card
-  static const double sectionHeaderGap = 12;
+  static const double sectionHeaderGap = 16;
 
   /// Between adjacent cards in the same section
-  static const double cardGap = 14;
+  static const double cardGap = 16;
 
   /// Between adjacent list items (tight)
-  static const double listGap = 10;
+  static const double listGap = 8;
 
   static EdgeInsets screenPadding(
     BuildContext context, {
@@ -55,8 +56,7 @@ class AppSpacing {
 
   static double navBottom(BuildContext context) {
     final safeBottom = MediaQuery.paddingOf(context).bottom;
-    final reservedBottom = safeBottom > 0 ? safeBottom : 8;
-    return navBottomMargin + reservedBottom;
+    return math.max(safeBottom + 2, 4);
   }
 
   static double _safeBottomContribution(BuildContext context) {

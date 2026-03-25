@@ -12,7 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   drift: ^2.20.0
-  sqlite3_flutter_libs: ^0.5.26
+  sqlcipher_flutter_libs: ^0.5.4
   path_provider: ^2.1.5
   path: ^1.9.0
   flutter_secure_storage: ^9.2.4
@@ -38,6 +38,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   google_fonts: ^6.2.1
   shorebird_code_push: ^1.1.0
+  sentry_flutter: ^9.15.0
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,10 @@ dev_dependencies:
   build_runner: ^2.4.12
   mocktail: ^1.0.4
   flutter_launcher_icons: ^0.14.4
+
+dependency_overrides:
+  sqlcipher_flutter_libs:
+    path: third_party/sqlcipher_flutter_libs
 
 flutter:
   uses-material-design: true

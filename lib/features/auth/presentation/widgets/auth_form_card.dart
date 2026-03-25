@@ -90,7 +90,6 @@ class AuthFormCard extends StatelessWidget {
                               controller: nameController,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.username],
-                              maxLength: 10,
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(10),
                               ],
@@ -98,7 +97,6 @@ class AuthFormCard extends StatelessWidget {
                                 labelText: 'Username',
                                 hintText: 'Choose a short username',
                                 prefixIcon: Icon(Icons.person_outline_rounded),
-                                counterText: '',
                               ),
                               validator: (value) {
                                 if (!isSignUp) return null;

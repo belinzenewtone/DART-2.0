@@ -12,12 +12,11 @@ class ProfileToolHub extends StatelessWidget {
       tone: GlassCardTone.muted,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tool Hub',
-            textAlign: TextAlign.center,
-            style: AppTypography.eyebrow(context),
+            'TOOL HUB',
+            style: AppTypography.eyebrow(context).copyWith(letterSpacing: 0.45),
           ),
           const SizedBox(height: 12),
           const ToolShortcutGrid(),

@@ -27,7 +27,7 @@ class PageHeader extends StatelessWidget {
     this.subtitle,
     this.action,
     this.leading,
-    this.bottomPadding = 18,
+    this.bottomPadding = 4,
   });
 
   final String title;
@@ -44,44 +44,64 @@ class PageHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: 10),
-          ],
           Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (eyebrow != null)
+                if (leading != null) ...[
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Text(
-                      eyebrow!.toUpperCase(),
-                      style: AppTypography.eyebrow(context),
+                    padding: const EdgeInsets.only(top: 2),
+                    child: leading!,
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (eyebrow != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              eyebrow!.toUpperCase(),
+                              style: AppTypography.eyebrow(context),
+                            ),
+                          ),
+                        Text(
+                          title,
+                          style: AppTypography.pageTitle(context).copyWith(
+                            fontSize: 26,
+                            height: 32 / 26,
+                          ),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (subtitle != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              subtitle!,
+                              style: AppTypography.bodySm(context),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                Text(
-                  title,
-                  style: AppTypography.pageTitle(context),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                if (subtitle != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Text(
-                      subtitle!,
-                      style: AppTypography.bodySm(context),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
               ],
             ),
           ),
           if (action != null) ...[
             const SizedBox(width: 8),
-            action!,
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: action!,
+            ),
           ],
         ],
       ),

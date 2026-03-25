@@ -79,19 +79,29 @@ class _PageShellState extends State<PageShell>
   Widget build(BuildContext context) {
     final reduceMotion = AppMotion.reduceMotion(context);
     final safeBottom = MediaQuery.paddingOf(context).bottom;
-    final effectiveBottom =
-        widget.bottomPadding + (safeBottom > 0 ? safeBottom * 0.6 : 0);
+    final effectiveBottom = widget.bottomPadding + safeBottom;
+    final effectiveTop =
+        widget.scrollable ? AppSpacing.listGap : widget.topPadding;
 
     final glow = widget.glowColor ?? AppColors.glowBlue;
-    final secondaryGlow = widget.secondaryGlowColor ??
-        glow.withValues(alpha: glow.a * 0.5);
+    final secondaryGlow =
+        widget.secondaryGlowColor ?? glow.withValues(alpha: glow.a * 0.5);
+
+    // Non-scrollable bottom: if bottomPadding was explicitly overridden from
+    // its default (contentBottomSafe is the scrollable default), honour it
+    // directly so callers can pin the input flush with the nav bar. Otherwise
+    // keep the old symmetric topPadding behaviour for screens that don't set it.
+    final nonScrollableBottom =
+        widget.bottomPadding == AppSpacing.contentBottomSafe
+            ? widget.topPadding + safeBottom
+            : widget.bottomPadding + safeBottom;
 
     Widget content = widget.scrollable
         ? SingleChildScrollView(
             controller: widget.controller,
             padding: EdgeInsets.fromLTRB(
               widget.horizontalPadding,
-              widget.topPadding,
+              effectiveTop,
               widget.horizontalPadding,
               effectiveBottom,
             ),
@@ -102,7 +112,7 @@ class _PageShellState extends State<PageShell>
               widget.horizontalPadding,
               widget.topPadding,
               widget.horizontalPadding,
-              0,
+              nonScrollableBottom,
             ),
             child: widget.child,
           );
@@ -114,18 +124,9 @@ class _PageShellState extends State<PageShell>
       );
     }
 
-    // In light mode: clean white background, no atmospheric glow orbs.
-    // In dark mode: keep the accent + secondary glow orbs for depth.
-    final isLight =
-        Theme.of(context).brightness == Brightness.light;
-
-    if (isLight) {
-      return SafeArea(bottom: false, child: content);
-    }
-
     return Stack(
       children: [
-        // Top-right accent glow (dark mode only)
+        // Top-right accent glow
         Positioned(
           top: -60,
           right: -60,
@@ -143,7 +144,7 @@ class _PageShellState extends State<PageShell>
             ),
           ),
         ),
-        // Bottom-left secondary glow (dark mode only)
+        // Bottom-left secondary glow
         Positioned(
           bottom: 100,
           left: -80,

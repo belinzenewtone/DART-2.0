@@ -79,7 +79,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
         _showAllTransactions ? transactions : transactions.take(20).toList();
     final groupedTransactions = _groupTransactionsByDay(visibleTransactions);
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 20),
       children: [
         Row(
           children: [
@@ -94,7 +94,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             const SizedBox(width: 10),
             Expanded(
               child: _SummaryCard(
-                title: 'This Week',
+                title: 'Week',
                 amount: CurrencyFormatter.money(widget.snapshot.weekKes),
                 tone: GlassCardTone.accent,
                 accentColor: AppColors.teal,
@@ -102,9 +102,9 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 36,
+          height: 38,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: ExpenseFilter.values.map((filter) {
@@ -124,7 +124,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             }).toList(),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _CategoryCard(categories: widget.snapshot.categories),
         if (widget.fulizaEvents.isNotEmpty) ...[
           const SizedBox(height: 14),

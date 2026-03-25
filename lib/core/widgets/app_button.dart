@@ -28,18 +28,15 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     final isEnabled = onPressed != null && !loading;
 
     final (height, hPad, fontSize) = switch (size) {
-      AppButtonSize.sm => (38.0, 14.0, 13.0),
-      AppButtonSize.md => (46.0, 18.0, 15.0),
-      AppButtonSize.lg => (54.0, 22.0, 16.0),
+      AppButtonSize.sm => (38.0, 16.0, 13.0),
+      AppButtonSize.md => (46.0, 24.0, 15.0),
+      AppButtonSize.lg => (54.0, 32.0, 17.0),
     };
 
-    final accent = brightness == Brightness.light
-        ? const Color(0xFF2A6FE8)
-        : AppColors.accent;
+    final accent = AppColors.accent;
 
     final (bgColor, fgColor, borderColor) = switch (variant) {
       AppButtonVariant.primary => (
@@ -95,7 +92,7 @@ class AppButton extends StatelessWidget {
           );
 
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
+      borderRadius: BorderRadius.circular(AppRadius.full),
       side: borderColor == Colors.transparent
           ? BorderSide.none
           : BorderSide(color: borderColor),
@@ -113,7 +110,7 @@ class AppButton extends StatelessWidget {
                 foregroundColor: fgColor,
                 side: BorderSide(color: borderColor),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.lg)),
+                    borderRadius: BorderRadius.circular(AppRadius.full)),
                 padding: EdgeInsets.symmetric(horizontal: hPad),
               ),
               child: content,

@@ -1,8 +1,8 @@
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_typography.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,8 +74,8 @@ class ToolShortcutGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth < 290 ? 2 : 3;
-        final aspectRatio = crossAxisCount == 3 ? 0.94 : 1.04;
+        final crossAxisCount = constraints.maxWidth < 260 ? 2 : 3;
+        final aspectRatio = crossAxisCount == 3 ? 1.02 : 1.08;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -119,52 +119,55 @@ class _ToolShortcutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      tone: GlassCardTone.muted,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: shortcut.color.withValues(alpha: 0.14),
-              border: Border.all(
-                color: shortcut.color.withValues(alpha: 0.2),
-              ),
+    final brightness = Theme.of(context).brightness;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 88),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: AppColors.borderFor(brightness),
             ),
-            child: Icon(
-              shortcut.icon,
-              color: shortcut.color,
-              size: 20,
-            ),
+            color:
+                AppColors.surfaceMutedFor(brightness).withValues(alpha: 0.58),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 18,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  shortcut.label,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.cardTitle(context).copyWith(
-                    fontSize: 13,
-                    height: 1.1,
-                    letterSpacing: -0.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.visible,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: shortcut.color.withValues(alpha: 0.18),
+                ),
+                child: Icon(
+                  shortcut.icon,
+                  color: shortcut.color,
+                  size: 18,
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                shortcut.label,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySm(context).copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimaryFor(brightness),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

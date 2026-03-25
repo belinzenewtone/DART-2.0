@@ -26,7 +26,7 @@ class ProfileAvatar extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         CircleAvatar(
-          radius: 46,
+          radius: 36,
           backgroundColor: AppColors.accent,
           backgroundImage: image,
           child: image == null
@@ -34,8 +34,8 @@ class ProfileAvatar extends StatelessWidget {
                   name.isEmpty ? 'U' : name.substring(0, 1).toUpperCase(),
                   style: TextStyle(
                     color: onSurface,
-                    fontSize: 38,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
                   ),
                 )
               : null,
@@ -43,22 +43,29 @@ class ProfileAvatar extends StatelessWidget {
         Positioned(
           right: -2,
           bottom: -2,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: onCameraTap,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: borderColor, width: 2),
-                ),
-                child: const Icon(
-                  Icons.camera_alt_outlined,
-                  color: AppColors.textPrimary,
-                  size: 18,
+          child: Semantics(
+            label: 'Change profile photo',
+            button: true,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(13),
+                onTap: onCameraTap,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: brightness == Brightness.light
+                        ? Colors.white.withValues(alpha: 0.96)
+                        : AppColors.surfaceMutedFor(brightness),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: borderColor, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppColors.textSecondaryFor(brightness),
+                    size: 14,
+                  ),
                 ),
               ),
             ),

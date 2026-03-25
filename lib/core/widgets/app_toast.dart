@@ -30,7 +30,8 @@ class ToastNotifier extends Notifier<List<ToastMessage>> {
   void show(String message, {ToastType type = ToastType.info}) {
     final id = _nextId++;
     state = [...state, ToastMessage(id: id, message: message, type: type)];
-    Future.delayed(const Duration(milliseconds: 3400), () {
+    // Auto-dismiss after 3 200ms (matches RN DURATION constant).
+    Future.delayed(const Duration(milliseconds: 3200), () {
       dismiss(id);
     });
   }
@@ -59,10 +60,12 @@ class AppToastOverlay extends ConsumerWidget {
     final toasts = ref.watch(toastProvider);
     if (toasts.isEmpty) return const SizedBox.shrink();
 
+    // Position toasts at the top of the screen, outside the safe area
+    // but below the status bar — identical to the RN ToastContainer position.
     return Positioned(
-      top: MediaQuery.paddingOf(context).top + 12,
-      left: 16,
-      right: 16,
+      top: MediaQuery.paddingOf(context).top + 8,
+      left: 20,
+      right: 20,
       child: Column(
         children: toasts
             .map((t) => _ToastItem(key: ValueKey(t.id), toast: t))
@@ -91,11 +94,12 @@ class _ToastItemState extends ConsumerState<_ToastItem>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 220),
     );
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    // Slide down from above (matching RN toast animation direction).
     _slide = Tween<Offset>(
-      begin: const Offset(0, -0.3),
+      begin: const Offset(0, -0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _ctrl.forward();
@@ -107,7 +111,7 @@ class _ToastItemState extends ConsumerState<_ToastItem>
     super.dispose();
   }
 
-  Color get _barColor => switch (widget.toast.type) {
+  Color get _accentColor => switch (widget.toast.type) {
     ToastType.success => AppColors.success,
     ToastType.error => AppColors.danger,
     ToastType.warning => AppColors.warning,
@@ -115,82 +119,84 @@ class _ToastItemState extends ConsumerState<_ToastItem>
   };
 
   IconData get _icon => switch (widget.toast.type) {
-    ToastType.success => Icons.check_circle_outline_rounded,
-    ToastType.error => Icons.error_outline_rounded,
-    ToastType.warning => Icons.warning_amber_rounded,
-    ToastType.info => Icons.info_outline_rounded,
+    ToastType.success => Icons.check_circle_rounded,
+    ToastType.error => Icons.error_rounded,
+    ToastType.warning => Icons.warning_rounded,
+    ToastType.info => Icons.info_rounded,
   };
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final accent = _accentColor;
+
+    // RN-style elevated pill: surface background with coloured icon and
+    // a subtle tinted border. No coloured left-bar — the icon carries the
+    // semantic colour instead.
     final bg = brightness == Brightness.light
-        ? const Color(0xFFF3F8FF)
+        ? Colors.white
         : AppColors.surface;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: FadeTransition(
         opacity: _opacity,
         child: SlideTransition(
           position: _slide,
           child: Material(
             color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.xxl),
             child: Container(
               decoration: BoxDecoration(
                 color: bg,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: BorderRadius.circular(AppRadius.xxl),
                 border: Border.all(
-                  color: AppColors.borderFor(brightness).withValues(alpha: 0.4),
+                  color: accent.withValues(alpha: 0.28),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
                 children: [
-                  Container(
-                    width: 4,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _barColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(AppRadius.lg),
-                        bottomLeft: Radius.circular(AppRadius.lg),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(_icon, color: _barColor, size: 20),
+                  Icon(_icon, color: accent, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        widget.toast.message,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimaryFor(brightness),
-                          height: 1.4,
-                        ),
+                    child: Text(
+                      widget.toast.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimaryFor(brightness),
+                        height: 1.35,
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 16,
-                      color: AppColors.textMutedFor(brightness),
+                  GestureDetector(
+                    onTap: () => ref
+                        .read(toastProvider.notifier)
+                        .dismiss(widget.toast.id),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 15,
+                        color: AppColors.textMutedFor(brightness),
+                      ),
                     ),
-                    onPressed: () =>
-                        ref.read(toastProvider.notifier).dismiss(widget.toast.id),
                   ),
                 ],
               ),

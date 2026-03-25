@@ -2,6 +2,7 @@ import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_radius.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
@@ -78,7 +79,7 @@ class TaskItemCard extends StatelessWidget {
             : GlassCardTone.standard,
         accentColor: selectionMode && selected ? AppColors.accent : null,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(GlassStyles.borderRadius),
           onTap: selectionMode ? onSelectToggle : null,
           onLongPress: busy
               ? null
@@ -100,6 +101,9 @@ class TaskItemCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 IconButton(
+                  tooltip: selectionMode
+                      ? (selected ? 'Deselect task' : 'Select task')
+                      : (task.completed ? 'Mark incomplete' : 'Mark complete'),
                   onPressed: busy
                       ? null
                       : () {
@@ -185,6 +189,7 @@ class TaskItemCard extends StatelessWidget {
                 ),
                 if (!selectionMode)
                   IconButton(
+                    tooltip: 'Edit task',
                     onPressed: busy
                         ? null
                         : () {

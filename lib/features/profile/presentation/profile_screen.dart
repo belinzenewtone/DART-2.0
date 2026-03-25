@@ -1,10 +1,12 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
+import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:beltech/features/profile/presentation/widgets/profile_content_section.dart';
@@ -49,7 +51,6 @@ class ProfileScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const PageHeader(
-            eyebrow: 'ACCOUNT',
             title: 'Profile',
           ),
           profileState.when(
@@ -58,6 +59,9 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 ProfileContentSection(
                   profile: profile,
+                  workspaceLabel: ref.watch(useSupabaseProvider)
+                      ? 'Cloud Workspace'
+                      : 'Local Workspace',
                   onEdit: () => showEditProfileDialog(context, ref, profile),
                   onOpenSettings: () => context.pushNamed('settings'),
                   onChangePassword: () => showPasswordDialog(context, ref),
@@ -111,6 +115,13 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 const ProfileToolHub(),
+                const SizedBox(height: AppSpacing.sectionGap),
+                Center(
+                  child: Text(
+                    'PersonalOs · v1.1.0',
+                    style: AppTypography.metaText(context),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sectionGap),
               ],
             ),

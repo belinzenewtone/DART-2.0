@@ -50,6 +50,7 @@ class OsBackgroundSyncScheduler {
       existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
       constraints: Constraints(
         networkType: NetworkType.notRequired,
+        requiresBatteryNotLow: true,
       ),
     );
   }

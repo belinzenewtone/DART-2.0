@@ -46,9 +46,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Weekly Ritual'), findsOneWidget);
+    expect(find.textContaining('WEEK OF'), findsOneWidget);
     expect(find.text('Protect your momentum'), findsOneWidget);
-    expect(find.text('Start ritual'), findsOneWidget);
   });
 
   testWidgets('week review screen shows ritual and upcoming events', (
@@ -118,17 +117,19 @@ void main() {
           ),
         ],
         child: _wrap(
-          const Column(
-            children: [
-              SettingsSecurityCard(
-                state: AuthState(
-                  biometricSupported: true,
-                  biometricEnabled: true,
-                  isAuthenticating: false,
+          const SingleChildScrollView(
+            child: Column(
+              children: [
+                SettingsSecurityCard(
+                  state: AuthState(
+                    biometricSupported: true,
+                    biometricEnabled: true,
+                    isAuthenticating: false,
+                  ),
                 ),
-              ),
-              NotificationPreferencesSection(),
-            ],
+                NotificationPreferencesSection(),
+              ],
+            ),
           ),
         ),
       ),
@@ -264,8 +265,8 @@ void main() {
 
     expect(find.text('Replay Import Queue'), findsOneWidget);
     expect(find.text('Paybill Registry'), findsOneWidget);
-    expect(find.text('Fuliza Lifecycle'), findsOneWidget);
-    expect(find.textContaining('Outstanding KES'), findsOneWidget);
+    expect(find.text('Fuliza'), findsOneWidget);
+    expect(find.text('Outstanding'), findsOneWidget);
   });
 }
 

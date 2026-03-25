@@ -11,6 +11,14 @@ class LocalNotificationService {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
+  final _tapController = StreamController<String>.broadcast();
+
+  /// Emits the route payload string whenever a notification is tapped
+  /// while the app is in the foreground or restored from background.
+  Stream<String> get notificationTapRoutes => _tapController.stream;
+
+  void dispose() => _tapController.close();
+
   // ── Notification ID namespaces ────────────────────────────────────────────
   // IDs are computed via FNV-1a hash of (namespace + ":" + recordId), so each
   // (namespace, recordId) pair maps to a unique, stable positive int32. This
@@ -67,6 +75,7 @@ class LocalNotificationService {
       title: 'Task Reminder',
       body: '$title is due soon.',
       when: reminderAt,
+      payload: '/tasks',
     );
   }
 
@@ -87,6 +96,7 @@ class LocalNotificationService {
       title: 'Upcoming Event',
       body: '$title starts soon.',
       when: reminderAt,
+      payload: '/calendar',
     );
   }
 
@@ -109,6 +119,7 @@ class LocalNotificationService {
       title: title,
       body: body,
       notificationDetails: _details,
+      payload: '/home',
     );
   }
 
@@ -157,6 +168,7 @@ class LocalNotificationService {
     required String title,
     required String body,
     required DateTime when,
+    String? payload,
   }) async {
     final enabled = await isNotificationsEnabled();
     if (!enabled) {
@@ -173,6 +185,7 @@ class LocalNotificationService {
       scheduledDate: tz.TZDateTime.from(when, tz.local),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: payload,
     );
   }
 
@@ -180,6 +193,27 @@ class LocalNotificationService {
     await _ensureInitialized();
     await _plugin.cancel(id: id);
   }
+
+  void _onNotificationTap(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null && !_tapController.isClosed) {
+      _tapController.add(payload);
+    }
+  }
+
+  /// Initialises the plugin and returns the route payload from the notification
+  /// that cold-started the app, or `null` if the app was launched normally.
+  Future<String?> getNotificationLaunchRoute() async {
+    await _ensureInitialized();
+    if (kIsWeb) return null;
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details == null || !details.didNotificationLaunchApp) return null;
+    return details.notificationResponse?.payload;
+  }
+
+  /// Public entry point so callers (e.g. [AppShell]) can eagerly initialise
+  /// the plugin on startup without scheduling a notification first.
+  Future<void> initialize() => _ensureInitialized();
 
   Future<void> _ensureInitialized() async {
     if (_initialized) {
@@ -218,7 +252,10 @@ class LocalNotificationService {
       ),
     );
 
-    await _plugin.initialize(settings: initSettings);
+    await _plugin.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: _onNotificationTap,
+    );
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin

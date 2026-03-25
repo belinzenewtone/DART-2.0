@@ -1,5 +1,19 @@
-String normalizeParserText(String message) =>
-    message.trim().replaceAll(RegExp(r'\s+'), ' ');
+String normalizeParserText(String message) => message
+    .trim()
+    // Normalize non-breaking spaces to regular spaces.
+    .replaceAll('\u00A0', ' ')
+    // Remove zero-width chars entirely to avoid splitting tokens.
+    .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF]'), '')
+    // Normalize curly quotes and dashes used by some SMS gateways.
+    .replaceAll('\u2019', "'")
+    .replaceAll('\u2018', "'")
+    .replaceAll('\u201C', '"')
+    .replaceAll('\u201D', '"')
+    .replaceAll('\u2013', '-')
+    .replaceAll('\u2014', '-')
+    // Collapse any run of whitespace (including newlines) to a single space.
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .trim();
 
 String titleCaseWords(String text) => text
     .split(' ')
@@ -12,9 +26,12 @@ String titleCaseWords(String text) => text
 
 bool looksLikeMpesaMessage(String message) {
   final lower = message.toLowerCase();
+  final hasTxCode =
+      RegExp(r'^[a-z0-9]{10}\b', caseSensitive: false).hasMatch(message.trim());
   return lower.contains('mpesa') ||
       lower.contains('m-pesa') ||
-      (lower.contains('confirmed') && lower.contains('ksh'));
+      (lower.contains('confirmed') &&
+          (lower.contains('ksh') || lower.contains('kes') || hasTxCode));
 }
 
 DateTime? parseMpesaDateTime(String message, RegExp dateTimePattern) {

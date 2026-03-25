@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
@@ -7,6 +8,7 @@ import 'package:beltech/features/review/presentation/providers/review_ritual_pro
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class HomeWeekReviewRitualCard extends ConsumerWidget {
   const HomeWeekReviewRitualCard({super.key});
@@ -24,43 +26,55 @@ class HomeWeekReviewRitualCard extends ConsumerWidget {
           WeekReviewInsightTone.caution => AppColors.warning,
           WeekReviewInsightTone.neutral => AppColors.accent,
         };
+        // Compute the Monday of the current week (ISO week starts Monday)
+        final now = DateTime.now();
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        final weekLabel =
+            'WEEK OF ${DateFormat('MMM d').format(weekStart).toUpperCase()}';
+
         return GlassCard(
           tone: GlassCardTone.accent,
           accentColor: accent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Weekly Ritual',
-                style: AppTypography.sectionTitle(context),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                ritual.headline,
-                style: AppTypography.cardTitle(context),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                ritual.summary,
-                style: AppTypography.bodySm(context),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${ritual.focusLabel}: ${ritual.focusDetail}',
-                      style: AppTypography.bodySm(context),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            onTap: () => context.pushNamed('week-review'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          weekLabel,
+                          style: AppTypography.eyebrow(context)
+                              .copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton(
-                    onPressed: () => context.pushNamed('week-review'),
-                    child: Text(ritual.ctaLabel),
-                  ),
-                ],
-              ),
-            ],
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 18,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  ritual.headline,
+                  style: AppTypography.bodySm(context)
+                      .copyWith(color: AppColors.textPrimary),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -6,23 +6,22 @@ import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/app_skeleton.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
-import 'package:beltech/core/widgets/section_header.dart';
 import 'package:beltech/core/widgets/stagger_reveal.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/features/home/domain/entities/home_overview.dart';
 import 'package:beltech/features/home/presentation/providers/home_providers.dart';
 import 'package:beltech/features/home/presentation/widgets/home_spending_cards.dart';
-import 'package:beltech/features/home/presentation/widgets/home_quick_actions.dart';
+import 'package:beltech/features/home/presentation/widgets/home_hub_card.dart';
+import 'package:beltech/features/home/presentation/widgets/home_tools_row.dart';
 import 'package:beltech/features/home/presentation/widgets/home_week_review_ritual_card.dart';
 import 'package:beltech/features/home/presentation/widgets/home_sync_banner.dart';
-import 'package:beltech/features/home/presentation/widgets/spending_chart.dart';
 import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -86,28 +85,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // ── Header ──────────────────────────────────────────────────────────
           PageHeader(
-            eyebrow: _todayLabel,
-            title: greeting,
-            subtitle: "Here's your day at a glance",
-            action: GestureDetector(
-              onTap: () {
-                AppHaptics.lightImpact();
-                _showProfileSheet(context, ref, firstName, email, initials);
-              },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.accent.withValues(alpha: 0.22),
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.accent,
+            eyebrow: null,
+            title: 'Today',
+            subtitle: _todayLabel,
+            action: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkResponse(
+                  onTap: () {
+                    AppHaptics.lightImpact();
+                    context.pushNamed('analytics');
+                  },
+                  radius: 18,
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.bar_chart_rounded,
+                      color: AppColors.accent,
+                      size: 22,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () {
+                    AppHaptics.lightImpact();
+                    _showProfileSheet(context, ref, firstName, email, initials);
+                  },
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.surface,
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+
+          // ── Greeting ─────────────────────────────────────────────────────────
+          Text(
+            greeting,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
 
           // ── Sync status banner ───────────────────────────────────────────────
           const HomeSyncBanner(),
@@ -145,22 +176,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return firstName.isEmpty ? salutation : '$salutation, $firstName';
   }
 
+  // Format: "Tuesday, Mar 24" — matches the RN reference exactly (abbreviated
+  // month, no ordinal suffix, clean and compact).
   String _buildTodayLabel(DateTime now) {
     final weekday = DateFormat('EEEE').format(now);
-    final monthDay = DateFormat('MMMM d').format(now);
-    return '$weekday, $monthDay${_ordinalSuffix(now.day)}';
-  }
-
-  String _ordinalSuffix(int day) {
-    if (day >= 11 && day <= 13) {
-      return 'th';
-    }
-    return switch (day % 10) {
-      1 => 'st',
-      2 => 'nd',
-      3 => 'rd',
-      _ => 'th',
-    };
+    final monthDay = DateFormat('MMM d').format(now);
+    return '$weekday, $monthDay';
   }
 
   void _showProfileSheet(
@@ -208,10 +229,9 @@ class _HomeOverviewSection extends StatelessWidget {
           child: HomeSpendSnapshotStrip(overview: overview),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        const SectionHeader('Productivity'),
         StaggerReveal(
           delay: const Duration(milliseconds: 55),
-          child: HomeProductivityCard(overview: overview),
+          child: HomeHubCard(overview: overview),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
         const StaggerReveal(
@@ -219,20 +239,11 @@ class _HomeOverviewSection extends StatelessWidget {
           child: HomeWeekReviewRitualCard(),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        const SectionHeader('Spending Trend'),
-        StaggerReveal(
-          delay: const Duration(milliseconds: 110),
-          child: GlassCard(
-            child: SpendingChart(dayValues: overview.weeklySpendingKes),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionGap),
-        const SectionHeader('Quick Actions'),
         const StaggerReveal(
-          delay: Duration(milliseconds: 140),
-          child: HomeQuickActionsGrid(),
+          delay: Duration(milliseconds: 110),
+          child: HomeToolsRow(),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: AppSpacing.fabBottom(context)),
       ],
     );
   }
@@ -257,18 +268,12 @@ class _ProfileQuickSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final sheetBg = AppColors.surfaceFor(brightness);
-    final handleColor = AppColors.borderFor(brightness);
-    final nameColor = AppColors.textPrimaryFor(brightness);
-    final emailColor = AppColors.textSecondaryFor(brightness);
-
     return Container(
       decoration: BoxDecoration(
-        color: sheetBg,
+        color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(
-          top: BorderSide(color: AppColors.borderFor(brightness).withValues(alpha: 0.5)),
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
         ),
       ),
       padding: EdgeInsets.only(
@@ -286,7 +291,7 @@ class _ProfileQuickSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 24),
             decoration: BoxDecoration(
-              color: handleColor,
+              color: AppColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -307,19 +312,19 @@ class _ProfileQuickSheet extends StatelessWidget {
           if (firstName.isNotEmpty)
             Text(
               firstName,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: nameColor,
+                color: AppColors.textPrimary,
               ),
             ),
           if (email.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               email,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color: emailColor,
+                color: AppColors.textSecondary,
               ),
             ),
           ],

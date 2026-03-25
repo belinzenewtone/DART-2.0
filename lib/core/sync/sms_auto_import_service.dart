@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:beltech/core/logger/app_logger.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
@@ -56,7 +57,13 @@ class SmsAutoImportService {
       final imported = await _expensesRepository.importFromDevice(from: from);
       await _saveLastSync(DateTime.now());
       return imported;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'SMS auto-import failed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'SmsAutoImport',
+      );
       await _saveLastError('$error');
       return 0;
     } finally {
