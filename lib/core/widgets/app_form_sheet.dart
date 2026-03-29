@@ -43,7 +43,7 @@ class AppFormSheet extends StatelessWidget {
                 ],
               ),
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.xxl + 4),
+                top: Radius.circular(AppRadius.xxl),
               ),
               border: Border(
                 top: BorderSide(

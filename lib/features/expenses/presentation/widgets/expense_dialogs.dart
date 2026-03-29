@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/utils/category_visual.dart';
 import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_form_sheet.dart';
@@ -53,7 +54,22 @@ class _ExpenseFormSheet extends StatefulWidget {
 }
 
 class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
-  static const _categories = ['Other', 'Food', 'Transport', 'Airtime', 'Bills'];
+  // Matches RN EXPENSE_CATEGORIES list in finance.constants.ts exactly
+  static const _categories = [
+    'Food & Dining',
+    'Airtime',
+    'Transport',
+    'Utilities',
+    'Rent',
+    'Shopping',
+    'Healthcare',
+    'Entertainment',
+    'Education',
+    'Savings',
+    'Loans',
+    'Family',
+    'Other',
+  ];
 
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
@@ -152,16 +168,16 @@ class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
           ),
           const SizedBox(height: 18),
           InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             onTap: _pickOccurredAt,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.surfaceMuted.withValues(alpha: 0.78),
-                borderRadius: BorderRadius.circular(16),
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.55),
+                  color: AppColors.border,
                 ),
               ),
               child: Row(

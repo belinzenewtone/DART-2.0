@@ -8,6 +8,7 @@ import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
 import 'package:beltech/features/tasks/presentation/widgets/task_item_visuals.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TaskItemCard extends StatelessWidget {
   const TaskItemCard({
@@ -275,7 +276,7 @@ class TaskItemCard extends StatelessWidget {
       return 'Tomorrow';
     }
 
-    return '${date.month}/${date.day}/${date.year}';
+    return DateFormat('MMM d').format(date);
   }
 
   String _priorityLabel(TaskPriority priority) {

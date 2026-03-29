@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/category_visual.dart';
@@ -34,17 +35,11 @@ class HomeSpendSnapshotStrip extends StatelessWidget {
 
   Widget _buildCell(BuildContext context, String label, double amount) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Expanded(
-      child: Container(
+      child: GlassCard(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: brightness == Brightness.light ? AppColors.surfaceFor(brightness) : AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: brightness == Brightness.light ? AppColors.borderFor(brightness) : AppColors.border,
-          ),
-        ),
+        borderRadius: AppRadius.xl,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -95,6 +90,9 @@ class HomeDashboardTransactionTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: visual.background,
               shape: BoxShape.circle,
+              border: Border.all(
+                color: visual.foreground.withValues(alpha: 0.18),
+              ),
             ),
             child: Icon(visual.icon, color: visual.foreground, size: 20),
           ),
@@ -109,7 +107,7 @@ class HomeDashboardTransactionTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis),
                 Text(
                   tx.category,
-                  style: AppTypography.bodySm(context),
+                  style: AppTypography.label(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

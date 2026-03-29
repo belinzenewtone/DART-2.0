@@ -49,8 +49,8 @@ ThemeData buildDarkTheme() {
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(
         foregroundColor: AppColors.textPrimary,
-        backgroundColor: AppColors.surfaceMuted.withValues(alpha: 0.58),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+        backgroundColor: AppColors.surfaceMuted,
+        side: BorderSide(color: AppColors.border.withValues(alpha: 0.75)),
         minimumSize: const Size(38, 38),
         padding: const EdgeInsets.all(9),
         shape: RoundedRectangleBorder(
@@ -81,8 +81,8 @@ ThemeData buildDarkTheme() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.accent,
-        backgroundColor: AppColors.surfaceMuted.withValues(alpha: 0.42),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.55)),
+        backgroundColor: AppColors.surfaceMuted,
+        side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

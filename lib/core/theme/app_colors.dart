@@ -100,14 +100,24 @@ class AppColors {
       'food' || 'restaurant' || 'groceries' || 'eating out' || 'food & dining' => categoryFood,
       'airtime' || 'mobile' || 'data' => categoryAirtime,
       'transport' || 'transit' || 'fuel' => categoryTransport,
-      'shopping' => const Color(0xFFEC4899), // pink-500
-      'rent' => const Color(0xFFEF4444),     // red-500
-      'savings' => accent,                   // teal
-      'loans' || 'loans & credit' || 'credit' => const Color(0xFFEF4444), // red-500
-      'transfer' => const Color(0xFF6366F1), // indigo-500
-      'education' => sky,                    // sky-500
-      'entertainment' => warning,            // amber
-      'family' => violet,                    // violet
+      'shopping' => const Color(0xFFEC4899),   // pink-500
+      'rent' => const Color(0xFFEF4444),       // red-500
+      'savings' => accent,                     // teal
+      'loans' || 'loans & credit' || 'credit' => const Color(0xFFDC2626), // red-600
+      'transfer' => const Color(0xFF6366F1),   // indigo-500
+      'education' => sky,                      // sky-500  #0ea5e9
+      'entertainment' => warning,              // amber-400 #f59e0b
+      'family' => const Color(0xFFA855F7),     // purple-500
+      'household groceries' => const Color(0xFF84CC16), // lime-400
+      // Income categories
+      'salary' || 'payroll' => success,
+      'freelance' || 'contract' => azure,
+      'business' || 'revenue' => orange,
+      'm-pesa received' || 'received' => success,
+      'investment' || 'dividends' => violet,
+      'other income' => categoryOther,
+      // Transfer / movement
+      'cash withdrawal' || 'atm' => orange,
       _ => categoryOther,
     };
   }

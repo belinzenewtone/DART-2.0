@@ -1,3 +1,4 @@
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 
 enum AppCapsuleVariant { solid, subtle, outline }
@@ -59,12 +60,17 @@ class AppCapsule extends StatelessWidget {
       AppCapsuleVariant.solid => Border.all(color: Colors.transparent),
     };
 
+    // sm badges use a full pill; md/lg use the sm corner token
+    final pillRadius = size == AppCapsuleSize.sm
+        ? BorderRadius.circular(AppRadius.full)
+        : BorderRadius.circular(AppRadius.sm);
+
     final pill = Container(
       constraints: BoxConstraints(minHeight: minHeight),
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(8.0), // AppRadius.sm
+        borderRadius: pillRadius,
         border: border,
       ),
       child: Row(
@@ -95,7 +101,7 @@ class AppCapsule extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: pillRadius,
         child: pill,
       ),
     );

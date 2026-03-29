@@ -137,10 +137,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.light 
-                             ? AppColors.surfaceFor(Theme.of(context).brightness) 
-                             : AppColors.surfaceElevated,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? AppColors.surfaceFor(Theme.of(context).brightness)
+                            : AppColors.surfaceElevated,
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.accent.withValues(alpha: 0.55),
+                          width: 1.5,
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: Text(

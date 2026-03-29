@@ -128,15 +128,6 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
   String _memberSinceLabel() {
     final createdAt = _client.auth.currentUser?.createdAt;
     final parsed = DateTime.tryParse(createdAt ?? '') ?? DateTime.now();
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday'
-    ];
     const months = [
       'January',
       'February',
@@ -151,10 +142,8 @@ class SupabaseProfileRepositoryImpl implements ProfileRepository {
       'November',
       'December',
     ];
-    final weekday = weekdays[parsed.weekday - 1];
     final month = months[parsed.month - 1];
-    final day = parsed.day.toString().padLeft(2, '0');
-    return '$weekday, $month $day, ${parsed.year}';
+    return '$month ${parsed.year}';
   }
 
   String _normalizeExtension(String extension) {

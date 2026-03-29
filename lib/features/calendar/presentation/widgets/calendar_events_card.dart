@@ -1,5 +1,7 @@
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_radius.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
 import 'package:flutter/material.dart';
@@ -79,16 +81,16 @@ class CalendarEventsCard extends StatelessWidget {
             alignment: Alignment.centerRight,
           ),
           child: GlassCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: IntrinsicHeight(
+              child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
                   width: 4,
-                  height: 68,
-                  margin: const EdgeInsets.only(top: 4),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
                   decoration: BoxDecoration(
                     color: typeColor,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -149,6 +151,7 @@ class CalendarEventsCard extends StatelessWidget {
                 ),
               ],
             ),
+            ),
           ),
         );
       },
@@ -194,7 +197,7 @@ class _EventSwipeBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 22),
       alignment: alignment,
@@ -215,20 +218,11 @@ class _EventPriorityBadge extends StatelessWidget {
       CalendarEventPriority.medium => ('Important', AppColors.warning),
       CalendarEventPriority.low => ('Neutral', AppColors.accent),
     };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
+    return AppCapsule(
+      label: label,
+      color: color,
+      variant: AppCapsuleVariant.subtle,
+      size: AppCapsuleSize.sm,
     );
   }
 }
@@ -247,19 +241,11 @@ class _EventTypeBadge extends StatelessWidget {
       CalendarEventType.health => ('Health', AppColors.warning),
       CalendarEventType.general => ('General', AppColors.slate),
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
+    return AppCapsule(
+      label: label,
+      color: color,
+      variant: AppCapsuleVariant.subtle,
+      size: AppCapsuleSize.sm,
     );
   }
 }

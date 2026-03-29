@@ -51,9 +51,9 @@ class GlassCard extends StatelessWidget {
           : AppColors.borderStrong,
     };
 
-    final shadowColor = brightness == Brightness.light 
-         ? const Color(0x1F0F172A)
-         : Colors.black.withValues(alpha: 0.12);
+    final shadowColor = brightness == Brightness.light
+        ? const Color(0x280F172A)
+        : Colors.black.withValues(alpha: 0.22);
 
     final innerDecoration = BoxDecoration(
       color: bgColor,
@@ -62,8 +62,8 @@ class GlassCard extends StatelessWidget {
       boxShadow: [
         BoxShadow(
           color: shadowColor,
-          blurRadius: 4,
-          offset: const Offset(0, 2),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
         ),
       ],
     );

@@ -1,7 +1,9 @@
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/home/domain/entities/home_overview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,20 +17,11 @@ class HomeHubCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final brightness = Theme.of(context).brightness;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: brightness == Brightness.light 
-            ? AppColors.surfaceFor(brightness) 
-            : AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: brightness == Brightness.light 
-              ? AppColors.borderFor(brightness)
-              : AppColors.border,
-        ),
-      ),
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      borderRadius: AppRadius.xl,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         child: Column(
           children: [
             _HubRow(
@@ -146,7 +139,7 @@ class _HubRow extends StatelessWidget {
                 style: AppTypography.bodyMd(context).copyWith(
                   color: AppColors.textSecondary,
                   fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 4),
