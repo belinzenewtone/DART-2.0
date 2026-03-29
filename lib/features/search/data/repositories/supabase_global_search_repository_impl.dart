@@ -1,3 +1,4 @@
+import 'package:beltech/core/utils/legacy_seed_data.dart';
 import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/domain/repositories/global_search_repository.dart';
@@ -19,7 +20,7 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
 
     final txRows = await _client
         .from('transactions')
-        .select('title,category,amount,source,source_hash')
+        .select('id,title,category,amount,source,source_hash,occurred_at')
         .eq('owner_id', userId)
         .or(
           'title.ilike.%$q%,category.ilike.%$q%,source.ilike.%$q%,source_hash.ilike.%$q%',
@@ -33,30 +34,43 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
           secondaryText:
               '${row['category'] ?? 'Other'} · ${row['source'] ?? 'manual'}',
           trailingText: 'KES ${parseDouble(row['amount']).toStringAsFixed(2)}',
+          recordId: parseInt(row['id']),
+          recordDate: row['occurred_at'] == null
+              ? null
+              : parseTimestamp(row['occurred_at']),
         ),
       );
     }
 
     final incomeRows = await _client
         .from('incomes')
-        .select('title,amount,source')
+        .select('id,title,amount,source,received_at')
         .eq('owner_id', userId)
         .or('title.ilike.%$q%,source.ilike.%$q%')
         .limit(15);
     for (final row in (incomeRows as List).cast<Map<String, dynamic>>()) {
+      final title = '${row['title'] ?? ''}';
+      final source = '${row['source'] ?? 'manual'}';
+      if (isLegacySeedIncome(title: title, source: source)) {
+        continue;
+      }
       results.add(
         GlobalSearchResult(
           kind: GlobalSearchKind.income,
-          primaryText: '${row['title'] ?? ''}',
-          secondaryText: '${row['source'] ?? 'manual'}',
+          primaryText: title,
+          secondaryText: source,
           trailingText: 'KES ${parseDouble(row['amount']).toStringAsFixed(2)}',
+          recordId: parseInt(row['id']),
+          recordDate: row['received_at'] == null
+              ? null
+              : parseTimestamp(row['received_at']),
         ),
       );
     }
 
     final taskRows = await _client
         .from('tasks')
-        .select('title,description,completed,priority')
+        .select('id,title,description,completed,priority,due_at')
         .eq('owner_id', userId)
         .or('title.ilike.%$q%,description.ilike.%$q%,priority.ilike.%$q%')
         .limit(15);
@@ -70,13 +84,16 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
           secondaryText:
               description.isEmpty ? priority : '$description · $priority',
           trailingText: row['completed'] == true ? 'Done' : 'Pending',
+          recordId: parseInt(row['id']),
+          recordDate:
+              row['due_at'] == null ? null : parseTimestamp(row['due_at']),
         ),
       );
     }
 
     final eventRows = await _client
         .from('events')
-        .select('title,note,priority')
+        .select('id,title,note,priority,start_at')
         .eq('owner_id', userId)
         .or('title.ilike.%$q%,note.ilike.%$q%,priority.ilike.%$q%')
         .limit(15);
@@ -89,13 +106,16 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
           primaryText: '${row['title'] ?? ''}',
           secondaryText: note.isEmpty ? priority : '$note · $priority',
           trailingText: 'Event',
+          recordId: parseInt(row['id']),
+          recordDate:
+              row['start_at'] == null ? null : parseTimestamp(row['start_at']),
         ),
       );
     }
 
     final budgetRows = await _client
         .from('budgets')
-        .select('category,monthly_limit')
+        .select('id,category,monthly_limit')
         .eq('owner_id', userId)
         .ilike('category', '%$q%')
         .limit(15);
@@ -107,13 +127,14 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
           secondaryText: 'Monthly budget',
           trailingText:
               'KES ${parseDouble(row['monthly_limit']).toStringAsFixed(2)}',
+          recordId: parseInt(row['id']),
         ),
       );
     }
 
     final recurringRows = await _client
         .from('recurring_templates')
-        .select('title,kind,cadence,description,category')
+        .select('id,title,kind,cadence,description,category,next_run_at')
         .eq('owner_id', userId)
         .or(
           'title.ilike.%$q%,description.ilike.%$q%,category.ilike.%$q%,kind.ilike.%$q%,cadence.ilike.%$q%',
@@ -132,6 +153,10 @@ class SupabaseGlobalSearchRepositoryImpl implements GlobalSearchRepository {
           primaryText: '${row['title'] ?? ''}',
           secondaryText: meta,
           trailingText: description.isEmpty ? 'Recurring' : description,
+          recordId: parseInt(row['id']),
+          recordDate: row['next_run_at'] == null
+              ? null
+              : parseTimestamp(row['next_run_at']),
         ),
       );
     }

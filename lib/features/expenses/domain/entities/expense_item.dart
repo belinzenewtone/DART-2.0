@@ -5,6 +5,7 @@ class ExpenseItem {
     required this.category,
     required this.amountKes,
     required this.occurredAt,
+    this.balanceAfterKes,
   });
 
   final int id;
@@ -12,6 +13,7 @@ class ExpenseItem {
   final String category;
   final double amountKes;
   final DateTime occurredAt;
+  final double? balanceAfterKes;
 
   @override
   bool operator ==(Object other) =>
@@ -22,18 +24,16 @@ class ExpenseItem {
           title == other.title &&
           category == other.category &&
           amountKes == other.amountKes &&
-          occurredAt == other.occurredAt;
+          occurredAt == other.occurredAt &&
+          balanceAfterKes == other.balanceAfterKes;
 
   @override
   int get hashCode =>
-      Object.hash(id, title, category, amountKes, occurredAt);
+      Object.hash(id, title, category, amountKes, occurredAt, balanceAfterKes);
 }
 
 class CategoryExpenseTotal {
-  const CategoryExpenseTotal({
-    required this.category,
-    required this.totalKes,
-  });
+  const CategoryExpenseTotal({required this.category, required this.totalKes});
 
   final String category;
   final double totalKes;

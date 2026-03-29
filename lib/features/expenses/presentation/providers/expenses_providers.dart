@@ -2,16 +2,58 @@ import 'dart:async';
 
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_window.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/usecases/import_expenses_use_case.dart';
+import 'package:beltech/features/expenses/domain/usecases/manage_expense_import_review_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum ExpenseFilter { all, today, week, month }
 
-final expenseFilterProvider =
-    StateProvider<ExpenseFilter>((_) => ExpenseFilter.month);
+final expenseFilterProvider = StateProvider<ExpenseFilter>(
+  (_) => ExpenseFilter.month,
+);
 
 final expensesSnapshotProvider = StreamProvider<ExpensesSnapshot>(
   (ref) => ref.watch(expensesRepositoryProvider).watchSnapshot(),
+);
+
+final importExpensesUseCaseProvider = Provider<ImportExpensesUseCase>(
+  (ref) => ImportExpensesUseCase(ref.watch(expensesRepositoryProvider)),
+);
+
+final manageExpenseImportReviewUseCaseProvider =
+    Provider<ManageExpenseImportReviewUseCase>(
+  (ref) => ManageExpenseImportReviewUseCase(
+    ref.watch(expensesRepositoryProvider),
+  ),
+);
+
+final expenseImportMetricsProvider = FutureProvider<ExpenseImportMetrics>(
+  (ref) => ref.watch(manageExpenseImportReviewUseCaseProvider).fetchMetrics(),
+);
+
+final expenseReviewQueueProvider = FutureProvider<List<ExpenseReviewItem>>(
+  (ref) => ref
+      .watch(manageExpenseImportReviewUseCaseProvider)
+      .fetchReviewQueue(limit: 20),
+);
+
+final expenseQuarantineQueueProvider =
+    FutureProvider<List<ExpenseQuarantineItem>>(
+  (ref) => ref
+      .watch(manageExpenseImportReviewUseCaseProvider)
+      .fetchQuarantine(limit: 20),
+);
+
+final expensePaybillProfilesProvider = FutureProvider<List<PaybillProfile>>(
+  (ref) => ref.watch(expensesRepositoryProvider).fetchPaybillProfiles(limit: 8),
+);
+
+final expenseFulizaLifecycleProvider =
+    FutureProvider<List<FulizaLifecycleEvent>>(
+  (ref) => ref.watch(expensesRepositoryProvider).fetchFulizaLifecycle(limit: 8),
 );
 
 class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
@@ -87,34 +129,93 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
       () => ref
-          .read(expensesRepositoryProvider)
-          .importSmsMessages(lines, from: from),
+          .read(importExpensesUseCaseProvider)
+          .importRawMessages(lines, from: from),
     );
     if (result.hasError) {
-      state =
-          AsyncError(result.error!, result.stackTrace ?? StackTrace.current);
+      state = AsyncError(
+        result.error!,
+        result.stackTrace ?? StackTrace.current,
+      );
       throw result.error!;
     }
     state = const AsyncData(null);
+    _invalidateImportReviewCaches();
     return result.valueOrNull ?? 0;
   }
 
-  Future<int> importFromDevice({
-    required ExpenseImportWindow window,
-  }) async {
+  Future<int> importFromDevice({required ExpenseImportWindow window}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
-      () => ref.read(expensesRepositoryProvider).importFromDevice(
-            from: fromWindow(window),
-          ),
+      () => ref
+          .read(importExpensesUseCaseProvider)
+          .importFromDevice(from: fromWindow(window)),
     );
     if (result.hasError) {
-      state =
-          AsyncError(result.error!, result.stackTrace ?? StackTrace.current);
+      state = AsyncError(
+        result.error!,
+        result.stackTrace ?? StackTrace.current,
+      );
       throw result.error!;
     }
     state = const AsyncData(null);
+    _invalidateImportReviewCaches();
     return result.valueOrNull ?? 0;
+  }
+
+  Future<void> approveReviewItem(int reviewId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(manageExpenseImportReviewUseCaseProvider)
+          .resolveReviewItem(reviewId: reviewId, approve: true);
+    });
+    _invalidateImportReviewCaches();
+  }
+
+  Future<void> rejectReviewItem(int reviewId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(manageExpenseImportReviewUseCaseProvider)
+          .resolveReviewItem(reviewId: reviewId, approve: false);
+    });
+    _invalidateImportReviewCaches();
+  }
+
+  Future<void> dismissQuarantineItem(int quarantineId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(manageExpenseImportReviewUseCaseProvider)
+          .dismissQuarantineItem(quarantineId);
+    });
+    _invalidateImportReviewCaches();
+  }
+
+  Future<int> replayImportQueue() async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(
+      () => ref.read(expensesRepositoryProvider).replayImportQueue(),
+    );
+    if (result.hasError) {
+      state = AsyncError(
+        result.error!,
+        result.stackTrace ?? StackTrace.current,
+      );
+      throw result.error!;
+    }
+    state = const AsyncData(null);
+    _invalidateImportReviewCaches();
+    return result.valueOrNull ?? 0;
+  }
+
+  void _invalidateImportReviewCaches() {
+    ref.invalidate(expenseImportMetricsProvider);
+    ref.invalidate(expenseReviewQueueProvider);
+    ref.invalidate(expenseQuarantineQueueProvider);
+    ref.invalidate(expensePaybillProfilesProvider);
+    ref.invalidate(expenseFulizaLifecycleProvider);
   }
 }
 

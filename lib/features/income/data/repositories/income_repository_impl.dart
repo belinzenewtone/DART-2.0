@@ -1,4 +1,5 @@
 import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/core/utils/legacy_seed_data.dart';
 import 'package:beltech/features/income/domain/entities/income_item.dart';
 import 'package:beltech/features/income/domain/repositories/income_repository.dart';
 
@@ -70,6 +71,12 @@ class IncomeRepositoryImpl implements IncomeRepository {
             receivedAt:
                 DateTime.fromMillisecondsSinceEpoch(_asInt(row['received_at'])),
             source: '${row['source'] ?? 'manual'}',
+          ),
+        )
+        .where(
+          (item) => !isLegacySeedIncome(
+            title: item.title,
+            source: item.source,
           ),
         )
         .toList();

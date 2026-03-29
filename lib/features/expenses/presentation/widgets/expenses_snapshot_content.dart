@@ -1,13 +1,27 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
+import 'package:beltech/core/widgets/app_empty_state.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
+import 'package:beltech/core/utils/category_visual.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/category_chip.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
+import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/presentation/providers/expenses_providers.dart';
 import 'package:beltech/features/expenses/presentation/widgets/transaction_row.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+part 'expenses_snapshot_content_cards.dart';
+part 'expenses_snapshot_content_imports.dart';
+
+final _expenseDayHeaderFormat = DateFormat('EEE, MMM d');
 final _txDateFormat = DateFormat('MMM d, HH:mm');
 
 class ExpensesSnapshotContent extends StatefulWidget {
@@ -19,6 +33,15 @@ class ExpensesSnapshotContent extends StatefulWidget {
     required this.onFilterChanged,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.importMetrics,
+    required this.reviewItems,
+    required this.quarantineItems,
+    required this.paybillProfiles,
+    required this.fulizaEvents,
+    required this.onApproveReview,
+    required this.onRejectReview,
+    required this.onDismissQuarantine,
+    required this.onReplayImportQueue,
   });
 
   final ExpensesSnapshot snapshot;
@@ -27,6 +50,15 @@ class ExpensesSnapshotContent extends StatefulWidget {
   final ValueChanged<ExpenseFilter> onFilterChanged;
   final ValueChanged<ExpenseItem> onEditExpense;
   final ValueChanged<ExpenseItem> onDeleteExpense;
+  final ExpenseImportMetrics importMetrics;
+  final List<ExpenseReviewItem> reviewItems;
+  final List<ExpenseQuarantineItem> quarantineItems;
+  final List<PaybillProfile> paybillProfiles;
+  final List<FulizaLifecycleEvent> fulizaEvents;
+  final ValueChanged<ExpenseReviewItem> onApproveReview;
+  final ValueChanged<ExpenseReviewItem> onRejectReview;
+  final ValueChanged<ExpenseQuarantineItem> onDismissQuarantine;
+  final Future<void> Function() onReplayImportQueue;
 
   @override
   State<ExpensesSnapshotContent> createState() =>
@@ -40,11 +72,15 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final transactions = _transactionsForFilter(
-        widget.snapshot.transactions, widget.selectedFilter);
-    final visibleTransactions =
-        _showAllTransactions ? transactions : transactions.take(20).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      widget.snapshot.transactions,
+      widget.selectedFilter,
+    );
+    final visibleTransactions = _showAllTransactions
+        ? transactions
+        : transactions.take(20).toList();
+    final groupedTransactions = _groupTransactionsByDay(visibleTransactions);
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 20),
       children: [
         Row(
           children: [
@@ -59,7 +95,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             const SizedBox(width: 10),
             Expanded(
               child: _SummaryCard(
-                title: 'This Week',
+                title: 'Week',
                 amount: CurrencyFormatter.money(widget.snapshot.weekKes),
                 tone: GlassCardTone.accent,
                 accentColor: AppColors.teal,
@@ -67,40 +103,79 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: ExpenseFilter.values.map((filter) {
-            return CategoryChip(
-              label: switch (filter) {
-                ExpenseFilter.all => 'All',
-                ExpenseFilter.today => 'Today',
-                ExpenseFilter.week => 'This Week',
-                ExpenseFilter.month => 'This Month',
-              },
-              selected: widget.selectedFilter == filter,
-              onTap: () => widget.onFilterChanged(filter),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 14),
-        _CategoryCard(categories: widget.snapshot.categories),
-        const SizedBox(height: 16),
-        Text('Transactions', style: textTheme.titleMedium),
         const SizedBox(height: 10),
-        for (final tx in visibleTransactions) ...[
-          ExpenseTransactionRow(
-            dismissKey: 'expense-${tx.id}',
-            title: tx.title,
-            subtitle:
-                '${tx.category} · ${_txDateFormat.format(tx.occurredAt)}',
-            amount: CurrencyFormatter.money(tx.amountKes),
-            onEdit: () => widget.onEditExpense(tx),
-            onDelete: () => widget.onDeleteExpense(tx),
-            busy: widget.busy,
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: ExpenseFilter.values.map((filter) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: CategoryChip(
+                  label: switch (filter) {
+                    ExpenseFilter.all => 'All',
+                    ExpenseFilter.today => 'Today',
+                    ExpenseFilter.week => 'This Week',
+                    ExpenseFilter.month => 'This Month',
+                  },
+                  selected: widget.selectedFilter == filter,
+                  onTap: () => widget.onFilterChanged(filter),
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 10),
+        ),
+        const SizedBox(height: 12),
+        _CategoryCard(categories: widget.snapshot.categories),
+        if (widget.fulizaEvents.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _FulizaSummaryCard(events: widget.fulizaEvents),
+        ],
+        const SizedBox(height: 14),
+        _ImportPipelineCard(
+          metrics: widget.importMetrics,
+          reviewItems: widget.reviewItems,
+          quarantineItems: widget.quarantineItems,
+          paybillProfiles: widget.paybillProfiles,
+          fulizaEvents: widget.fulizaEvents,
+          busy: widget.busy,
+          onApproveReview: widget.onApproveReview,
+          onRejectReview: widget.onRejectReview,
+          onDismissQuarantine: widget.onDismissQuarantine,
+          onReplayImportQueue: widget.onReplayImportQueue,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: Text('Transactions', style: textTheme.titleMedium)),
+            if (transactions.isNotEmpty)
+              Text('${transactions.length} total', style: textTheme.bodySmall),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (transactions.isEmpty)
+          const AppEmptyState(
+            icon: Icons.receipt_long_outlined,
+            title: 'No transactions yet',
+            subtitle: 'Import from M-Pesa SMS or add one manually.',
+          ),
+        for (final group in groupedTransactions) ...[
+          _TransactionDayHeader(group: group),
+          const SizedBox(height: 8),
+          for (final tx in group.items) ...[
+            ExpenseTransactionRow(
+              dismissKey: 'expense-${tx.id}',
+              title: tx.title,
+              amount: CurrencyFormatter.money(tx.amountKes),
+              category: tx.category,
+              occurredAt: tx.occurredAt,
+              balanceAfterKes: tx.balanceAfterKes,
+              onEdit: () => widget.onEditExpense(tx),
+              onDelete: () => widget.onDeleteExpense(tx),
+              busy: widget.busy,
+            ),
+            const SizedBox(height: 10),
+          ],
         ],
         if (transactions.length > 20)
           Align(
@@ -111,9 +186,11 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
                   _showAllTransactions = !_showAllTransactions;
                 });
               },
-              child: Text(_showAllTransactions
-                  ? 'Show fewer transactions'
-                  : 'Show all transactions (${transactions.length})'),
+              child: Text(
+                _showAllTransactions
+                    ? 'Show fewer transactions'
+                    : 'Show all transactions (${transactions.length})',
+              ),
             ),
           ),
       ],
@@ -121,7 +198,9 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
   }
 
   List<ExpenseItem> _transactionsForFilter(
-      List<ExpenseItem> source, ExpenseFilter filter) {
+    List<ExpenseItem> source,
+    ExpenseFilter filter,
+  ) {
     final now = DateTime.now();
     final dayStart = DateTime(now.year, now.month, now.day);
     final weekStart = dayStart.subtract(Duration(days: now.weekday - 1));
@@ -139,156 +218,62 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
       }
     }).toList();
   }
-}
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.title,
-    required this.amount,
-    this.tone = GlassCardTone.standard,
-    this.accentColor,
-  });
-
-  final String title;
-  final String amount;
-  final GlassCardTone tone;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return GlassCard(
-      tone: tone,
-      accentColor: accentColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: textTheme.bodyMedium),
-          const SizedBox(height: 6),
-          Text(amount, style: textTheme.titleMedium),
-        ],
-      ),
-    );
+  List<_ExpenseDayGroup> _groupTransactionsByDay(List<ExpenseItem> items) {
+    final groups = <_ExpenseDayGroup>[];
+    for (final item in items) {
+      final day = DateTime(
+        item.occurredAt.year,
+        item.occurredAt.month,
+        item.occurredAt.day,
+      );
+      if (groups.isEmpty || groups.last.day != day) {
+        groups.add(_ExpenseDayGroup(day: day, items: [item]));
+      } else {
+        groups.last.items.add(item);
+      }
+    }
+    return groups;
   }
 }
 
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.categories});
+class _ExpenseDayGroup {
+  _ExpenseDayGroup({required this.day, required this.items});
 
-  final List<CategoryExpenseTotal> categories;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final total =
-        categories.fold<double>(0, (sum, item) => sum + item.totalKes);
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Categories', style: textTheme.titleMedium),
-          const SizedBox(height: 12),
-          for (final entry in categories.take(8)) ...[
-            _CategoryRow(
-              name: entry.category,
-              amount: CurrencyFormatter.money(entry.totalKes),
-              ratio: total <= 0 ? 0 : entry.totalKes / total,
-            ),
-            const SizedBox(height: 10),
-          ],
-        ],
-      ),
-    );
-  }
+  final DateTime day;
+  final List<ExpenseItem> items;
 }
 
-class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.name,
-    required this.amount,
-    required this.ratio,
-  });
+class _TransactionDayHeader extends StatelessWidget {
+  const _TransactionDayHeader({required this.group});
 
-  final String name;
-  final String amount;
-  final double ratio;
+  final _ExpenseDayGroup group;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final visual = _categoryVisual(name);
+    final now = DateTime.now();
+    final isToday =
+        now.year == group.day.year &&
+        now.month == group.day.month &&
+        now.day == group.day.day;
+    final total = group.items.fold<double>(
+      0,
+      (sum, item) => sum + item.amountKes,
+    );
+
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: visual.background,
-          child: Icon(visual.icon, color: visual.foreground, size: 16),
-        ),
-        const SizedBox(width: 10),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name, style: textTheme.bodyLarge),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: SizedBox(
-                  height: 4,
-                  child: LinearProgressIndicator(
-                    value: ratio.clamp(0, 1),
-                    backgroundColor:
-                        AppColors.surfaceMuted.withValues(alpha: 0.7),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(visual.foreground),
-                  ),
-                ),
-              ),
-            ],
+          child: Text(
+            isToday ? 'Today' : _expenseDayHeaderFormat.format(group.day),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
-        const SizedBox(width: 10),
-        Text(amount, style: textTheme.bodyLarge),
+        Text(
+          CurrencyFormatter.money(total),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ],
     );
   }
-}
-
-({IconData icon, Color foreground, Color background}) _categoryVisual(
-    String category) {
-  final normalized = category.trim().toLowerCase();
-  if (normalized.contains('food')) {
-    return (
-      icon: Icons.restaurant_outlined,
-      foreground: const Color(0xFFFF8C5A),
-      background: const Color(0xFF4B2F2B),
-    );
-  }
-  if (normalized.contains('airtime')) {
-    return (
-      icon: Icons.phone_android_outlined,
-      foreground: const Color(0xFFC66BFF),
-      background: const Color(0xFF3B284F),
-    );
-  }
-  if (normalized.contains('bill')) {
-    return (
-      icon: Icons.receipt_long_outlined,
-      foreground: const Color(0xFFC66BFF),
-      background: const Color(0xFF3C2A4D),
-    );
-  }
-  if (normalized.contains('transport')) {
-    return (
-      icon: Icons.directions_bus_outlined,
-      foreground: const Color(0xFF57B3FF),
-      background: const Color(0xFF233A4F),
-    );
-  }
-  return (
-    icon: Icons.more_horiz,
-    foreground: AppColors.textSecondary,
-    background: AppColors.accentSoft,
-  );
 }

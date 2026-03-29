@@ -1,18 +1,24 @@
 import 'dart:async';
-import 'package:beltech/core/di/update_providers.dart';
+import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/routing/deep_link_router.dart';
 import 'package:beltech/core/di/sync_providers.dart';
+import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/di/security_providers.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
+import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/security/biometric_relock_policy.dart';
+import 'package:beltech/core/security/screen_capture_protection_service.dart';
 import 'package:beltech/core/navigation/app_shell_helpers.dart';
 import 'package:beltech/core/navigation/shell_providers.dart';
+import 'package:beltech/core/navigation/widgets/app_tab_bar.dart';
 import 'package:beltech/core/navigation/widgets/biometric_lock_overlay.dart';
 import 'package:beltech/core/navigation/widgets/shell_body_switcher.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/theme/glass_styles.dart';
-import 'package:beltech/core/update/presentation/app_update_dialog.dart';
-import 'package:beltech/core/widgets/app_dialog.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/app_toast.dart';
+import 'package:beltech/core/widgets/offline_banner.dart';
 import 'package:beltech/features/assistant/presentation/assistant_screen.dart';
 import 'package:beltech/features/calendar/presentation/calendar_screen.dart';
 import 'package:beltech/features/expenses/presentation/expenses_screen.dart';
@@ -20,9 +26,10 @@ import 'package:beltech/features/home/presentation/home_screen.dart';
 import 'package:beltech/features/profile/presentation/profile_screen.dart';
 import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
-import 'package:beltech/core/widgets/offline_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'app_shell_biometric.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -36,15 +43,49 @@ class AppShell extends ConsumerStatefulWidget {
     ProfileScreen(),
   ];
 
+  static const List<AppTabItem> _tabs = [
+    AppTabItem(
+      label: 'Home',
+      icon: Icons.grid_view_outlined,
+      selectedIcon: Icons.grid_view_rounded,
+    ),
+    AppTabItem(
+      label: 'Calendar',
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today_rounded,
+    ),
+    AppTabItem(
+      label: 'Finance',
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet_rounded,
+    ),
+    AppTabItem(
+      label: 'Tasks',
+      icon: Icons.task_alt_outlined,
+      selectedIcon: Icons.task_alt_rounded,
+    ),
+    AppTabItem(
+      label: 'AI',
+      icon: Icons.auto_awesome_outlined,
+      selectedIcon: Icons.auto_awesome_rounded,
+    ),
+    AppTabItem(
+      label: 'Profile',
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
+    ),
+  ];
+
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
-  late final BackgroundSyncCoordinator _backgroundSyncCoordinator;
-  bool _updateChecked = false;
+  late BackgroundSyncCoordinator _backgroundSyncCoordinator;
+  StreamSubscription<String>? _notificationTapSub;
   bool _biometricConfigured = false;
+  bool _biometricRelockEnabled = true;
   bool _appLocked = false;
   bool _biometricUnlockInProgress = false;
   String? _biometricLockMessage;
@@ -54,19 +95,24 @@ class _AppShellState extends ConsumerState<AppShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(
+      ScreenCaptureProtectionService.syncForTab(
+        ref.read(shellTabIndexProvider),
+      ),
+    );
     _backgroundSyncCoordinator = ref.read(backgroundSyncCoordinatorProvider);
+    unawaited(_refreshFeatureFlags());
     unawaited(_startBackgroundSync());
     unawaited(_initializeBiometricLock());
     unawaited(cleanupNotificationReminders(ref));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_checkForAppUpdate());
-    });
+    unawaited(_initNotificationDeepLink());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _backgroundSyncCoordinator.stop();
+    _notificationTapSub?.cancel();
     super.dispose();
   }
 
@@ -78,6 +124,12 @@ class _AppShellState extends ConsumerState<AppShell>
       return;
     }
     if (state == AppLifecycleState.resumed) {
+      unawaited(
+        ScreenCaptureProtectionService.syncForTab(
+          ref.read(shellTabIndexProvider),
+        ),
+      );
+      unawaited(_refreshFeatureFlags());
       unawaited(_syncNow());
       unawaited(_materializeRecurringNow());
       unawaited(_runNotificationSweep());
@@ -88,33 +140,27 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(shellTabIndexProvider);
-    final accent = accentForTab(currentIndex);
-    final accentSoft = accent.withValues(alpha: 0.2);
-    final brightness = Theme.of(context).brightness;
-    final reduceMotion = AppMotion.reduceMotion(context);
-    final overlayDuration =
-        AppMotion.duration(context, normalMs: 240, reducedMs: 0);
+    ref.listen<bool>(useSupabaseProvider, (previous, next) {
+      if (previous == null || previous == next) {
+        return;
+      }
+      unawaited(_rebindBackgroundSyncForModeChange());
+    });
+    ref.listen<int>(shellTabIndexProvider, (previous, next) {
+      if (previous == next) {
+        return;
+      }
+      unawaited(ScreenCaptureProtectionService.syncForTab(next));
+    });
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: GlassStyles.backgroundGradientFor(brightness),
-      ),
+    final currentIndex = ref.watch(shellTabIndexProvider);
+    final reduceMotion = AppMotion.reduceMotion(context);
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
+    return Container(
+      color: AppColors.background,
       child: Stack(
         children: [
-          IgnorePointer(
-            child: AnimatedContainer(
-              duration: overlayDuration,
-              curve: Curves.easeOutCubic,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0.75, -0.9),
-                  radius: 1.05,
-                  colors: [accent.withValues(alpha: 0.24), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
           IgnorePointer(
             ignoring: _appLocked,
             child: Scaffold(
@@ -124,84 +170,28 @@ class _AppShellState extends ConsumerState<AppShell>
                 reduceMotion: reduceMotion,
                 children: AppShell._screens,
               ),
-              bottomNavigationBar: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.shellHorizontal,
-                  0,
-                  AppSpacing.shellHorizontal,
-                  AppSpacing.navBottom(context),
-                ),
-                child: GlassCard(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                  borderRadius: 24,
-                  child: NavigationBarTheme(
-                    data: NavigationBarThemeData(
-                      backgroundColor: Colors.transparent,
-                      indicatorColor: accentSoft,
-                      labelTextStyle:
-                          WidgetStateProperty.resolveWith<TextStyle?>(
-                        (states) => TextStyle(
-                          color: states.contains(WidgetState.selected)
-                              ? accent
-                              : AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
+              bottomNavigationBar: keyboardVisible
+                  ? null
+                  : Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.screenHorizontal,
+                        0,
+                        AppSpacing.screenHorizontal,
+                        AppSpacing.navBottom(context),
+                      ),
+                      child: AppTabBar(
+                        selectedIndex: currentIndex,
+                        items: AppShell._tabs,
+                        onTap: (index) {
+                          ref.read(shellTabIndexProvider.notifier).state =
+                              index;
+                        },
                       ),
                     ),
-                    child: NavigationBar(
-                      height: 66,
-                      backgroundColor: Colors.transparent,
-                      selectedIndex: currentIndex,
-                      onDestinationSelected: (index) {
-                        ref.read(shellTabIndexProvider.notifier).state = index;
-                      },
-                      destinations: const [
-                        NavigationDestination(
-                          icon: Icon(Icons.home_outlined),
-                          selectedIcon: Icon(Icons.home),
-                          label: 'Home',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.calendar_month_outlined),
-                          selectedIcon: Icon(Icons.calendar_month),
-                          label: 'Calendar',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.receipt_long_outlined),
-                          selectedIcon: Icon(Icons.receipt_long),
-                          label: 'Expenses',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.check_circle_outline),
-                          selectedIcon: Icon(Icons.check_circle),
-                          label: 'Tasks',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.smart_toy_outlined),
-                          selectedIcon: Icon(Icons.smart_toy),
-                          label: 'AI',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.person_outline),
-                          selectedIcon: Icon(Icons.person),
-                          label: 'Profile',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
-          // Offline banner overlays everything when disconnected
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: OfflineBanner(),
-          ),
+          const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
+          const AppToastOverlay(),
           if (_appLocked)
             BiometricLockOverlay(
               busy: _biometricUnlockInProgress,
@@ -213,60 +203,55 @@ class _AppShellState extends ConsumerState<AppShell>
     );
   }
 
-  Future<void> _startBackgroundSync() async {
+  Future<void> _initNotificationDeepLink() async {
+    final svc = ref.read(localNotificationServiceProvider);
+    await svc.initialize();
+
+    final launchRoute = await svc.getNotificationLaunchRoute();
+    if (launchRoute != null && mounted) {
+      final tab = DeepLinkRouter.tabForRoute(launchRoute);
+      if (tab != null) {
+        ref.read(shellTabIndexProvider.notifier).state = tab.index;
+      }
+    }
+
+    _notificationTapSub = svc.notificationTapRoutes.listen((route) {
+      if (!mounted) return;
+      final tab = DeepLinkRouter.tabForRoute(route);
+      if (tab != null) {
+        ref.read(shellTabIndexProvider.notifier).state = tab.index;
+      }
+    });
+  }
+
+  Future<void> _startBackgroundSync() async =>
+      _backgroundSyncCoordinator.start();
+  Future<void> _materializeRecurringNow() async =>
+      _backgroundSyncCoordinator.materializeNow();
+  Future<void> _syncNow() async => _backgroundSyncCoordinator.syncNow();
+  Future<void> _runNotificationSweep() async =>
+      _backgroundSyncCoordinator.runNotificationSweep();
+  Future<void> _rebindBackgroundSyncForModeChange() async {
+    await _backgroundSyncCoordinator.stop();
+    ref.invalidate(backgroundSyncCoordinatorProvider);
+    ref.invalidate(syncStatusProvider);
+    _backgroundSyncCoordinator = ref.read(backgroundSyncCoordinatorProvider);
     await _backgroundSyncCoordinator.start();
+    await cleanupNotificationReminders(ref);
   }
 
-  Future<void> _materializeRecurringNow() async {
-    await _backgroundSyncCoordinator.materializeNow();
-  }
-
-  Future<void> _syncNow() async {
-    await _backgroundSyncCoordinator.syncNow();
-  }
-
-  Future<void> _runNotificationSweep() async {
-    await _backgroundSyncCoordinator.runNotificationSweep();
-  }
-
-  Future<void> _checkForAppUpdate() async {
-    if (_updateChecked || !mounted) {
+  Future<void> _refreshFeatureFlags() async {
+    try {
+      await ref.read(refreshFeatureFlagsUseCaseProvider).call();
+      final snapshot = await ref.read(featureFlagStoreProvider).snapshot();
+      final motionEnabled = snapshot[FeatureFlag.stretchMotion] ?? true;
+      AppMotion.setStretchMotionEnabled(motionEnabled);
+      AppHaptics.setEnabled(motionEnabled);
+      _biometricRelockEnabled = snapshot[FeatureFlag.biometricRelock] ?? true;
+      ref.invalidate(featureFlagSnapshotProvider);
+    } catch (_) {
       return;
     }
-    _updateChecked = true;
-    final service = ref.read(appUpdateServiceProvider);
-    final update = await service.fetchAvailableUpdate();
-    if (update == null || !mounted) {
-      return;
-    }
-    await showAppDialog<void>(
-      context: context,
-      barrierDismissible: !update.forceUpdate,
-      builder: (context) => AppUpdateDialog(
-        update: update,
-        service: service,
-      ),
-    );
-  }
-
-  Future<void> _initializeBiometricLock() async {
-    await _refreshBiometricConfiguration(lockNow: true);
-  }
-
-  Future<void> _applyBiometricLockOnResume() async {
-    if (_biometricUnlockInProgress) {
-      return;
-    }
-    final pausedAt = _lastPausedAt;
-    _lastPausedAt = null;
-    if (pausedAt == null) {
-      return;
-    }
-    final inactiveDuration = DateTime.now().difference(pausedAt);
-    if (inactiveDuration < const Duration(seconds: 2)) {
-      return;
-    }
-    await _refreshBiometricConfiguration(lockNow: true);
   }
 
   Future<void> _refreshBiometricConfiguration({required bool lockNow}) async {
@@ -274,9 +259,7 @@ class _AppShellState extends ConsumerState<AppShell>
     final enabled = await authRepository.isBiometricEnabled();
     final supported = await authRepository.isBiometricSupported();
     final configured = enabled && supported;
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() {
       _biometricConfigured = configured;
       if (!configured) {
@@ -284,34 +267,25 @@ class _AppShellState extends ConsumerState<AppShell>
         _biometricLockMessage = null;
         return;
       }
-      if (lockNow) {
-        _appLocked = true;
-      }
+      if (lockNow) _appLocked = true;
     });
   }
 
   Future<void> _unlockWithBiometrics() async {
-    if (_biometricUnlockInProgress || !_biometricConfigured) {
-      return;
-    }
+    if (_biometricUnlockInProgress || !_biometricConfigured) return;
     setState(() {
       _biometricUnlockInProgress = true;
       _biometricLockMessage = null;
     });
-
     final authenticated = await ref.read(authRepositoryProvider).authenticate();
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     setState(() {
       _biometricUnlockInProgress = false;
       _appLocked = !authenticated;
-      _biometricLockMessage =
-          authenticated ? null : 'Authentication was not completed.';
-      if (authenticated) {
-        _lastPausedAt = null;
-      }
+      _biometricLockMessage = authenticated
+          ? null
+          : 'Authentication was not completed.';
+      if (authenticated) _lastPausedAt = null;
     });
   }
 }

@@ -69,12 +69,12 @@ class CalendarEventsCard extends StatelessWidget {
             return false;
           },
           background: const _EventSwipeBackground(
-            color: Color(0xFF1E5C2A),
+            color: AppColors.successMuted,
             icon: Icons.check_circle_outline,
             alignment: Alignment.centerLeft,
           ),
           secondaryBackground: const _EventSwipeBackground(
-            color: Color(0xFF612226),
+            color: AppColors.dangerMuted,
             icon: Icons.delete_outline,
             alignment: Alignment.centerRight,
           ),

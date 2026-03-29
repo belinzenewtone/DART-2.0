@@ -1,19 +1,39 @@
+import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/glass_styles.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _kOnboardingDoneKey = 'onboarding_done_v1';
+// ── Convenience helpers used by the app router ────────────────────────────────
+//
+// The router runs outside of a widget tree and cannot inject a provider,
+// so it calls the repository directly via a one-shot ProviderContainer.
+// Keeping these as package-level functions preserves the existing router
+// call-site while the actual persistence is delegated to the repository.
 
+/// Returns `true` if the user has already completed onboarding.
+///
+/// Uses a temporary [ProviderContainer] so the router can call this without
+/// a widget context.
 Future<bool> hasSeenOnboarding() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool(_kOnboardingDoneKey) ?? false;
+  final container = ProviderContainer();
+  try {
+    final repo = container.read(onboardingRepositoryProvider);
+    return await repo.hasSeenOnboarding();
+  } finally {
+    container.dispose();
+  }
 }
 
+/// Marks onboarding as complete.  See [hasSeenOnboarding] for rationale.
 Future<void> markOnboardingDone() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(_kOnboardingDoneKey, true);
+  final container = ProviderContainer();
+  try {
+    final repo = container.read(onboardingRepositoryProvider);
+    await repo.markOnboardingDone();
+  } finally {
+    container.dispose();
+  }
 }
 
 class _OnboardingPage {
@@ -31,45 +51,45 @@ class _OnboardingPage {
 
 const _pages = [
   _OnboardingPage(
-    icon: Icons.home_outlined,
-    title: 'Welcome to BELTECH',
+    icon: Icons.auto_awesome_rounded,
+    title: 'Welcome to\nBELTECH',
     body:
-        'Your all-in-one personal finance and productivity companion. Track spending, manage tasks, and stay on top of your schedule — all in one place.',
-    color: AppColors.accent,
+        'Track money, tasks, schedule, and focus in one connected daily system built for how you actually live.',
+    color: Color(0xFF2F80FF),
   ),
   _OnboardingPage(
-    icon: Icons.receipt_long_outlined,
-    title: 'Track Every Expense',
+    icon: Icons.account_balance_wallet_rounded,
+    title: 'Finance That\nFeels Native',
     body:
-        'Log expenses manually or let BELTECH auto-import from your SMS messages. Set monthly budget targets and get notified before you overspend.',
-    color: AppColors.teal,
+        'Capture spending quickly, import M-Pesa SMS data, and keep your budget posture always visible.',
+    color: Color(0xFF26C4B6),
   ),
   _OnboardingPage(
-    icon: Icons.check_circle_outline,
-    title: 'Stay Productive',
+    icon: Icons.task_alt_rounded,
+    title: 'Execution\n& Planning',
     body:
-        'Manage tasks with priority levels and due dates. Schedule calendar events. Set up recurring items so nothing falls through the cracks.',
-    color: AppColors.violet,
+        'Own your priorities with tasks, recurring automation, and calendar context in one unified view.',
+    color: Color(0xFF8B6DFF),
   ),
   _OnboardingPage(
-    icon: Icons.smart_toy_outlined,
-    title: 'Your AI Assistant',
+    icon: Icons.bolt_rounded,
+    title: 'Weekly\nIntelligence',
     body:
-        'Ask BELTECH about your spending, pending tasks, or upcoming events. Get instant insights powered by your real data.',
-    color: AppColors.accent,
+        'Get assistant guidance and review insights powered by your real workspace data - not generic tips.',
+    color: Color(0xFFF4A838),
   ),
 ];
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key, required this.onDone});
 
   final VoidCallback onDone;
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
@@ -91,125 +111,224 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
-    await markOnboardingDone();
+    await ref.read(onboardingRepositoryProvider).markOnboardingDone();
     widget.onDone();
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final brightness = Theme.of(context).brightness;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: GlassStyles.backgroundGradientFor(brightness),
-      ),
+    return Container(
+      color: AppColors.background,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  itemCount: _pages.length,
-                  itemBuilder: (context, index) {
-                    final page = _pages[index];
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 40, 28, 24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    controller: _controller,
+                    onPageChanged: (i) => setState(() => _page = i),
+                    itemCount: _pages.length,
+                    itemBuilder: (context, index) {
+                      final page = _pages[index];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: page.color.withValues(alpha: 0.18),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              page.icon,
-                              size: 52,
-                              color: page.color,
+                          Expanded(
+                            child: Center(
+                              child: Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(
+                                  color: page.color.withValues(alpha: 0.10),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: page.color.withValues(alpha: 0.33),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: page.color.withValues(alpha: 0.35),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    page.icon,
+                                    size: 40,
+                                    color: page.color,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 36),
-                          Text(
-                            page.title,
-                            style: textTheme.titleLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          GlassCard(
-                            child: Text(
-                              page.body,
-                              style: textTheme.bodyLarge,
-                              textAlign: TextAlign.center,
+                          SafeArea(
+                            top: false,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    page.title,
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    page.body,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: AppColors.textSecondary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              // Page indicator dots
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _pages.length,
-                  (i) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: i == _page ? 20 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: i == _page
-                          ? AppColors.accent
-                          : AppColors.accent.withValues(alpha: 0.3),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: List.generate(
+                            _pages.length,
+                            (i) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              margin: const EdgeInsets.only(right: 8),
+                              width: i == _page ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                color: i == _page
+                                    ? _pages[_page].color
+                                    : _pages[_page].color.withValues(alpha: 0.26),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        if (_page == _pages.length - 1)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.surfaceSoft,
+                                  foregroundColor: AppColors.textPrimary,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
+                                  ),
+                                ),
+                                onPressed: _finish,
+                                child: const Text('Start Local Workspace', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _pages[_page].color,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: _finish,
+                                child: const Text('Use Cloud Sync', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            children: [
+                              if (_page > 0) ...[
+                                GestureDetector(
+                                  onTap: () => _controller.previousPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  ),
+                                  child: Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: _pages[_page].color.withValues(alpha: 0.26),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                     child: const Icon(
+                                       Icons.arrow_back_rounded,
+                                       size: 20,
+                                       color: AppColors.textSecondary,
+                                     ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                              ] else
+                                const SizedBox(width: 48 + 12),
+                              Expanded(
+                                child: FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: _pages[_page].color,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: _next,
+                                  child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 24, top: 16),
+                  child: GestureDetector(
+                    onTap: _finish,
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(
+                        fontSize: AppTypography.sm,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.accent,
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-                child: Row(
-                  children: [
-                    if (_page > 0) ...[
-                      TextButton(
-                        onPressed: () => _controller.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        ),
-                        child: const Text('Back'),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _next,
-                        child: Text(
-                          _page == _pages.length - 1
-                              ? 'Get Started'
-                              : 'Next',
-                        ),
-                      ),
-                    ),
-                    if (_page < _pages.length - 1) ...[
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: _finish,
-                        child: const Text('Skip'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

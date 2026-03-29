@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -38,7 +39,31 @@ class AnalyticsBarChart extends StatelessWidget {
                   horizontalInterval: maxY <= 0 ? 1 : maxY / 3,
                 ),
                 borderData: FlBorderData(show: false),
-                barTouchData: BarTouchData(enabled: true),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => AppColors.tooltipBackground,
+                    fitInsideHorizontally: true,
+                    fitInsideVertically: true,
+                    tooltipRoundedRadius: 8,
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final point = points[group.x.toInt()];
+                      return BarTooltipItem(
+                        '${point.label}\n${CurrencyFormatter.money(point.amountKes)}',
+                        const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
@@ -53,9 +78,15 @@ class AnalyticsBarChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 26,
+                      // For monthly data (>10 points) only label every 5th bar
+                      // to avoid the unreadable "1 2 3 4 5..." wall of numbers.
                       getTitlesWidget: (value, _) {
                         final index = value.toInt();
                         if (index < 0 || index >= points.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final isMonthly = points.length > 10;
+                        if (isMonthly && index % 5 != 0) {
                           return const SizedBox.shrink();
                         }
                         return Padding(

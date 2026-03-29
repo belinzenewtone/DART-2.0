@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:beltech/core/logger/app_logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -49,7 +50,13 @@ class AssistantProxyService {
         }
       }
       return null;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Assistant proxy request failed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'AssistantProxy',
+      );
       return null;
     }
   }

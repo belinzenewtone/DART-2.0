@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:flutter/material.dart';
 
@@ -65,7 +66,6 @@ class _AuthLoadingScreenState extends State<AuthLoadingScreen>
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final textTheme = Theme.of(context).textTheme;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -109,14 +109,15 @@ class _AuthLoadingScreenState extends State<AuthLoadingScreen>
                 const SizedBox(height: 24),
                 Text(
                   'BELTECH',
-                  style: textTheme.titleLarge?.copyWith(
+                  style: AppTypography.pageTitle(context).copyWith(
                     letterSpacing: 3,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Loading your workspace...',
-                  style: textTheme.bodyMedium,
+                  style: AppTypography.bodySm(context),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(

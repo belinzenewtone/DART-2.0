@@ -21,11 +21,13 @@ void main() {
       title: 'Task CRUD',
       dueDate: DateTime.now().add(const Duration(days: 2)),
       priority: TaskPriority.low,
+      reminderEnabled: false,
+      reminderMinutesBefore: 5,
     );
 
     final created = await repository.watchTasks().firstWhere(
-          (tasks) => tasks.any((task) => task.title == 'Task CRUD'),
-        );
+      (tasks) => tasks.any((task) => task.title == 'Task CRUD'),
+    );
     final task = created.firstWhere((item) => item.title == 'Task CRUD');
 
     await repository.updateTask(
@@ -33,22 +35,26 @@ void main() {
       title: 'Task CRUD Updated',
       dueDate: task.dueDate,
       priority: TaskPriority.high,
+      reminderEnabled: true,
+      reminderMinutesBefore: 45,
     );
 
     final updated = await repository.watchTasks().firstWhere(
-          (tasks) => tasks.any(
-            (item) =>
-                item.id == task.id &&
-                item.title == 'Task CRUD Updated' &&
-                item.priority == TaskPriority.high,
-          ),
-        );
+      (tasks) => tasks.any(
+        (item) =>
+            item.id == task.id &&
+            item.title == 'Task CRUD Updated' &&
+            item.priority == TaskPriority.high &&
+            item.reminderEnabled &&
+            item.reminderMinutesBefore == 45,
+      ),
+    );
     expect(updated.any((item) => item.id == task.id), isTrue);
 
     await repository.deleteTask(task.id);
     final afterDelete = await repository.watchTasks().firstWhere(
-          (tasks) => !tasks.any((item) => item.id == task.id),
-        );
+      (tasks) => !tasks.any((item) => item.id == task.id),
+    );
     expect(afterDelete.any((item) => item.id == task.id), isFalse);
   });
 }

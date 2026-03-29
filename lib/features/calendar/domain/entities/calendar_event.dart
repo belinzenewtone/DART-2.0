@@ -12,6 +12,8 @@ class CalendarEvent {
     this.type = CalendarEventType.general,
     this.endAt,
     this.note,
+    this.reminderEnabled = true,
+    this.reminderMinutesBefore = 15,
   });
 
   final int id;
@@ -22,6 +24,8 @@ class CalendarEvent {
   final CalendarEventType type;
   final DateTime? endAt;
   final String? note;
+  final bool reminderEnabled;
+  final int reminderMinutesBefore;
 
   @override
   bool operator ==(Object other) =>
@@ -35,11 +39,23 @@ class CalendarEvent {
           priority == other.priority &&
           type == other.type &&
           endAt == other.endAt &&
-          note == other.note;
+          note == other.note &&
+          reminderEnabled == other.reminderEnabled &&
+          reminderMinutesBefore == other.reminderMinutesBefore;
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, startAt, completed, priority, type, endAt, note);
+  int get hashCode => Object.hash(
+    id,
+    title,
+    startAt,
+    completed,
+    priority,
+    type,
+    endAt,
+    note,
+    reminderEnabled,
+    reminderMinutesBefore,
+  );
 }
 
 CalendarEventType calendarEventTypeFromRaw(String raw) {

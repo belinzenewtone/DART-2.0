@@ -1,3 +1,4 @@
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
@@ -47,5 +48,46 @@ Future<T?> showAppDialog<T>({
         child: child,
       );
     },
+  );
+}
+
+/// Shows a destructive-action confirmation dialog.
+/// Returns `true` if the user confirms, `false` / `null` if they cancel.
+///
+/// Usage:
+/// ```dart
+/// final confirmed = await showDeleteConfirmDialog(
+///   context,
+///   title: 'Delete income',
+///   body: 'This record will be permanently removed.',
+/// );
+/// if (confirmed == true) { /* proceed */ }
+/// ```
+Future<bool?> showDeleteConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String body,
+  String confirmLabel = 'Delete',
+}) {
+  return showAppDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(title),
+      content: Text(body),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.danger,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(confirmLabel),
+        ),
+      ],
+    ),
   );
 }

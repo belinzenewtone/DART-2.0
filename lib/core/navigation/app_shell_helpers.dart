@@ -1,16 +1,21 @@
 import 'package:beltech/core/di/notification_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Returns the per-tab accent radial glow colour used by [AppShell].
+///
+/// Tab mapping: 0 = Home, 1 = Calendar, 2 = Expenses, 3 = Tasks,
+///              4 = (reserved), 5 = Profile / Settings.
 Color accentForTab(int tab) {
   const palette = [
-    Color(0xFF2D7CFF),
-    Color(0xFF2AAE9D),
-    Color(0xFF3A8AE8),
-    Color(0xFFE4895E),
-    Color(0xFF6D77E8),
-    Color(0xFF3E91D6),
+    AppColors.accent,   // Home      – primary blue
+    AppColors.teal,     // Calendar  – teal
+    AppColors.azure,    // Expenses  – azure blue
+    AppColors.orange,   // Tasks     – warm orange
+    AppColors.violet,   // (reserved)
+    AppColors.sky,      // Profile   – sky blue
   ];
   return palette[tab % palette.length];
 }

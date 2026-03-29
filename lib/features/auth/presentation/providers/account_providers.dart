@@ -39,6 +39,21 @@ class AccountAuthController extends AutoDisposeAsyncNotifier<void> {
             phone: phone,
             password: password,
           );
+      // Immediately seed the profile store with the sign-up data so the user
+      // never has to re-enter their name/phone/email on the profile screen.
+      // For Supabase mode this is an early upsert that matches what _loadProfile
+      // will do on first visit; for local (Drift) mode this is the only path
+      // that populates the profile, since the local account repo only keeps
+      // data in-memory and the Drift profile store is otherwise unseeded.
+      try {
+        await ref.read(profileRepositoryProvider).updateProfile(
+              name: name.trim(),
+              email: email.trim(),
+              phone: phone.trim(),
+            );
+      } catch (_) {
+        // Non-fatal — profile will fall back to lazy creation on first visit.
+      }
     });
   }
 

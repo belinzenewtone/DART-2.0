@@ -18,6 +18,8 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
     String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   }) {
     final userId = _requireUserId();
     return _client.from('tasks').insert({
@@ -27,14 +29,13 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
       'completed': false,
       'due_at': dueDate?.toUtc().toIso8601String(),
       'priority': priority.name,
+      'reminder_enabled': reminderEnabled,
+      'reminder_minutes_before': reminderMinutesBefore,
     });
   }
 
   @override
-  Future<void> toggleCompleted({
-    required int taskId,
-    required bool completed,
-  }) {
+  Future<void> toggleCompleted({required int taskId, required bool completed}) {
     final userId = _requireUserId();
     return _client
         .from('tasks')
@@ -50,6 +51,8 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
     String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   }) {
     final userId = _requireUserId();
     return _client
@@ -59,6 +62,8 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
           'description': description,
           'due_at': dueDate?.toUtc().toIso8601String(),
           'priority': priority.name,
+          'reminder_enabled': reminderEnabled,
+          'reminder_minutes_before': reminderMinutesBefore,
         })
         .eq('id', taskId)
         .eq('owner_id', userId);
@@ -78,7 +83,9 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
     final userId = _requireUserId();
     final rows = await _client
         .from('tasks')
-        .select('id,title,description,completed,due_at,priority')
+        .select(
+          'id,title,description,completed,due_at,priority,reminder_enabled,reminder_minutes_before',
+        )
         .eq('owner_id', userId)
         .order('id', ascending: false);
     final tasks = (rows as List).cast<Map<String, dynamic>>();
@@ -90,8 +97,13 @@ class SupabaseTasksRepositoryImpl implements TasksRepository {
             description: row['description'] as String?,
             completed: row['completed'] == true,
             priority: _priorityFrom('${row['priority'] ?? 'medium'}'),
-            dueDate:
-                row['due_at'] == null ? null : parseTimestamp(row['due_at']),
+            dueDate: row['due_at'] == null
+                ? null
+                : parseTimestamp(row['due_at']),
+            reminderEnabled: row['reminder_enabled'] != false,
+            reminderMinutesBefore: row['reminder_minutes_before'] == null
+                ? 30
+                : parseInt(row['reminder_minutes_before']),
           ),
         )
         .toList();

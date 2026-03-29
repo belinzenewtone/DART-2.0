@@ -27,6 +27,19 @@ Core user experiences (based on provided UI references):
 - Drift (local test fallback)
 - Flutter Secure Storage (secrets/credentials)
 
+## Required Toolchain
+
+- Flutter `3.41.6` (stable)
+- Dart `3.11.4`
+
+For local consistency:
+
+```bash
+fvm use
+```
+
+CI is pinned to Flutter `3.41.6` and verifies Dart `3.11.4` for every PR/build.
+
 ## Supabase Runtime Configuration
 
 Pass Supabase values through `--dart-define` (not hardcoded in source):

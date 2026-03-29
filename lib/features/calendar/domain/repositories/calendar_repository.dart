@@ -11,6 +11,8 @@ abstract class CalendarRepository {
     CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   });
 
   Future<void> updateEvent({
@@ -21,12 +23,11 @@ abstract class CalendarRepository {
     required CalendarEventType type,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   });
 
-  Future<void> setCompleted({
-    required int eventId,
-    required bool completed,
-  });
+  Future<void> setCompleted({required int eventId, required bool completed});
 
   Future<void> deleteEvent(int eventId);
 }

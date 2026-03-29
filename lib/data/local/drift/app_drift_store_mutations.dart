@@ -10,14 +10,15 @@ extension AppDriftStoreMutations on AppDriftStore {
   }) async {
     await ensureInitialized();
     await executor.runUpdate(
-      'UPDATE transactions SET title = ?, category = ?, amount = ?, occurred_at = ?, source = ?, source_hash = NULL WHERE id = ?',
+      'UPDATE transactions SET title = ?, category = ?, amount = ?, occurred_at = ?, source = ?, source_hash = NULL, transaction_type = ?, balance_after = NULL WHERE id = ?',
       [
         title,
         category,
         amountKes,
         occurredAt.millisecondsSinceEpoch,
         'manual',
-        id
+        'expense',
+        id,
       ],
     );
     emitChange();
@@ -35,11 +36,21 @@ extension AppDriftStoreMutations on AppDriftStore {
     String? description,
     required DateTime? dueDate,
     required String priority,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   }) async {
     await ensureInitialized();
     await executor.runUpdate(
-      'UPDATE tasks SET title = ?, description = ?, due_at = ?, priority = ? WHERE id = ?',
-      [title, description, dueDate?.millisecondsSinceEpoch, priority, id],
+      'UPDATE tasks SET title = ?, description = ?, due_at = ?, priority = ?, reminder_enabled = ?, reminder_minutes_before = ? WHERE id = ?',
+      [
+        title,
+        description,
+        dueDate?.millisecondsSinceEpoch,
+        priority,
+        reminderEnabled ? 1 : 0,
+        reminderMinutesBefore,
+        id,
+      ],
     );
     emitChange();
   }
@@ -58,10 +69,12 @@ extension AppDriftStoreMutations on AppDriftStore {
     required String eventType,
     required DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) async {
     await ensureInitialized();
     await executor.runUpdate(
-      'UPDATE events SET title = ?, start_at = ?, end_at = ?, note = ?, priority = ?, event_type = ? WHERE id = ?',
+      'UPDATE events SET title = ?, start_at = ?, end_at = ?, note = ?, priority = ?, event_type = ?, reminder_enabled = ?, reminder_minutes_before = ? WHERE id = ?',
       [
         title,
         startAt.millisecondsSinceEpoch,
@@ -69,7 +82,9 @@ extension AppDriftStoreMutations on AppDriftStore {
         note,
         priority,
         eventType,
-        id
+        reminderEnabled ? 1 : 0,
+        reminderMinutesBefore,
+        id,
       ],
     );
     emitChange();

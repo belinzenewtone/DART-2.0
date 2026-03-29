@@ -1,155 +1,97 @@
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/widgets/action_button.dart';
-import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_fab.dart';
+import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_empty_state.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
 import 'package:beltech/core/widgets/category_chip.dart';
+import 'package:beltech/core/widgets/app_feedback.dart';
+import 'package:beltech/core/widgets/app_search_bar.dart';
+import 'package:beltech/core/widgets/app_skeleton.dart';
+import 'package:beltech/core/widgets/super_add_sheet.dart';
 import 'package:beltech/core/widgets/error_message.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
-import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/core/widgets/page_header.dart';
+import 'package:beltech/core/widgets/page_shell.dart';
+import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
+import 'package:beltech/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:beltech/features/search/domain/entities/global_search_result.dart';
+import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
 import 'package:beltech/features/tasks/presentation/providers/tasks_providers.dart';
 import 'package:beltech/features/tasks/presentation/widgets/task_item_card.dart';
-import 'package:beltech/features/tasks/presentation/widgets/task_dialogs.dart';
+import 'package:beltech/features/tasks/presentation/widgets/task_selection_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TasksScreen extends ConsumerWidget {
+part 'tasks_screen_layout.dart';
+part 'tasks_screen_actions.dart';
+part 'tasks_screen_pulse.dart';
+
+class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = Theme.of(context).textTheme;
+  ConsumerState<TasksScreen> createState() => _TasksScreenState();
+}
+
+class _TasksScreenState extends ConsumerState<TasksScreen> {
+  bool _selectionMode = false;
+  final Set<int> _selectedTaskIds = <int>{};
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tasksState = ref.watch(filteredTasksProvider);
     final allTasksState = ref.watch(tasksProvider);
+    final allTasks = allTasksState.valueOrNull ?? const <TaskItem>[];
+    if (allTasksState.hasValue) {
+      _syncSelectionWithTasks(allTasks);
+      _consumeSearchTarget(context, allTasks);
+    }
     final selectedFilter = ref.watch(taskFilterProvider);
     final writeState = ref.watch(taskWriteControllerProvider);
 
     ref.listen<AsyncValue<void>>(taskWriteControllerProvider, (previous, next) {
-      if (previous is AsyncLoading && next is AsyncData<void>) {
-        AppFeedback.success(context, 'Task changes saved successfully.');
-      } else if (next.hasError) {
-        AppFeedback.error(context, 'Task action failed. Please try again.');
+      if (next.hasError) {
+        AppFeedback.error(
+          context,
+          'Task action failed. Please try again.',
+          ref: ref,
+        );
       }
     });
 
-    return SafeArea(
-      child: Padding(
-        padding: AppSpacing.screenPadding(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Tasks', style: textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              _buildCountSubtitle(allTasksState),
-              style: textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: TaskFilter.values
-                  .map(
-                    (filter) => CategoryChip(
-                      label: _filterLabel(filter),
-                      selected: selectedFilter == filter,
-                      onTap: () {
-                        ref.read(taskFilterProvider.notifier).state = filter;
-                      },
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: tasksState.when(
-                data: (tasks) {
-                  if (tasks.isEmpty) {
-                    return const GlassCard(
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline,
-                              color: AppColors.textSecondary),
-                          SizedBox(width: 8),
-                          Text('No tasks in this filter'),
-                        ],
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    itemBuilder: (_, index) => TaskItemCard(
-                      task: tasks[index],
-                      busy: writeState.isLoading,
-                      onToggle: () async {
-                        await ref
-                            .read(taskWriteControllerProvider.notifier)
-                            .toggleTask(
-                              taskId: tasks[index].id,
-                              completed: !tasks[index].completed,
-                            );
-                      },
-                      onEdit: () async {
-                        final input = await showEditTaskDialog(context,
-                            task: tasks[index]);
-                        if (input == null) {
-                          return;
-                        }
-                        await ref
-                            .read(taskWriteControllerProvider.notifier)
-                            .updateTask(
-                              taskId: tasks[index].id,
-                              title: input.title,
-                              description: input.description,
-                              dueDate: input.dueDate,
-                              priority: input.priority,
-                            );
-                      },
-                      onDelete: () async {
-                        await ref
-                            .read(taskWriteControllerProvider.notifier)
-                            .deleteTask(
-                              tasks[index].id,
-                            );
-                      },
-                    ),
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemCount: tasks.length,
-                  );
-                },
-                loading: () => const Center(child: LoadingIndicator()),
-                error: (_, __) => ErrorMessage(
-                  label: 'Unable to load tasks',
-                  onRetry: () => ref.invalidate(filteredTasksProvider),
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: ActionButton(
-                icon: Icons.add_task,
-                isLoading: writeState.isLoading,
-                onPressed: writeState.isLoading
-                    ? null
-                    : () async {
-                        final input = await showAddTaskDialog(context);
-                        if (input == null) {
-                          return;
-                        }
-                        await ref
-                            .read(taskWriteControllerProvider.notifier)
-                            .addTask(
-                              title: input.title,
-                              description: input.description,
-                              dueDate: input.dueDate,
-                              priority: input.priority,
-                            );
-                      },
-              ),
-            ),
-          ],
-        ),
-      ),
+    final countSubtitle = _buildCountSubtitle(allTasksState);
+
+    return _TasksLayout(
+      state: this,
+      tasksState: tasksState,
+      allTasks: allTasks,
+      selectedFilter: selectedFilter,
+      writeState: writeState,
+      countSubtitle: countSubtitle,
     );
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _selectionMode = !_selectionMode;
+      if (!_selectionMode) {
+        _selectedTaskIds.clear();
+      }
+    });
+  }
+
+  void _refreshSearchResults() {
+    setState(() {});
   }
 
   String _filterLabel(TaskFilter filter) {
@@ -167,6 +109,117 @@ class TasksScreen extends ConsumerWidget {
     }
     final pending = tasks.where((task) => !task.completed).length;
     final completed = tasks.where((task) => task.completed).length;
-    return '$pending pending · $completed completed';
+    return '$pending pending · $completed done';
+  }
+
+  void _toggleTaskSelection(int taskId) {
+    setState(() {
+      if (!_selectionMode) {
+        _selectionMode = true;
+        _selectedTaskIds.add(taskId);
+        return;
+      }
+      if (!_selectedTaskIds.remove(taskId)) {
+        _selectedTaskIds.add(taskId);
+      }
+      if (_selectedTaskIds.isEmpty) {
+        _selectionMode = false;
+      }
+    });
+  }
+
+  void _toggleSelectAll(List<TaskItem> tasks) {
+    setState(() {
+      if (_selectedTaskIds.length == tasks.length) {
+        _selectedTaskIds.clear();
+        _selectionMode = false;
+      } else {
+        _selectionMode = true;
+        _selectedTaskIds
+          ..clear()
+          ..addAll(tasks.map((task) => task.id));
+      }
+    });
+  }
+
+  void _clearSelectionState() {
+    setState(() {
+      _selectionMode = false;
+      _selectedTaskIds.clear();
+    });
+  }
+
+  void _syncSelectionWithTasks(List<TaskItem> allTasks) {
+    if (_selectedTaskIds.isEmpty) {
+      return;
+    }
+    final ids = allTasks.map((task) => task.id).toSet();
+    final hasStale = _selectedTaskIds.any((id) => !ids.contains(id));
+    if (!hasStale) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _selectedTaskIds.removeWhere((id) => !ids.contains(id));
+        if (_selectedTaskIds.isEmpty) {
+          _selectionMode = false;
+        }
+      });
+    });
+  }
+
+  void _consumeSearchTarget(BuildContext context, List<TaskItem> allTasks) {
+    final pendingTarget = ref.read(globalSearchDeepLinkTargetProvider);
+    if (pendingTarget?.kind != GlobalSearchKind.task) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>(() async {
+        if (!context.mounted) {
+          return;
+        }
+        final target = ref.read(globalSearchDeepLinkTargetProvider);
+        if (target?.kind != GlobalSearchKind.task) {
+          return;
+        }
+        ref.read(globalSearchDeepLinkTargetProvider.notifier).state = null;
+
+        final recordId = target?.recordId;
+        if (recordId == null) {
+          return;
+        }
+        final task = allTasks.where((item) => item.id == recordId).firstOrNull;
+        if (task == null) {
+          AppFeedback.info(context, 'This task no longer exists.', ref: ref);
+          return;
+        }
+
+        ref.read(taskFilterProvider.notifier).state = TaskFilter.all;
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _selectionMode = false;
+          _selectedTaskIds.clear();
+        });
+        await _editTask(context, task);
+      });
+    });
+  }
+
+  Future<void> _completeSelected(BuildContext context) =>
+      _completeSelectedImpl(this, context);
+
+  Future<void> _archiveSelected(BuildContext context) =>
+      _archiveSelectedImpl(this, context);
+
+  Future<void> _deleteSelected(BuildContext context) =>
+      _deleteSelectedImpl(this, context);
+
+  Future<void> _editTask(BuildContext context, TaskItem task) async {
+    return _editTaskWithSuperSheetImpl(this, context, task);
   }
 }

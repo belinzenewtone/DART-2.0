@@ -58,27 +58,27 @@ String formatEventDateTimeLabel(BuildContext context, DateTime value) {
   return switch (type) {
     CalendarEventType.work => (
         label: 'Work',
-        color: const Color(0xFF2F82FF),
+        color: AppColors.accent,
         icon: Icons.work_outline
       ),
     CalendarEventType.personal => (
         label: 'Personal',
-        color: const Color(0xFF6D77E8),
+        color: AppColors.violet,
         icon: Icons.person_outline
       ),
     CalendarEventType.finance => (
         label: 'Finance',
-        color: const Color(0xFF2AAE9D),
+        color: AppColors.teal,
         icon: Icons.account_balance_wallet_outlined
       ),
     CalendarEventType.health => (
         label: 'Health',
-        color: const Color(0xFFE4895E),
+        color: AppColors.orange,
         icon: Icons.favorite_outline
       ),
     CalendarEventType.general => (
         label: 'General',
-        color: const Color(0xFF5F7395),
+        color: AppColors.slate,
         icon: Icons.event_note_outlined
       ),
   };

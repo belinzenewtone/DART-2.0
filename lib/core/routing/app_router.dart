@@ -4,6 +4,7 @@ import 'package:beltech/features/budget/presentation/budget_screen.dart';
 import 'package:beltech/features/export/presentation/export_screen.dart';
 import 'package:beltech/features/income/presentation/income_screen.dart';
 import 'package:beltech/features/recurring/presentation/recurring_screen.dart';
+import 'package:beltech/features/review/presentation/week_review_screen.dart';
 import 'package:beltech/features/search/presentation/global_search_screen.dart';
 import 'package:beltech/features/settings/presentation/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,6 +53,11 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/analytics',
         name: 'analytics',
         builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/week-review',
+        name: 'week-review',
+        builder: (context, state) => const WeekReviewScreen(),
       ),
     ],
   ),

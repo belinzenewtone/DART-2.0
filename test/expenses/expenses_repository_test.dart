@@ -1,6 +1,8 @@
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/expenses/data/repositories/expenses_repository_impl.dart';
+import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
+import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,79 +22,190 @@ void main() {
     await store.dispose();
   });
 
-  test('addManualTransaction updates snapshot totals and transactions',
-      () async {
-    final initial = await repository.watchSnapshot().first;
-    final nextSnapshot = repository.watchSnapshot().firstWhere(
-          (snapshot) =>
-              snapshot.transactions.any((tx) => tx.title == 'Test Expense'),
-        );
+  test(
+    'addManualTransaction updates snapshot totals and transactions',
+    () async {
+      final initial = await repository.watchSnapshot().first;
+      final nextSnapshot = repository.watchSnapshot().firstWhere(
+        (snapshot) =>
+            snapshot.transactions.any((tx) => tx.title == 'Test Expense'),
+      );
 
-    await repository.addManualTransaction(
-      title: 'Test Expense',
-      category: 'Other',
-      amountKes: 250,
-    );
+      await repository.addManualTransaction(
+        title: 'Test Expense',
+        category: 'Other',
+        amountKes: 250,
+      );
 
-    final updated = await nextSnapshot.timeout(const Duration(seconds: 2));
-    expect(updated.weekKes, greaterThanOrEqualTo(initial.weekKes));
-    expect(
-        updated.transactions.any((tx) => tx.title == 'Test Expense'), isTrue);
-  });
+      final updated = await nextSnapshot.timeout(const Duration(seconds: 2));
+      expect(updated.weekKes, greaterThanOrEqualTo(initial.weekKes));
+      expect(
+        updated.transactions.any((tx) => tx.title == 'Test Expense'),
+        isTrue,
+      );
+    },
+  );
 
   test('importSmsMessages parses valid mpesa rows', () async {
     final nextSnapshot = repository.watchSnapshot().firstWhere(
-          (snapshot) =>
-              snapshot.transactions.any((tx) => tx.title.contains('Sky Cafe')),
-        );
+      (snapshot) =>
+          snapshot.transactions.any((tx) => tx.title.contains('Sky Cafe')),
+    );
     final imported = await repository.importSmsMessages([
-      'QW12AB34CD Confirmed. Ksh1,250.00 sent to SKY CAFE on 7/3/26 at 6:24 PM.',
+      'QW12AB34CD Confirmed. Ksh1,250.00 sent to SKY CAFE on 7/3/26 at 6:24 PM. New M-PESA balance is Ksh3,210.55.',
       'invalid row',
     ]);
 
     final updated = await nextSnapshot.timeout(const Duration(seconds: 2));
     expect(imported, 1);
-    expect(updated.transactions.any((tx) => tx.title.contains('Sky Cafe')),
-        isTrue);
+    final importedTx = updated.transactions.firstWhere(
+      (tx) => tx.title.contains('Sky Cafe'),
+    );
+    expect(importedTx.balanceAfterKes, 3210.55);
+    final rows = await store.executor.runSelect(
+      'SELECT transaction_type, source FROM transactions WHERE id = ? LIMIT 1',
+      [importedTx.id],
+    );
+    expect(rows, isNotEmpty);
+    expect('${rows.first['transaction_type'] ?? ''}', 'sent');
+    expect('${rows.first['source'] ?? ''}', 'sms');
   });
 
-  test('updateTransaction and deleteTransaction persist expense changes',
-      () async {
+  test(
+    'importFromDevice uses SMS receive timestamp when message has no date',
+    () async {
+      final smsAt = DateTime(2025, 11, 22, 9, 30);
+      final source = DeviceSmsDataSource(
+        isAndroid: () => true,
+        requestPermission: () async => true,
+        queryRunner: (_) async => [
+          _sms(
+            body: 'AA11BB22CC Confirmed. Ksh120.00 sent to SKY CAFE sometime.',
+            sender: 'MPESA',
+            date: smsAt,
+          ),
+        ],
+      );
+      final repoWithDevice = ExpensesRepositoryImpl(
+        store,
+        const MpesaParserService(),
+        null,
+        source,
+      );
+
+      final imported = await repoWithDevice.importFromDevice();
+      expect(imported, 1);
+
+      final rows = await store.executor.runSelect(
+        'SELECT occurred_at FROM transactions WHERE source = ? ORDER BY id DESC LIMIT 1',
+        ['sms'],
+      );
+      expect(rows, isNotEmpty);
+      expect(rows.first['occurred_at'], smsAt.millisecondsSinceEpoch);
+    },
+  );
+
+  test(
+    'updateTransaction and deleteTransaction persist expense changes',
+    () async {
+      await repository.addManualTransaction(
+        title: 'Expense CRUD',
+        category: 'Other',
+        amountKes: 99,
+        occurredAt: DateTime.now(),
+      );
+
+      final created = await repository.watchSnapshot().firstWhere(
+        (snapshot) =>
+            snapshot.transactions.any((tx) => tx.title == 'Expense CRUD'),
+      );
+      final tx = created.transactions.firstWhere(
+        (item) => item.title == 'Expense CRUD',
+      );
+
+      await repository.updateTransaction(
+        transactionId: tx.id,
+        title: 'Expense CRUD Updated',
+        category: 'Food',
+        amountKes: 150,
+        occurredAt: tx.occurredAt,
+      );
+
+      final updated = await repository.watchSnapshot().firstWhere(
+        (snapshot) => snapshot.transactions.any(
+          (item) => item.id == tx.id && item.title == 'Expense CRUD Updated',
+        ),
+      );
+      expect(
+        updated.transactions.any(
+          (item) => item.id == tx.id && item.category == 'Food',
+        ),
+        isTrue,
+      );
+
+      await repository.deleteTransaction(tx.id);
+      final afterDelete = await repository.watchSnapshot().firstWhere(
+        (snapshot) => !snapshot.transactions.any((item) => item.id == tx.id),
+      );
+      expect(afterDelete.transactions.any((item) => item.id == tx.id), isFalse);
+    },
+  );
+
+  test('merchant_categories learning is applied to future SMS imports', () async {
     await repository.addManualTransaction(
-      title: 'Expense CRUD',
-      category: 'Other',
-      amountKes: 99,
-      occurredAt: DateTime.now(),
+      title: 'Sky Cafe',
+      category: 'Transport',
+      amountKes: 250,
     );
 
-    final created = await repository.watchSnapshot().firstWhere(
-          (snapshot) =>
-              snapshot.transactions.any((tx) => tx.title == 'Expense CRUD'),
-        );
-    final tx =
-        created.transactions.firstWhere((item) => item.title == 'Expense CRUD');
+    final imported = await repository.importSmsMessages([
+      'ZX11CV22BN Confirmed. Ksh500.00 sent to SKY CAFE on 7/3/26 at 6:24 PM.',
+    ]);
+    expect(imported, 1);
 
-    await repository.updateTransaction(
-      transactionId: tx.id,
-      title: 'Expense CRUD Updated',
-      category: 'Food',
-      amountKes: 150,
-      occurredAt: tx.occurredAt,
+    final learnedRows = await store.executor.runSelect(
+      'SELECT category FROM merchant_categories WHERE merchant_key = ? LIMIT 1',
+      ['sky cafe'],
     );
+    expect(learnedRows, isNotEmpty);
+    expect('${learnedRows.first['category'] ?? ''}', 'Transport');
 
-    final updated = await repository.watchSnapshot().firstWhere(
-          (snapshot) => snapshot.transactions.any((item) =>
-              item.id == tx.id && item.title == 'Expense CRUD Updated'),
-        );
-    expect(
-        updated.transactions
-            .any((item) => item.id == tx.id && item.category == 'Food'),
-        isTrue);
+    final txRows = await store.executor.runSelect(
+      'SELECT category FROM transactions WHERE source = ? AND LOWER(title) = ? ORDER BY id DESC LIMIT 1',
+      ['sms', 'sky cafe'],
+    );
+    expect(txRows, isNotEmpty);
+    expect('${txRows.first['category'] ?? ''}', 'Transport');
+  });
 
-    await repository.deleteTransaction(tx.id);
-    final afterDelete = await repository.watchSnapshot().firstWhere(
-          (snapshot) => !snapshot.transactions.any((item) => item.id == tx.id),
-        );
-    expect(afterDelete.transactions.any((item) => item.id == tx.id), isFalse);
+  test('fuzzy dedupe skips same-day near-amount duplicate imports', () async {
+    final imported = await repository.importSmsMessages([
+      'AA11BB22CC Confirmed. Ksh1000.00 sent to ACME SHOP on 7/3/26 at 8:00 AM.',
+      'DD33EE44FF Confirmed. Ksh1000.50 sent to ACME SHOP on 7/3/26 at 9:30 AM.',
+    ]);
+
+    expect(imported, 1);
+    final rows = await store.executor.runSelect(
+      'SELECT COUNT(*) AS total FROM transactions WHERE source = ? AND LOWER(title) = ?',
+      ['sms', 'acme shop'],
+    );
+    expect(rows, isNotEmpty);
+    expect(rows.first['total'], 1);
+  });
+}
+
+SmsMessage _sms({
+  required String body,
+  required String sender,
+  required DateTime date,
+}) {
+  return SmsMessage.fromJson({
+    '_id': date.millisecondsSinceEpoch,
+    'thread_id': 1,
+    'address': sender,
+    'body': body,
+    'read': 1,
+    'date': date.millisecondsSinceEpoch,
+    'sub_id': 1,
   });
 }

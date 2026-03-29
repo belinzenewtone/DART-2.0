@@ -53,6 +53,26 @@ void main() {
     expect(result.length, 1);
     expect(result.single.toLowerCase(), contains('confirmed'));
   });
+
+  test('returns timestamped inbox entries for parser fallback', () async {
+    final now = DateTime.now();
+    final source = DeviceSmsDataSource(
+      isAndroid: () => true,
+      requestPermission: () async => true,
+      queryRunner: (_) async => [
+        _sms(
+          body: 'AA11BB22CC Confirmed. Ksh100.00 sent to JOHN sometime.',
+          sender: 'MPESA',
+          date: now.subtract(const Duration(minutes: 10)),
+        ),
+      ],
+    );
+
+    final entries = await source.loadLikelyMpesaEntries();
+    expect(entries.length, 1);
+    expect(entries.single.body, contains('Confirmed'));
+    expect(entries.single.receivedAt, isNotNull);
+  });
 }
 
 SmsMessage _sms({

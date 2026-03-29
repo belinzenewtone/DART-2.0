@@ -11,19 +11,21 @@ class TasksRepositoryImpl implements TasksRepository {
   @override
   Stream<List<TaskItem>> watchTasks() {
     return _store.watchTasks().map(
-          (rows) => rows
-              .map(
-                (row) => TaskItem(
-                  id: row.id,
-                  title: row.title,
-                  description: row.description,
-                  completed: row.completed,
-                  priority: _toPriority(row.priority),
-                  dueDate: row.dueDate,
-                ),
-              )
-              .toList(),
-        );
+      (rows) => rows
+          .map(
+            (row) => TaskItem(
+              id: row.id,
+              title: row.title,
+              description: row.description,
+              completed: row.completed,
+              priority: _toPriority(row.priority),
+              dueDate: row.dueDate,
+              reminderEnabled: row.reminderEnabled,
+              reminderMinutesBefore: row.reminderMinutesBefore,
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override
@@ -32,12 +34,16 @@ class TasksRepositoryImpl implements TasksRepository {
     String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   }) async {
     await _store.addTask(
       title: title,
       description: description,
       dueDate: dueDate,
       priority: priority.name,
+      reminderEnabled: reminderEnabled,
+      reminderMinutesBefore: reminderMinutesBefore,
     );
   }
 
@@ -46,10 +52,7 @@ class TasksRepositoryImpl implements TasksRepository {
     required int taskId,
     required bool completed,
   }) async {
-    await _store.toggleTaskCompletion(
-      taskId: taskId,
-      completed: completed,
-    );
+    await _store.toggleTaskCompletion(taskId: taskId, completed: completed);
   }
 
   @override
@@ -59,6 +62,8 @@ class TasksRepositoryImpl implements TasksRepository {
     String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   }) async {
     await _store.updateTask(
       id: taskId,
@@ -66,6 +71,8 @@ class TasksRepositoryImpl implements TasksRepository {
       description: description,
       dueDate: dueDate,
       priority: priority.name,
+      reminderEnabled: reminderEnabled,
+      reminderMinutesBefore: reminderMinutesBefore,
     );
   }
 

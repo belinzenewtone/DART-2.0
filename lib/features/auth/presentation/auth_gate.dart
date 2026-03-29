@@ -1,6 +1,7 @@
-import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/navigation/app_shell.dart';
-import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/di/bootstrap_providers.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_brand_header.dart';
@@ -25,13 +26,18 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
-    hasSeenOnboarding().then((done) {
-      if (mounted) {
-        setState(() {
-          _onboardingDone = done;
-          _checkingOnboarding = false;
-        });
-      }
+    _bootstrapAndLoadOnboarding();
+  }
+
+  Future<void> _bootstrapAndLoadOnboarding() async {
+    await ref.read(revampBootstrapServiceProvider).runIfNeeded();
+    final done = await hasSeenOnboarding();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _onboardingDone = done;
+      _checkingOnboarding = false;
     });
   }
 
@@ -44,9 +50,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       return OnboardingScreen(
         onDone: () => setState(() => _onboardingDone = true),
       );
-    }
-    if (!ref.watch(useSupabaseProvider)) {
-      return const AppShell();
     }
     final sessionState = ref.watch(accountSessionProvider);
     return sessionState.when(
@@ -91,67 +94,69 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final writeState = ref.watch(accountAuthControllerProvider);
-    ref.listen<AsyncValue<void>>(accountAuthControllerProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<void>>(accountAuthControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasError) {
         final message = _friendlyAuthError(next.error);
         AppFeedback.error(context, message);
       }
     });
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient:
-            GlassStyles.backgroundGradientFor(Theme.of(context).brightness),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const AuthBrandHeader(),
-                    const SizedBox(height: 20),
-                    AuthFormCard(
-                      formKey: _formKey,
-                      isSignUp: _isSignUp,
-                      isLoading: writeState.isLoading,
-                      nameController: _nameController,
-                      phoneController: _phoneController,
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                      confirmPasswordController: _confirmPasswordController,
-                      hidePassword:
-                          _isSignUp ? _hideSignUpPassword : _hideSignInPassword,
-                      hideConfirmPassword: _hideConfirmPassword,
-                      onTogglePasswordVisibility: () {
-                        setState(() {
-                          if (_isSignUp) {
-                            _hideSignUpPassword = !_hideSignUpPassword;
-                          } else {
-                            _hideSignInPassword = !_hideSignInPassword;
-                          }
-                        });
-                      },
-                      onToggleConfirmPasswordVisibility: () {
-                        setState(() {
-                          _hideConfirmPassword = !_hideConfirmPassword;
-                        });
-                      },
-                      onSubmit: _submit,
-                      onToggleMode: () {
-                        setState(() {
-                          _isSignUp = !_isSignUp;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenHorizontal,
+              vertical: AppSpacing.xxl,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const AuthBrandHeader(),
+                  const SizedBox(height: 32),
+                  AuthFormCard(
+                    formKey: _formKey,
+                    isSignUp: _isSignUp,
+                    isLoading: writeState.isLoading,
+                    nameController: _nameController,
+                    phoneController: _phoneController,
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    confirmPasswordController: _confirmPasswordController,
+                    hidePassword: _isSignUp
+                        ? _hideSignUpPassword
+                        : _hideSignInPassword,
+                    hideConfirmPassword: _hideConfirmPassword,
+                    onTogglePasswordVisibility: () {
+                      setState(() {
+                        if (_isSignUp) {
+                          _hideSignUpPassword = !_hideSignUpPassword;
+                        } else {
+                          _hideSignInPassword = !_hideSignInPassword;
+                        }
+                      });
+                    },
+                    onToggleConfirmPasswordVisibility: () {
+                      setState(() {
+                        _hideConfirmPassword = !_hideConfirmPassword;
+                      });
+                    },
+                    onSubmit: _submit,
+                    onModeChanged: (value) {
+                      if (_isSignUp == value) {
+                        return;
+                      }
+                      setState(() => _isSignUp = value);
+                    },
+                  ),
+                ],
               ),
             ),
           ),

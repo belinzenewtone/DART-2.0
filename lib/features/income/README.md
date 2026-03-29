@@ -7,9 +7,10 @@ Purpose:
 Main classes:
 - `IncomeRepository`
 - `IncomeItem`
+- `BuildIncomeOverviewUseCase`
 - `IncomeScreen`
 
 Dependencies:
 - Riverpod providers
 - Local Drift / Supabase repositories
-
+- Expenses repository snapshot for net-cashflow comparison

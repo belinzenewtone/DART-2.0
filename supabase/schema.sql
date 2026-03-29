@@ -1,13 +1,22 @@
 create table if not exists public.transactions (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   category text not null,
   amount double precision not null,
   occurred_at timestamptz not null default now(),
+  transaction_type text not null default 'expense',
   source text not null default 'manual',
-  source_hash text
+  source_hash text,
+  balance_after double precision,
+  primary key (owner_id, id)
 );
+
+alter table public.transactions
+  add column if not exists transaction_type text not null default 'expense';
+
+alter table public.transactions
+  add column if not exists balance_after double precision;
 
 create index if not exists idx_transactions_owner_occurred_at
   on public.transactions (owner_id, occurred_at desc);
@@ -16,27 +25,50 @@ create index if not exists idx_transactions_owner_category
 create unique index if not exists idx_transactions_owner_source_hash
   on public.transactions (owner_id, source_hash)
   where source_hash is not null;
+create index if not exists idx_transactions_owner_type
+  on public.transactions (owner_id, transaction_type, occurred_at desc);
+create index if not exists idx_transactions_owner_title_occurred
+  on public.transactions (owner_id, lower(title), occurred_at desc);
+create index if not exists idx_transactions_owner_title_amount
+  on public.transactions (owner_id, lower(title), amount);
+create index if not exists idx_transactions_owner_category_date
+  on public.transactions (owner_id, category, occurred_at desc);
+create index if not exists idx_transactions_owner_source_date
+  on public.transactions (owner_id, source, occurred_at desc);
 
 create table if not exists public.tasks (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   description text,
   completed boolean not null default false,
   due_at timestamptz,
-  priority text not null default 'medium'
+  priority text not null default 'medium',
+  reminder_enabled boolean not null default true,
+  reminder_minutes_before integer not null default 30,
+  primary key (owner_id, id)
 );
 
 alter table public.tasks
   add column if not exists description text;
 
+alter table public.tasks
+  add column if not exists reminder_enabled boolean not null default true;
+
+alter table public.tasks
+  add column if not exists reminder_minutes_before integer not null default 30;
+
 create index if not exists idx_tasks_owner_completed
   on public.tasks (owner_id, completed);
 create index if not exists idx_tasks_owner_due
   on public.tasks (owner_id, due_at);
+create index if not exists idx_tasks_owner_priority_due
+  on public.tasks (owner_id, priority, due_at);
+create index if not exists idx_tasks_owner_status_due
+  on public.tasks (owner_id, completed, due_at);
 
 create table if not exists public.events (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   start_at timestamptz not null,
@@ -44,7 +76,10 @@ create table if not exists public.events (
   note text,
   completed boolean not null default false,
   priority text not null default 'medium',
-  event_type text not null default 'general'
+  event_type text not null default 'general',
+  reminder_enabled boolean not null default true,
+  reminder_minutes_before integer not null default 15,
+  primary key (owner_id, id)
 );
 
 alter table public.events
@@ -56,33 +91,49 @@ alter table public.events
 alter table public.events
   add column if not exists event_type text not null default 'general';
 
+alter table public.events
+  add column if not exists reminder_enabled boolean not null default true;
+
+alter table public.events
+  add column if not exists reminder_minutes_before integer not null default 15;
+
 create index if not exists idx_events_owner_start
   on public.events (owner_id, start_at);
+create index if not exists idx_events_owner_status_start
+  on public.events (owner_id, completed, start_at);
+create index if not exists idx_events_owner_type_start
+  on public.events (owner_id, event_type, start_at);
+create index if not exists idx_events_owner_priority_start
+  on public.events (owner_id, priority, start_at);
 
 create table if not exists public.incomes (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   amount double precision not null,
   received_at timestamptz not null default now(),
-  source text not null default 'manual'
+  source text not null default 'manual',
+  primary key (owner_id, id)
 );
 
 create index if not exists idx_incomes_owner_received
   on public.incomes (owner_id, received_at desc);
+create index if not exists idx_incomes_owner_source_date
+  on public.incomes (owner_id, source, received_at desc);
 
 create table if not exists public.budgets (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   category text not null,
-  monthly_limit double precision not null
+  monthly_limit double precision not null,
+  primary key (owner_id, id)
 );
 
 create unique index if not exists idx_budgets_owner_category
   on public.budgets (owner_id, lower(category));
 
 create table if not exists public.recurring_templates (
-  id bigserial primary key,
+  id bigserial not null,
   owner_id uuid not null references auth.users(id) on delete cascade,
   kind text not null,
   title text not null,
@@ -92,11 +143,16 @@ create table if not exists public.recurring_templates (
   priority text,
   cadence text not null,
   next_run_at timestamptz not null,
-  enabled boolean not null default true
+  enabled boolean not null default true,
+  primary key (owner_id, id)
 );
 
 create index if not exists idx_recurring_owner_next
   on public.recurring_templates (owner_id, next_run_at);
+create index if not exists idx_recurring_templates_owner_enabled_next
+  on public.recurring_templates (owner_id, enabled, next_run_at);
+create index if not exists idx_recurring_owner_kind_enabled_next
+  on public.recurring_templates (owner_id, kind, enabled, next_run_at);
 
 create table if not exists public.user_profile (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -140,6 +196,168 @@ create table if not exists public.app_updates (
 create index if not exists idx_app_updates_active_updated
   on public.app_updates (active, updated_at desc);
 
+create table if not exists public.feature_flags (
+  id bigserial primary key,
+  flag_key text not null unique,
+  enabled boolean not null default true,
+  active boolean not null default true,
+  rollout_percentage integer not null default 100,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.feature_flags
+  add column if not exists rollout_percentage integer not null default 100;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'feature_flags_rollout_percentage_range'
+  ) then
+    alter table public.feature_flags
+      add constraint feature_flags_rollout_percentage_range
+      check (rollout_percentage >= 0 and rollout_percentage <= 100) not valid;
+  end if;
+end
+$$;
+
+alter table public.feature_flags
+  validate constraint feature_flags_rollout_percentage_range;
+
+create table if not exists public.sms_import_queue (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  raw_message text not null,
+  source_hash text not null,
+  semantic_hash text not null,
+  source_timestamp timestamptz,
+  status text not null default 'pending',
+  route text not null default 'directLedger',
+  confidence double precision not null default 0,
+  attempt integer not null default 0,
+  next_retry_at timestamptz,
+  last_error text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_import_queue_owner_source_hash
+  on public.sms_import_queue (owner_id, source_hash);
+create index if not exists idx_sms_import_queue_owner_status
+  on public.sms_import_queue (owner_id, status, next_retry_at);
+create index if not exists idx_sms_import_queue_owner_source_timestamp
+  on public.sms_import_queue (owner_id, source_timestamp desc);
+create index if not exists idx_sms_import_queue_owner_route_status
+  on public.sms_import_queue (owner_id, route, status, next_retry_at);
+
+create table if not exists public.sms_import_audit (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  route text not null,
+  confidence double precision not null,
+  decision text not null,
+  status text not null,
+  payload jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_sms_import_audit_owner_created
+  on public.sms_import_audit (owner_id, created_at desc);
+create index if not exists idx_sms_import_audit_owner_semantic
+  on public.sms_import_audit (owner_id, semantic_hash);
+
+create table if not exists public.sms_review_queue (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  title text not null,
+  category text not null,
+  amount double precision not null,
+  occurred_at timestamptz not null,
+  raw_message text not null,
+  confidence double precision not null,
+  status text not null default 'pending',
+  resolved_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_review_owner_source_hash
+  on public.sms_review_queue (owner_id, source_hash);
+create index if not exists idx_sms_review_owner_status
+  on public.sms_review_queue (owner_id, status, created_at desc);
+create index if not exists idx_sms_review_owner_created
+  on public.sms_review_queue (owner_id, created_at desc);
+
+create table if not exists public.sms_quarantine (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  source_hash text not null,
+  semantic_hash text not null,
+  raw_message text not null,
+  reason text not null,
+  confidence double precision not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_sms_quarantine_owner_source_hash
+  on public.sms_quarantine (owner_id, source_hash);
+create index if not exists idx_sms_quarantine_owner_status
+  on public.sms_quarantine (owner_id, status, created_at desc);
+create index if not exists idx_sms_quarantine_owner_created
+  on public.sms_quarantine (owner_id, created_at desc);
+
+create table if not exists public.paybill_registry (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  paybill text not null,
+  display_name text not null,
+  last_seen_at timestamptz not null default now(),
+  usage_count integer not null default 1
+);
+
+create unique index if not exists idx_paybill_owner_value
+  on public.paybill_registry (owner_id, paybill);
+create index if not exists idx_paybill_owner_last_seen
+  on public.paybill_registry (owner_id, last_seen_at desc);
+
+create table if not exists public.merchant_categories (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  merchant_key text not null,
+  category text not null,
+  usage_count integer not null default 1,
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_merchant_categories_owner_key
+  on public.merchant_categories (owner_id, merchant_key);
+
+create index if not exists idx_merchant_categories_owner_updated
+  on public.merchant_categories (owner_id, updated_at desc);
+
+create table if not exists public.fuliza_lifecycle_events (
+  id bigserial primary key,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  mpesa_code text not null,
+  event_kind text not null,
+  amount double precision not null,
+  occurred_at timestamptz not null,
+  raw_message text not null,
+  source_hash text,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists idx_fuliza_owner_code_kind
+  on public.fuliza_lifecycle_events (owner_id, mpesa_code, event_kind);
+create index if not exists idx_fuliza_owner_occurred
+  on public.fuliza_lifecycle_events (owner_id, occurred_at desc);
+
 alter table public.transactions enable row level security;
 alter table public.tasks enable row level security;
 alter table public.events enable row level security;
@@ -149,6 +367,14 @@ alter table public.app_updates enable row level security;
 alter table public.incomes enable row level security;
 alter table public.budgets enable row level security;
 alter table public.recurring_templates enable row level security;
+alter table public.feature_flags enable row level security;
+alter table public.sms_import_queue enable row level security;
+alter table public.sms_import_audit enable row level security;
+alter table public.sms_review_queue enable row level security;
+alter table public.sms_quarantine enable row level security;
+alter table public.paybill_registry enable row level security;
+alter table public.merchant_categories enable row level security;
+alter table public.fuliza_lifecycle_events enable row level security;
 
 drop policy if exists "transactions_owner_rw" on public.transactions;
 create policy "transactions_owner_rw"
@@ -212,6 +438,62 @@ create policy "app_updates_public_read"
   for select
   to anon, authenticated
   using (active = true);
+
+drop policy if exists "feature_flags_public_read" on public.feature_flags;
+create policy "feature_flags_public_read"
+  on public.feature_flags
+  for select
+  to anon, authenticated
+  using (active = true);
+
+drop policy if exists "sms_import_queue_owner_rw" on public.sms_import_queue;
+create policy "sms_import_queue_owner_rw"
+  on public.sms_import_queue
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_import_audit_owner_rw" on public.sms_import_audit;
+create policy "sms_import_audit_owner_rw"
+  on public.sms_import_audit
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_review_queue_owner_rw" on public.sms_review_queue;
+create policy "sms_review_queue_owner_rw"
+  on public.sms_review_queue
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "sms_quarantine_owner_rw" on public.sms_quarantine;
+create policy "sms_quarantine_owner_rw"
+  on public.sms_quarantine
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "paybill_registry_owner_rw" on public.paybill_registry;
+create policy "paybill_registry_owner_rw"
+  on public.paybill_registry
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "merchant_categories_owner_rw" on public.merchant_categories;
+create policy "merchant_categories_owner_rw"
+  on public.merchant_categories
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "fuliza_lifecycle_owner_rw" on public.fuliza_lifecycle_events;
+create policy "fuliza_lifecycle_owner_rw"
+  on public.fuliza_lifecycle_events
+  for all
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
 
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

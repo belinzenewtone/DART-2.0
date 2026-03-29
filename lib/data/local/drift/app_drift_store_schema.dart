@@ -15,10 +15,14 @@ class _AppDriftSchema {
       'amount REAL NOT NULL,'
       'occurred_at INTEGER NOT NULL,'
       'source TEXT NOT NULL,'
-      'source_hash TEXT'
+      'source_hash TEXT,'
+      'transaction_type TEXT NOT NULL DEFAULT \'expense\','
+      'balance_after REAL'
       ')',
     );
-    await tryAddSourceHashColumn(store);
+    await _AppDriftSchemaMigrations.tryAddSourceHashColumn(store);
+    await _AppDriftSchemaMigrations.tryAddBalanceAfterColumn(store);
+    await _AppDriftSchemaMigrations.tryAddTransactionTypeColumn(store);
 
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS tasks('
@@ -27,10 +31,14 @@ class _AppDriftSchema {
       'description TEXT,'
       'completed INTEGER NOT NULL DEFAULT 0,'
       'due_at INTEGER,'
-      'priority TEXT NOT NULL DEFAULT \'medium\''
+      'priority TEXT NOT NULL DEFAULT \'medium\','
+      'reminder_enabled INTEGER NOT NULL DEFAULT 1,'
+      'reminder_minutes_before INTEGER NOT NULL DEFAULT 30'
       ')',
     );
-    await tryAddTaskDescriptionColumn(store);
+    await _AppDriftSchemaMigrations.tryAddTaskDescriptionColumn(store);
+    await _AppDriftSchemaMigrations.tryAddTaskReminderEnabledColumn(store);
+    await _AppDriftSchemaMigrations.tryAddTaskReminderMinutesColumn(store);
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS events('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -40,12 +48,16 @@ class _AppDriftSchema {
       'note TEXT,'
       'completed INTEGER NOT NULL DEFAULT 0,'
       'priority TEXT NOT NULL DEFAULT \'medium\','
-      'event_type TEXT NOT NULL DEFAULT \'general\''
+      'event_type TEXT NOT NULL DEFAULT \'general\','
+      'reminder_enabled INTEGER NOT NULL DEFAULT 1,'
+      'reminder_minutes_before INTEGER NOT NULL DEFAULT 15'
       ')',
     );
-    await tryAddEventCompletedColumn(store);
-    await tryAddEventPriorityColumn(store);
-    await tryAddEventTypeColumn(store);
+    await _AppDriftSchemaMigrations.tryAddEventCompletedColumn(store);
+    await _AppDriftSchemaMigrations.tryAddEventPriorityColumn(store);
+    await _AppDriftSchemaMigrations.tryAddEventTypeColumn(store);
+    await _AppDriftSchemaMigrations.tryAddEventReminderEnabledColumn(store);
+    await _AppDriftSchemaMigrations.tryAddEventReminderMinutesColumn(store);
     await store._db.runCustom(
       'CREATE TABLE IF NOT EXISTS incomes('
       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -76,8 +88,105 @@ class _AppDriftSchema {
       'enabled INTEGER NOT NULL DEFAULT 1'
       ')',
     );
-    await tryAddIncomesSourceColumn(store);
-    await tryAddRecurringPriorityColumn(store);
+    await _AppDriftSchemaMigrations.tryAddIncomesSourceColumn(store);
+    await _AppDriftSchemaMigrations.tryAddRecurringPriorityColumn(store);
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS sms_import_queue('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'scope TEXT NOT NULL,'
+      'raw_message TEXT NOT NULL,'
+      'source_hash TEXT NOT NULL,'
+      'semantic_hash TEXT NOT NULL,'
+      'source_timestamp INTEGER,'
+      'status TEXT NOT NULL DEFAULT \'pending\','
+      'route TEXT NOT NULL DEFAULT \'direct\','
+      'confidence REAL NOT NULL DEFAULT 0,'
+      'attempt INTEGER NOT NULL DEFAULT 0,'
+      'next_retry_at INTEGER,'
+      'created_at INTEGER NOT NULL,'
+      'updated_at INTEGER NOT NULL,'
+      'last_error TEXT'
+      ')',
+    );
+    await _AppDriftSchemaMigrations.tryAddImportQueueSourceTimestampColumn(
+      store,
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS sms_import_audit('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'scope TEXT NOT NULL,'
+      'source_hash TEXT NOT NULL,'
+      'semantic_hash TEXT NOT NULL,'
+      'route TEXT NOT NULL,'
+      'confidence REAL NOT NULL,'
+      'decision TEXT NOT NULL,'
+      'status TEXT NOT NULL,'
+      'attempt INTEGER NOT NULL DEFAULT 1,'
+      'reason TEXT,'
+      'payload TEXT,'
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS sms_review_queue('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'scope TEXT NOT NULL,'
+      'source_hash TEXT NOT NULL,'
+      'semantic_hash TEXT NOT NULL,'
+      'title TEXT NOT NULL,'
+      'category TEXT NOT NULL,'
+      'amount REAL NOT NULL,'
+      'occurred_at INTEGER NOT NULL,'
+      'raw_message TEXT NOT NULL,'
+      'confidence REAL NOT NULL,'
+      'status TEXT NOT NULL DEFAULT \'pending\','
+      'created_at INTEGER NOT NULL,'
+      'resolved_at INTEGER'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS sms_quarantine('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'scope TEXT NOT NULL,'
+      'source_hash TEXT NOT NULL,'
+      'semantic_hash TEXT NOT NULL,'
+      'raw_message TEXT NOT NULL,'
+      'reason TEXT NOT NULL,'
+      'confidence REAL NOT NULL,'
+      'status TEXT NOT NULL DEFAULT \'pending\','
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS paybill_registry('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'paybill TEXT NOT NULL,'
+      'display_name TEXT NOT NULL,'
+      'last_seen_at INTEGER NOT NULL,'
+      'usage_count INTEGER NOT NULL DEFAULT 1'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS merchant_categories('
+      'merchant_key TEXT PRIMARY KEY,'
+      'category TEXT NOT NULL,'
+      'usage_count INTEGER NOT NULL DEFAULT 1,'
+      'updated_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS fuliza_lifecycle_events('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'scope TEXT NOT NULL,'
+      'mpesa_code TEXT NOT NULL,'
+      'event_kind TEXT NOT NULL,'
+      'amount REAL NOT NULL,'
+      'occurred_at INTEGER NOT NULL,'
+      'raw_message TEXT NOT NULL,'
+      'linked_code TEXT,'
+      'source_hash TEXT'
+      ')',
+    );
 
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_tx_occurred_at ON transactions(occurred_at)',
@@ -87,6 +196,9 @@ class _AppDriftSchema {
     );
     await store._db.runCustom(
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_source_hash ON transactions(source_hash)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_tx_transaction_type ON transactions(transaction_type)',
     );
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed)',
@@ -103,171 +215,42 @@ class _AppDriftSchema {
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_recurring_next_run_at ON recurring_templates(next_run_at)',
     );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_import_queue_scope_source_hash ON sms_import_queue(scope, source_hash)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_import_queue_status_due ON sms_import_queue(status, next_retry_at)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_import_queue_source_timestamp ON sms_import_queue(source_timestamp DESC)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_import_audit_scope_created ON sms_import_audit(scope, created_at DESC)',
+    );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_review_scope_source_hash ON sms_review_queue(scope, source_hash)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_review_scope_status ON sms_review_queue(scope, status)',
+    );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_quarantine_scope_source_hash ON sms_quarantine(scope, source_hash)',
+    );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_paybill_value ON paybill_registry(paybill)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_merchant_categories_updated ON merchant_categories(updated_at DESC)',
+    );
+    await store._db.runCustom(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_fuliza_scope_code_kind ON fuliza_lifecycle_events(scope, mpesa_code, event_kind)',
+    );
 
-    await seedDataIfEmpty(store);
+    await _AppDriftSchemaMigrations.removeLegacySeedIncome(store);
+    await _AppDriftSchemaMigrations.seedDataIfEmpty(store);
     store._initialized = true;
   }
 
-  static Future<void> seedDataIfEmpty(AppDriftStore store) async {
-    final txCount = await store._countRows('transactions');
-    if (txCount == 0) {
-      final now = DateTime.now();
-      final entries = [
-        (
-          'HOTEL DELITOS Via Kopo Kopo',
-          'Food',
-          140.0,
-          now.subtract(const Duration(days: 1))
-        ),
-        ('GRACE NGULI', 'Other', 100.0, now.subtract(const Duration(days: 2))),
-        ('DELITOS HOTEL', 'Food', 400.0, now.subtract(const Duration(days: 3))),
-        ('Unknown', 'Other', 623.53, now.subtract(const Duration(days: 4))),
-        ('Unknown', 'Other', 865.93, now.subtract(const Duration(days: 5))),
-        (
-          'Airtime Topup',
-          'Airtime',
-          50.0,
-          now.subtract(const Duration(days: 2))
-        ),
-        (
-          'Electricity Token',
-          'Bills',
-          20.0,
-          now.subtract(const Duration(days: 3))
-        ),
-      ];
-      for (final entry in entries) {
-        await store._db.runInsert(
-          'INSERT INTO transactions(title, category, amount, occurred_at, source, source_hash) VALUES (?, ?, ?, ?, ?, ?)',
-          [
-            entry.$1,
-            entry.$2,
-            entry.$3,
-            entry.$4.millisecondsSinceEpoch,
-            'seed',
-            null
-          ],
-        );
-      }
-    }
-
-    final taskCount = await store._countRows('tasks');
-    if (taskCount == 0) {
-      final nowMs = DateTime.now().millisecondsSinceEpoch;
-      await store._db.runInsert(
-        'INSERT INTO tasks(title, description, completed, due_at, priority) VALUES (?, ?, ?, ?, ?)',
-        [
-          'Prepare monthly spending review',
-          'Review top spending categories and action items.',
-          0,
-          nowMs,
-          'high'
-        ],
-      );
-      await store._db.runInsert(
-        'INSERT INTO tasks(title, description, completed, due_at, priority) VALUES (?, ?, ?, ?, ?)',
-        [
-          'Submit transport expense report',
-          'Send final report to finance.',
-          1,
-          nowMs,
-          'medium'
-        ],
-      );
-    }
-
-    final incomeCount = await store._countRows('incomes');
-    if (incomeCount == 0) {
-      await store._db.runInsert(
-        'INSERT INTO incomes(title, amount, received_at, source) VALUES (?, ?, ?, ?)',
-        [
-          'Salary',
-          120000.0,
-          DateTime.now()
-              .subtract(const Duration(days: 5))
-              .millisecondsSinceEpoch,
-          'seed',
-        ],
-      );
-    }
-
-    final budgetCount = await store._countRows('budgets');
-    if (budgetCount == 0) {
-      await store._db.runInsert(
-        'INSERT OR IGNORE INTO budgets(category, monthly_limit) VALUES (?, ?)',
-        ['Food', 15000.0],
-      );
-      await store._db.runInsert(
-        'INSERT OR IGNORE INTO budgets(category, monthly_limit) VALUES (?, ?)',
-        ['Transport', 8000.0],
-      );
-    }
-  }
-
-  static Future<void> tryAddSourceHashColumn(AppDriftStore store) async {
-    try {
-      await store._db
-          .runCustom('ALTER TABLE transactions ADD COLUMN source_hash TEXT');
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddTaskDescriptionColumn(AppDriftStore store) async {
-    try {
-      await store._db
-          .runCustom('ALTER TABLE tasks ADD COLUMN description TEXT');
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddIncomesSourceColumn(AppDriftStore store) async {
-    try {
-      await store._db.runCustom(
-        'ALTER TABLE incomes ADD COLUMN source TEXT NOT NULL DEFAULT \'manual\'',
-      );
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddRecurringPriorityColumn(AppDriftStore store) async {
-    try {
-      await store._db.runCustom(
-          'ALTER TABLE recurring_templates ADD COLUMN priority TEXT');
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddEventCompletedColumn(AppDriftStore store) async {
-    try {
-      await store._db.runCustom(
-        'ALTER TABLE events ADD COLUMN completed INTEGER NOT NULL DEFAULT 0',
-      );
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddEventPriorityColumn(AppDriftStore store) async {
-    try {
-      await store._db.runCustom(
-        'ALTER TABLE events ADD COLUMN priority TEXT NOT NULL DEFAULT \'medium\'',
-      );
-    } catch (_) {
-      return;
-    }
-  }
-
-  static Future<void> tryAddEventTypeColumn(AppDriftStore store) async {
-    try {
-      await store._db.runCustom(
-        'ALTER TABLE events ADD COLUMN event_type TEXT NOT NULL DEFAULT \'general\'',
-      );
-    } catch (_) {
-      return;
-    }
-  }
+  static Future<void> seedDataIfEmpty(AppDriftStore store) =>
+      _AppDriftSchemaMigrations.seedDataIfEmpty(store);
 }

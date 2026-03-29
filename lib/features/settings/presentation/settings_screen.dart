@@ -1,25 +1,42 @@
+import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/di/notification_providers.dart';
+import 'package:beltech/core/di/sync_providers.dart';
+import 'package:beltech/core/di/update_providers.dart';
+import 'package:beltech/core/sync/data_mode_migration_service.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/theme/theme_mode_controller.dart';
+import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
+import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
-import 'package:beltech/core/widgets/error_message.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/loading_indicator.dart';
+import 'package:beltech/core/widgets/secondary_page_shell.dart';
+import 'package:beltech/core/widgets/section_header.dart';
 import 'package:beltech/features/auth/domain/entities/auth_state.dart';
+import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/auth/presentation/providers/auth_providers.dart';
 import 'package:beltech/features/settings/presentation/widgets/notification_preferences_section.dart';
+import 'package:beltech/features/settings/presentation/widgets/settings_about_card.dart';
+import 'package:beltech/features/settings/presentation/widgets/settings_appearance_card.dart';
+import 'package:beltech/features/settings/presentation/widgets/settings_security_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:go_router/go_router.dart';
+
+part 'settings_screen_data_mode.dart';
+
+final _dataModeSwitchBusyProvider = StateProvider<bool>((_) => false);
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = Theme.of(context).textTheme;
     final authState = ref.watch(authProvider);
+    final useSupabase = ref.watch(useSupabaseProvider);
+    final cloudAvailable = ref.watch(cloudModeAvailableProvider);
+    final preferredDataMode = ref.watch(preferredDataModeProvider);
+    final dataModeSwitchBusy = ref.watch(_dataModeSwitchBusyProvider);
 
     ref.listen<AsyncValue<AuthState>>(authProvider, (previous, next) {
       if (next.hasError) {
@@ -35,302 +52,174 @@ class SettingsScreen extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.sectionPadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Security', style: textTheme.titleMedium),
-              const SizedBox(height: 10),
-              authState.when(
-                data: (state) => _SecurityCard(state: state),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => ErrorMessage(
-                  label: 'Unable to load security settings',
-                  onRetry: () => ref.invalidate(authProvider),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text('Appearance', style: textTheme.titleMedium),
-              const SizedBox(height: 10),
-              const _AppearanceCard(),
-              const SizedBox(height: 16),
-              Text('Data and Tools', style: textTheme.titleMedium),
-              const SizedBox(height: 10),
-              const _ToolsCard(),
-              const SizedBox(height: 16),
-              Text('About', style: textTheme.titleMedium),
-              const SizedBox(height: 10),
-              const _AboutCard(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+    return SecondaryPageShell(
+      title: 'Settings',
 
-class _ToolsCard extends StatelessWidget {
-  const _ToolsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ToolTile(
-            icon: Icons.savings_outlined,
-            title: 'Budgets',
-            subtitle: 'Set monthly limits per category',
-            onTap: () => context.pushNamed('budget'),
-          ),
-          _ToolTile(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Income',
-            subtitle: 'Track incoming cashflow',
-            onTap: () => context.pushNamed('income'),
-          ),
-          _ToolTile(
-            icon: Icons.autorenew,
-            title: 'Recurring Items',
-            subtitle: 'Automate repeating records',
-            onTap: () => context.pushNamed('recurring'),
-          ),
-          _ToolTile(
-            icon: Icons.search,
-            title: 'Global Search',
-            subtitle: 'Search expenses, tasks, events, and more',
-            onTap: () => context.pushNamed('search'),
-          ),
-          _ToolTile(
-            icon: Icons.file_download_outlined,
-            title: 'Export CSV',
-            subtitle: 'Export your data for backup',
-            onTap: () => context.pushNamed('export'),
-          ),
-          _ToolTile(
-            icon: Icons.query_stats,
-            title: 'Analytics',
-            subtitle: 'View trends and performance metrics',
-            onTap: () => context.pushNamed('analytics'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: AppColors.accent),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-}
-
-class _SecurityCard extends ConsumerWidget {
-  const _SecurityCard({required this.state});
-
-  final AuthState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GlassCard(
-      child: Column(
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Biometric Lock'),
-            subtitle: Text(
-              state.biometricSupported
-                  ? 'Use fingerprint/face to unlock secure actions'
-                  : 'Biometrics not supported on this device',
-            ),
-            value: state.biometricEnabled,
-            onChanged: state.biometricSupported
-                ? (value) async {
-                    await ref
-                        .read(authProvider.notifier)
-                        .setBiometricEnabled(value);
-                  }
-                : null,
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: state.isAuthenticating
-                  ? null
-                  : () async {
-                      final ok = await ref
-                          .read(authProvider.notifier)
-                          .authenticateNow();
-                      if (context.mounted) {
-                        if (ok) {
-                          AppFeedback.success(
-                              context, 'Authentication successful.');
-                        } else {
-                          AppFeedback.error(context, 'Authentication failed.');
-                        }
-                      }
-                    },
-              icon: state.isAuthenticating
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.fingerprint),
-              label: const Text('Authenticate Now'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const NotificationPreferencesSection(),
-        ],
-      ),
-    );
-  }
-}
-
-class _AppearanceCard extends ConsumerWidget {
-  const _AppearanceCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(currentThemeModeProvider);
-    return GlassCard(
-      child: Column(
-        children: [
-          const ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.palette_outlined, color: AppColors.accent),
-            title: Text('Theme'),
-            subtitle: Text('Choose your preferred mode'),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SegmentedButton<ThemeMode>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  label: Text('Dark'),
+          const SectionHeader('Data Mode', topPadding: 0),
+          GlassCard(
+            tone: GlassCardTone.muted,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  useSupabase
+                      ? 'Cloud mode is active'
+                      : 'Offline mode is active',
+                  style: AppTypography.cardTitle(context),
                 ),
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  label: Text('Light'),
+                const SizedBox(height: 4),
+                Text(
+                  useSupabase
+                      ? 'Data syncs with your cloud account.'
+                      : 'Data stays on this device only.',
+                  style: AppTypography.bodySm(context),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                ButtonSegment(
-                  value: ThemeMode.system,
-                  label: Text('Auto'),
-                ),
-              ],
-              selected: {mode},
-              onSelectionChanged: (selected) async {
-                await ref
-                    .read(themeModeControllerProvider.notifier)
-                    .setThemeMode(selected.first);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AboutCard extends StatefulWidget {
-  const _AboutCard();
-
-  @override
-  State<_AboutCard> createState() => _AboutCardState();
-}
-
-class _AboutCardState extends State<_AboutCard> {
-  String _version = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    final info = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() {
-        _version = '${info.version} (build ${info.buildNumber})';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return GlassCard(
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.info_outline, color: AppColors.accent),
-            title: const Text('Version'),
-            trailing: Text(
-              _version.isEmpty ? '…' : _version,
-              style: textTheme.bodyMedium,
-            ),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading:
-                const Icon(Icons.delete_forever_outlined, color: Colors.red),
-            title: const Text(
-              'Delete Account',
-              style: TextStyle(color: Colors.red),
-            ),
-            subtitle: const Text('Permanently remove your account and data'),
-            onTap: () {
-              showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Delete Account'),
-                  content: const Text(
-                    'To delete your account and all associated data, '
-                    'please contact support at support@beltech.app. '
-                    'This action is irreversible.',
-                  ),
-                  actions: [
-                    FilledButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('OK'),
+                const SizedBox(height: 12),
+                SegmentedButton<DataModePreference>(
+                  showSelectedIcon: false,
+                  segments: [
+                    const ButtonSegment<DataModePreference>(
+                      value: DataModePreference.local,
+                      icon: Icon(Icons.phone_android_outlined, size: 18),
+                      label: Text('Offline'),
+                    ),
+                    ButtonSegment<DataModePreference>(
+                      value: DataModePreference.cloud,
+                      enabled: cloudAvailable,
+                      icon: const Icon(Icons.cloud_done_outlined, size: 18),
+                      label: Text(cloudAvailable ? 'Cloud' : 'Cloud (Setup)'),
                     ),
                   ],
+                  selected: {preferredDataMode},
+                  onSelectionChanged: dataModeSwitchBusy
+                      ? null
+                      : (selection) async {
+                          final mode = selection.first;
+                          await _applyDataMode(
+                            context: context,
+                            ref: ref,
+                            mode: mode,
+                            cloudAvailable: cloudAvailable,
+                          );
+                        },
                 ),
-              );
-            },
+                if (dataModeSwitchBusy) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Applying mode and syncing data...',
+                          style: AppTypography.bodySm(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
+          const SizedBox(height: AppSpacing.sectionGap),
+
+          // Data mode status banner (offline-only users)
+          if (!useSupabase)
+            GlassCard(
+              tone: GlassCardTone.muted,
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_off_outlined,
+                      color: AppColors.textMuted, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Local mode',
+                            style: AppTypography.cardTitle(context)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Data is stored on this device only',
+                          style: AppTypography.bodySm(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const AppCapsule(
+                    label: 'Offline',
+                    color: AppColors.textMuted,
+                    variant: AppCapsuleVariant.outline,
+                    size: AppCapsuleSize.sm,
+                  ),
+                ],
+              ),
+            ),
+          if (!useSupabase) const SizedBox(height: AppSpacing.sectionGap),
+
+          // Appearance
+          const SectionHeader('Appearance', topPadding: 0),
+          const SettingsAppearanceCard(),
+          const SizedBox(height: AppSpacing.sectionGap),
+
+          // Security
+          const SectionHeader('Security'),
+          authState.when(
+            data: (state) => SettingsSecurityCard(state: state),
+            loading: () => const GlassCard(
+              tone: GlassCardTone.muted,
+              child: SizedBox(
+                height: 200,
+                child: Center(
+                  child: LoadingIndicator(),
+                ),
+              ),
+            ),
+            error: (_, __) => GlassCard(
+              tone: GlassCardTone.muted,
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.danger),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unable to load security settings',
+                    style: AppTypography.bodySm(context),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => ref.invalidate(authProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sectionGap),
+
+          // Notifications
+          const SectionHeader('Notifications'),
+          const GlassCard(
+            tone: GlassCardTone.muted,
+            child: NotificationPreferencesSection(),
+          ),
+          const SizedBox(height: AppSpacing.sectionGap),
+
+          // About
+          const SectionHeader('About'),
+          const SettingsAboutCard(),
         ],
       ),
     );

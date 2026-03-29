@@ -10,7 +10,9 @@ class CalendarRepositoryImpl implements CalendarRepository {
 
   @override
   Stream<List<CalendarEvent>> watchEventsForDay(DateTime day) {
-    return _store.watchEventsForDay(day).map(
+    return _store
+        .watchEventsForDay(day)
+        .map(
           (rows) => rows
               .map(
                 (row) => CalendarEvent(
@@ -22,6 +24,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   type: calendarEventTypeFromRaw(row.eventType),
                   endAt: row.endAt,
                   note: row.note,
+                  reminderEnabled: row.reminderEnabled,
+                  reminderMinutesBefore: row.reminderMinutesBefore,
                 ),
               )
               .toList(),
@@ -30,7 +34,9 @@ class CalendarRepositoryImpl implements CalendarRepository {
 
   @override
   Stream<List<CalendarEvent>> watchEventsInRange(DateTime start, DateTime end) {
-    return _store.watchEventsInRange(start, end).map(
+    return _store
+        .watchEventsInRange(start, end)
+        .map(
           (rows) => rows
               .map(
                 (row) => CalendarEvent(
@@ -42,6 +48,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
                   type: calendarEventTypeFromRaw(row.eventType),
                   endAt: row.endAt,
                   note: row.note,
+                  reminderEnabled: row.reminderEnabled,
+                  reminderMinutesBefore: row.reminderMinutesBefore,
                 ),
               )
               .toList(),
@@ -56,6 +64,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
     CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) async {
     await _store.addEvent(
       title: title,
@@ -64,6 +74,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
       eventType: calendarEventTypeToRaw(type),
       endAt: endAt,
       note: note,
+      reminderEnabled: reminderEnabled,
+      reminderMinutesBefore: reminderMinutesBefore,
     );
   }
 
@@ -76,6 +88,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
     required CalendarEventType type,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) {
     return _store.updateEvent(
       id: eventId,
@@ -85,18 +99,14 @@ class CalendarRepositoryImpl implements CalendarRepository {
       eventType: calendarEventTypeToRaw(type),
       endAt: endAt,
       note: note,
+      reminderEnabled: reminderEnabled,
+      reminderMinutesBefore: reminderMinutesBefore,
     );
   }
 
   @override
-  Future<void> setCompleted({
-    required int eventId,
-    required bool completed,
-  }) {
-    return _store.setEventCompletion(
-      eventId: eventId,
-      completed: completed,
-    );
+  Future<void> setCompleted({required int eventId, required bool completed}) {
+    return _store.setEventCompletion(eventId: eventId, completed: completed);
   }
 
   @override

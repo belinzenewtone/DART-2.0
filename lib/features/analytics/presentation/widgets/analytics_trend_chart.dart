@@ -1,4 +1,5 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/analytics/domain/entities/analytics_snapshot.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -39,7 +40,28 @@ class AnalyticsTrendChart extends StatelessWidget {
                 maxY: maxY <= 0 ? 1 : maxY * 1.2,
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => const Color(0xDD0F1C34),
+                    getTooltipColor: (_) => AppColors.tooltipBackground,
+                    fitInsideHorizontally: true,
+                    fitInsideVertically: true,
+                    tooltipRoundedRadius: 8,
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final point = points[spot.x.toInt()];
+                        return LineTooltipItem(
+                          '${point.label}\n${CurrencyFormatter.money(point.amountKes)}',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
+                        );
+                      }).toList();
+                    },
                   ),
                 ),
                 gridData: FlGridData(

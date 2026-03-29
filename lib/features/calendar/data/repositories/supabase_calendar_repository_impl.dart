@@ -13,16 +13,12 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
   Stream<List<CalendarEvent>> watchEventsForDay(DateTime day) {
     final start = DateTime(day.year, day.month, day.day);
     final end = start.add(const Duration(days: 1));
-    return pollStream(
-      () => _loadForRange(start, end),
-    );
+    return pollStream(() => _loadForRange(start, end));
   }
 
   @override
   Stream<List<CalendarEvent>> watchEventsInRange(DateTime start, DateTime end) {
-    return pollStream(
-      () => _loadForRange(start, end),
-    );
+    return pollStream(() => _loadForRange(start, end));
   }
 
   @override
@@ -33,6 +29,8 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) {
     final userId = _requireUserId();
     return _client.from('events').insert({
@@ -44,6 +42,8 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
       'completed': false,
       'priority': priority.name,
       'event_type': calendarEventTypeToRaw(type),
+      'reminder_enabled': reminderEnabled,
+      'reminder_minutes_before': reminderMinutesBefore,
     });
   }
 
@@ -56,6 +56,8 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
     required CalendarEventType type,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) {
     final userId = _requireUserId();
     return _client
@@ -67,16 +69,15 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
           'note': note,
           'priority': priority.name,
           'event_type': calendarEventTypeToRaw(type),
+          'reminder_enabled': reminderEnabled,
+          'reminder_minutes_before': reminderMinutesBefore,
         })
         .eq('id', eventId)
         .eq('owner_id', userId);
   }
 
   @override
-  Future<void> setCompleted({
-    required int eventId,
-    required bool completed,
-  }) {
+  Future<void> setCompleted({required int eventId, required bool completed}) {
     final userId = _requireUserId();
     return _client
         .from('events')
@@ -96,11 +97,15 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
   }
 
   Future<List<CalendarEvent>> _loadForRange(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     final userId = _requireUserId();
     final rows = await _client
         .from('events')
-        .select('id,title,start_at,end_at,note,completed,priority,event_type')
+        .select(
+          'id,title,start_at,end_at,note,completed,priority,event_type,reminder_enabled,reminder_minutes_before',
+        )
         .eq('owner_id', userId)
         .gte('start_at', start.toUtc().toIso8601String())
         .lt('start_at', end.toUtc().toIso8601String())
@@ -118,6 +123,10 @@ class SupabaseCalendarRepositoryImpl implements CalendarRepository {
             type: calendarEventTypeFromRaw('${row['event_type'] ?? 'general'}'),
             endAt: row['end_at'] == null ? null : parseTimestamp(row['end_at']),
             note: row['note'] as String?,
+            reminderEnabled: row['reminder_enabled'] != false,
+            reminderMinutesBefore: row['reminder_minutes_before'] == null
+                ? 15
+                : parseInt(row['reminder_minutes_before']),
           ),
         )
         .toList();

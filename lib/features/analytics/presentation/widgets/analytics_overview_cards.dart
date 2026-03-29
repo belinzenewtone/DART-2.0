@@ -41,8 +41,8 @@ class AnalyticsOverviewCards extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 title: 'Tasks',
-                value:
-                    '${snapshot.totalTasksCompleted} done · ${snapshot.totalTasksPending} pending',
+                value: '${snapshot.totalTasksCompleted} done',
+                secondaryValue: '${snapshot.totalTasksPending} pending',
                 icon: Icons.check_circle_outline,
               ),
             ),
@@ -66,10 +66,12 @@ class _MetricCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.icon,
+    this.secondaryValue,
   });
 
   final String title;
   final String value;
+  final String? secondaryValue;
   final IconData icon;
 
   @override
@@ -96,9 +98,20 @@ class _MetricCard extends StatelessWidget {
           Text(
             value,
             style: textTheme.titleMedium,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
           ),
+          if (secondaryValue != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              secondaryValue!,
+              style: textTheme.bodyMedium,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.fade,
+            ),
+          ],
         ],
       ),
     );

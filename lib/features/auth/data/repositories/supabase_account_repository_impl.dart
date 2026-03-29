@@ -10,7 +10,21 @@ class SupabaseAccountRepositoryImpl implements AccountRepository {
   @override
   Stream<AccountSession> watchSession() {
     return Stream<AccountSession>.multi((controller) {
-      controller.add(currentSession());
+      // Only emit synchronously when we already have a confirmed current user
+      // (e.g. tab-switch resume where the session is known).  On a cold start
+      // after the process was killed, Supabase restores the session
+      // asynchronously, so currentUser is null here even though a valid stored
+      // session exists.  Emitting unauthenticated in that case causes AuthGate
+      // to flash the sign-in screen before the real session arrives.
+      //
+      // By NOT emitting when currentUser is null we stay in the
+      // StreamProvider's loading state (AuthLoadingScreen) until
+      // onAuthStateChange fires — which Supabase always does on startup,
+      // either with the restored session or with a SignedOut event.
+      final current = _client.auth.currentUser;
+      if (current != null) {
+        controller.add(_mapUser(current));
+      }
       final subscription = _client.auth.onAuthStateChange.listen((event) {
         controller.add(_mapUser(event.session?.user));
       });

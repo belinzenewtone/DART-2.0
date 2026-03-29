@@ -1,4 +1,9 @@
+import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/profile/domain/entities/user_profile.dart';
 import 'package:beltech/features/profile/presentation/widgets/profile_avatar.dart';
@@ -9,221 +14,181 @@ class ProfileContentSection extends StatelessWidget {
     super.key,
     required this.profile,
     required this.onEdit,
+    required this.onOpenSettings,
     required this.onChangePassword,
     required this.onAvatarCameraTap,
     required this.showSignOut,
     required this.signingOut,
     required this.onSignOut,
+    this.workspaceLabel = 'Local Workspace',
   });
 
   final UserProfile profile;
-  final VoidCallback onEdit;
-  final VoidCallback onChangePassword;
-  final VoidCallback onAvatarCameraTap;
-  final bool showSignOut;
-  final bool signingOut;
-  final VoidCallback onSignOut;
+  final VoidCallback onEdit,
+      onOpenSettings,
+      onChangePassword,
+      onAvatarCameraTap,
+      onSignOut;
+  final bool showSignOut, signingOut;
+
+  /// Shown below the name in the identity card (e.g. "Local Workspace" or "Cloud Workspace")
+  final String workspaceLabel;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final brightness = Theme.of(context).brightness;
-    final secondaryText = AppColors.textSecondaryFor(brightness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: ProfileAvatar(
-            name: profile.name,
-            avatarUrl: profile.avatarUrl,
-            onCameraTap: onAvatarCameraTap,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Center(child: Text(profile.name, style: textTheme.titleMedium)),
-        const SizedBox(height: 6),
-        Center(child: Text(profile.email, style: textTheme.bodyMedium)),
-        const SizedBox(height: 16),
+        // ── Identity card — teal accent, matches RN reference ──────────────────
         GlassCard(
-          child: _StatusRow(
-            icon: Icons.stars_rounded,
-            iconColor: AppColors.accent,
-            title: 'Member Since',
-            subtitle: profile.memberSinceLabel,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
-          child: _StatusRow(
-            icon:
-                profile.verified ? Icons.verified : Icons.warning_amber_rounded,
-            iconColor: profile.verified ? AppColors.success : AppColors.warning,
-            title: profile.verified ? 'Account Verified' : 'Account Pending',
-            subtitle: profile.verified
-                ? 'Your email has been confirmed'
-                : 'Verify your email to secure the account',
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
+          tone: GlassCardTone.accent,
+          accentColor: AppColors.accent,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Avatar row
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Personal Info', style: textTheme.titleMedium),
-                  IconButton(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit, color: AppColors.accent),
+                  ProfileAvatar(
+                    name: profile.name,
+                    avatarUrl: profile.avatarUrl,
+                    onCameraTap: onAvatarCameraTap,
                   ),
-                ],
-              ),
-              _InfoLine(icon: Icons.person, label: 'Name', value: profile.name),
-              const SizedBox(height: 8),
-              _InfoLine(
-                icon: Icons.mail_outline,
-                label: 'Email',
-                value: profile.email,
-              ),
-              const SizedBox(height: 8),
-              _InfoLine(
-                icon: Icons.call_outlined,
-                label: 'Phone',
-                value: profile.phone,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onChangePassword,
-          child: const GlassCard(
-            child: _StatusRow(
-              icon: Icons.lock,
-              iconColor: AppColors.warning,
-              title: 'Change Password',
-              subtitle: 'Update your account password',
-            ),
-          ),
-        ),
-        if (showSignOut) ...[
-          const SizedBox(height: 12),
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: signingOut ? null : onSignOut,
-            child: GlassCard(
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColors.danger.withValues(alpha: 0.18),
-                    child: const Icon(Icons.logout, color: AppColors.danger),
-                  ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Sign Out'),
+                        Text(
+                          profile.name,
+                          style: AppTypography.sectionTitle(context).copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 2),
                         Text(
-                          'Sign out from this device',
-                          style: TextStyle(color: secondaryText),
+                          workspaceLabel,
+                          style: AppTypography.bodySm(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        AppCapsule(
+                          label: 'Member since ${profile.memberSinceLabel}',
+                          color: AppColors.accent,
+                          variant: AppCapsuleVariant.subtle,
+                          size: AppCapsuleSize.sm,
                         ),
                       ],
                     ),
                   ),
-                  if (signingOut)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    const Icon(Icons.chevron_right, color: AppColors.danger),
                 ],
               ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _StatusRow extends StatelessWidget {
-  const _StatusRow({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: iconColor.withValues(alpha: 0.2),
-          child: Icon(icon, color: iconColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: textTheme.titleMedium),
-              const SizedBox(height: 2),
-              Text(subtitle, style: textTheme.bodyMedium),
+              const SizedBox(height: 16),
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: 'Edit Profile',
+                      onPressed: onEdit,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.sm,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppButton(
+                      label: 'Settings',
+                      onPressed: onOpenSettings,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.sm,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final brightness = Theme.of(context).brightness;
-    final infoIconBackground = brightness == Brightness.light
-        ? AppColors.accent.withValues(alpha: 0.14)
-        : AppColors.accentSoft;
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: infoIconBackground,
-          child: Icon(icon, color: AppColors.accent, size: 18),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
+        const SizedBox(height: AppSpacing.sectionGap),
+        // ── Security section — password + sign-out ─────────────────────────────
+        GlassCard(
+          tone: GlassCardTone.muted,
+          padding: EdgeInsets.zero,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: textTheme.bodyMedium),
-              Text(value, style: textTheme.bodyLarge),
+              InkWell(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(GlassStyles.borderRadius),
+                ),
+                onTap: onChangePassword,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor:
+                            AppColors.warning.withValues(alpha: 0.18),
+                        child: const Icon(Icons.lock_outline_rounded,
+                            color: AppColors.warning, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Password',
+                          style: AppTypography.cardTitle(context),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: AppColors.textMuted, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+              if (showSignOut) ...[
+                Divider(
+                    height: 1, color: AppColors.border.withValues(alpha: 0.3)),
+                InkWell(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(GlassStyles.borderRadius),
+                  ),
+                  onTap: signingOut ? null : onSignOut,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor:
+                              AppColors.danger.withValues(alpha: 0.18),
+                          child: const Icon(Icons.logout_rounded,
+                              color: AppColors.danger, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Sign Out',
+                            style: AppTypography.cardTitle(context)
+                                .copyWith(color: AppColors.danger),
+                          ),
+                        ),
+                        if (signingOut)
+                          const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                        else
+                          const Icon(Icons.chevron_right_rounded,
+                              color: AppColors.danger, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

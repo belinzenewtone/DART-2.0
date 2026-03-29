@@ -8,6 +8,8 @@ class TaskItem {
     required this.completed,
     required this.priority,
     this.dueDate,
+    this.reminderEnabled = true,
+    this.reminderMinutesBefore = 30,
   });
 
   final int id;
@@ -16,6 +18,8 @@ class TaskItem {
   final bool completed;
   final TaskPriority priority;
   final DateTime? dueDate;
+  final bool reminderEnabled;
+  final int reminderMinutesBefore;
 
   @override
   bool operator ==(Object other) =>
@@ -27,9 +31,19 @@ class TaskItem {
           description == other.description &&
           completed == other.completed &&
           priority == other.priority &&
-          dueDate == other.dueDate;
+          dueDate == other.dueDate &&
+          reminderEnabled == other.reminderEnabled &&
+          reminderMinutesBefore == other.reminderMinutesBefore;
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, description, completed, priority, dueDate);
+  int get hashCode => Object.hash(
+    id,
+    title,
+    description,
+    completed,
+    priority,
+    dueDate,
+    reminderEnabled,
+    reminderMinutesBefore,
+  );
 }

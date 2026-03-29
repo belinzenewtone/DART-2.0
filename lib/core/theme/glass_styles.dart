@@ -1,16 +1,17 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 
 class GlassStyles {
   GlassStyles._();
 
-  static const double blurSigma = 12;
-  static const double borderRadius = 24;
-  static const EdgeInsets cardPadding = EdgeInsets.all(16);
+  static const double blurSigma = 16.0;
+  static const double borderRadius = AppRadius.xl; // 22
+  static const EdgeInsets cardPadding = EdgeInsets.all(18.0); // cardPadding.inner
 
   static double blurSigmaFor(Brightness brightness) {
     if (brightness == Brightness.light) {
-      return 6;
+      return 8.0;
     }
     return blurSigma;
   }
@@ -48,9 +49,10 @@ class GlassStyles {
     return const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
+      // Neutral dark glass matches RN surfaceSoft = rgba(255, 255, 255, 0.04)
       colors: [
-        Color(0x3B1E3A67),
-        Color(0x1C102542),
+        Color(0x0CFFFFFF), // ~5%
+        Color(0x07FFFFFF), // ~3%
       ],
     );
   }
@@ -74,7 +76,7 @@ class GlassStyles {
       end: Alignment.bottomRight,
       colors: [
         accent.withValues(alpha: 0.24),
-        const Color(0x1C102542),
+        const Color(0xC20E1622), // dark neutral base for accent cards
       ],
     );
   }

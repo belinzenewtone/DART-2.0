@@ -5,19 +5,18 @@ class DriftTransactionRecord {
     required this.category,
     required this.amountKes,
     required this.occurredAt,
+    this.balanceAfterKes,
   });
   final int id;
   final String title;
   final String category;
   final double amountKes;
   final DateTime occurredAt;
+  final double? balanceAfterKes;
 }
 
 class CategoryTotalRecord {
-  const CategoryTotalRecord({
-    required this.category,
-    required this.totalKes,
-  });
+  const CategoryTotalRecord({required this.category, required this.totalKes});
   final String category;
   final double totalKes;
 }
@@ -61,6 +60,8 @@ class DriftTaskRecord {
     required this.description,
     required this.completed,
     required this.priority,
+    required this.reminderEnabled,
+    required this.reminderMinutesBefore,
     this.dueDate,
   });
   final int id;
@@ -69,6 +70,8 @@ class DriftTaskRecord {
   final bool completed;
   final String priority;
   final DateTime? dueDate;
+  final bool reminderEnabled;
+  final int reminderMinutesBefore;
 }
 
 class DriftEventRecord {
@@ -79,6 +82,8 @@ class DriftEventRecord {
     required this.completed,
     required this.priority,
     required this.eventType,
+    required this.reminderEnabled,
+    required this.reminderMinutesBefore,
     this.endAt,
     this.note,
   });
@@ -90,4 +95,6 @@ class DriftEventRecord {
   final String eventType;
   final DateTime? endAt;
   final String? note;
+  final bool reminderEnabled;
+  final int reminderMinutesBefore;
 }

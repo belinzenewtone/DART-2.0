@@ -18,3 +18,14 @@ coverage/
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Android signing secrets
+android/key.properties
+*.jks
+*.keystore
+
+# Claude Code session data
+.claude/
+
+# Competitor project (used for local audit only)
+KOTLIN-PROJECT-main/

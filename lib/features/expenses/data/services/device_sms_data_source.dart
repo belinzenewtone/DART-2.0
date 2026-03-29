@@ -6,16 +6,23 @@ typedef SmsPermissionRequester = Future<bool> Function();
 typedef SmsQueryRunner = Future<List<SmsMessage>> Function(SmsQuery query);
 typedef PlatformCheck = bool Function();
 
+class SmsInboxEntry {
+  const SmsInboxEntry({required this.body, required this.receivedAt});
+
+  final String body;
+  final DateTime? receivedAt;
+}
+
 class DeviceSmsDataSource {
   DeviceSmsDataSource({
     SmsQuery? query,
     SmsPermissionRequester? requestPermission,
     SmsQueryRunner? queryRunner,
     PlatformCheck? isAndroid,
-  })  : _query = query ?? SmsQuery(),
-        _requestPermission = requestPermission ?? _defaultPermission,
-        _queryRunner = queryRunner ?? _defaultQueryRunner,
-        _isAndroid = isAndroid ?? _defaultIsAndroid;
+  }) : _query = query ?? SmsQuery(),
+       _requestPermission = requestPermission ?? _defaultPermission,
+       _queryRunner = queryRunner ?? _defaultQueryRunner,
+       _isAndroid = isAndroid ?? _defaultIsAndroid;
 
   final SmsQuery _query;
   final SmsPermissionRequester _requestPermission;
@@ -23,6 +30,11 @@ class DeviceSmsDataSource {
   final PlatformCheck _isAndroid;
 
   Future<List<String>> loadLikelyMpesaMessages({DateTime? from}) async {
+    final entries = await loadLikelyMpesaEntries(from: from);
+    return entries.map((entry) => entry.body).toList(growable: false);
+  }
+
+  Future<List<SmsInboxEntry>> loadLikelyMpesaEntries({DateTime? from}) async {
     if (!_isAndroid()) {
       return const [];
     }
@@ -51,7 +63,12 @@ class DeviceSmsDataSource {
               normalized.contains('mpesa') || normalized.contains('confirmed');
           return mpesaSender || mpesaBody;
         })
-        .map((message) => message.body!.trim())
+        .map(
+          (message) => SmsInboxEntry(
+            body: message.body!.trim(),
+            receivedAt: message.date,
+          ),
+        )
         .toList();
   }
 

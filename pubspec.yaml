@@ -1,17 +1,19 @@
 name: beltech
 description: Personal management app with clean architecture and glassmorphism UI.
 publish_to: "none"
-version: 1.0.1+2
+version: 2.0.0+5
 
 environment:
-  sdk: ">=3.5.0 <4.0.0"
+  sdk: ">=3.11.4 <4.0.0"
+  flutter: ">=3.41.6 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   drift: ^2.20.0
-  sqlite3_flutter_libs: ^0.5.26
+  sqlcipher_flutter_libs: ^0.5.4
   path_provider: ^2.1.5
   path: ^1.9.0
   flutter_secure_storage: ^9.2.4
@@ -36,6 +38,9 @@ dependencies:
   go_router: ^17.1.0
   connectivity_plus: ^6.1.4
   google_fonts: ^6.2.1
+  shorebird_code_push: ^1.1.0
+  sentry_flutter: ^9.15.0
+  flutter_windowmanager: ^0.2.0
 
 dev_dependencies:
   flutter_test:
@@ -46,10 +51,17 @@ dev_dependencies:
   mocktail: ^1.0.4
   flutter_launcher_icons: ^0.14.4
 
+dependency_overrides:
+  sqlcipher_flutter_libs:
+    path: third_party/sqlcipher_flutter_libs
+  flutter_windowmanager:
+    path: third_party/flutter_windowmanager
+
 flutter:
   uses-material-design: true
   assets:
     - assets/branding/
+    - assets/google_fonts/
     - shorebird.yaml
 
 flutter_launcher_icons:

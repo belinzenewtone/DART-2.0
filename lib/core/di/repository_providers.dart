@@ -1,8 +1,11 @@
 import 'package:beltech/core/config/assistant_proxy_config.dart';
+import 'package:beltech/features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import 'package:beltech/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:beltech/core/config/supabase_config.dart';
 import 'package:beltech/core/di/database_providers.dart';
 import 'package:beltech/core/di/security_providers.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/core/sync/data_mode_migration_service.dart';
 import 'package:beltech/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:beltech/features/auth/data/repositories/local_account_repository_impl.dart';
 import 'package:beltech/features/auth/data/repositories/supabase_account_repository_impl.dart';
@@ -49,10 +52,68 @@ import 'package:beltech/features/tasks/data/repositories/supabase_tasks_reposito
 import 'package:beltech/features/tasks/data/repositories/tasks_repository_impl.dart';
 import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final useSupabaseProvider = Provider<bool>(
+enum DataModePreference { cloud, local }
+
+const String dataModePreferenceKey = 'app.data_mode_preference';
+
+DataModePreference dataModePreferenceFromRaw({
+  required String? raw,
+  required bool cloudAvailable,
+}) {
+  final parsed = switch (raw) {
+    'local' => DataModePreference.local,
+    'cloud' => DataModePreference.cloud,
+    _ => null,
+  };
+  if (parsed == null) {
+    return cloudAvailable ? DataModePreference.cloud : DataModePreference.local;
+  }
+  if (parsed == DataModePreference.cloud && !cloudAvailable) {
+    return DataModePreference.local;
+  }
+  return parsed;
+}
+
+Future<DataModePreference> loadPersistedDataModePreference({
+  required bool cloudAvailable,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString(dataModePreferenceKey);
+  return dataModePreferenceFromRaw(raw: raw, cloudAvailable: cloudAvailable);
+}
+
+Future<void> persistDataModePreference(DataModePreference mode) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(dataModePreferenceKey, mode.name);
+}
+
+final cloudModeAvailableProvider = Provider<bool>(
   (_) => SupabaseConfig.isConfigured && !hasRuntimeEnv('FLUTTER_TEST'),
+);
+
+final preferredDataModeProvider = StateProvider<DataModePreference>((ref) {
+  final cloudAvailable = ref.watch(cloudModeAvailableProvider);
+  return cloudAvailable ? DataModePreference.cloud : DataModePreference.local;
+});
+
+final useSupabaseProvider = Provider<bool>((ref) {
+  final cloudAvailable = ref.watch(cloudModeAvailableProvider);
+  final mode = ref.watch(preferredDataModeProvider);
+  return cloudAvailable && mode == DataModePreference.cloud;
+});
+
+final dataModeMigrationServiceProvider = Provider<DataModeMigrationService>(
+  (ref) {
+    final cloudAvailable = ref.watch(cloudModeAvailableProvider);
+    final client = cloudAvailable ? ref.watch(supabaseClientProvider) : null;
+    return DataModeMigrationService(
+      localStore: ref.watch(appDriftStoreProvider),
+      supabaseClient: client,
+    );
+  },
 );
 
 final supabaseClientProvider =
@@ -150,7 +211,7 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   if (ref.watch(useSupabaseProvider)) {
     return SupabaseAccountRepositoryImpl(ref.watch(supabaseClientProvider));
   }
-  return const LocalAccountRepositoryImpl();
+  return LocalAccountRepositoryImpl();
 });
 final assistantRepositoryProvider = Provider<AssistantRepository>((ref) {
   if (ref.watch(useSupabaseProvider)) {
@@ -184,4 +245,9 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
       ref.watch(passwordHasherProvider),
     );
   },
+);
+
+/// Onboarding completion flag — device-local, no cloud sync needed.
+final onboardingRepositoryProvider = Provider<OnboardingRepository>(
+  (_) => OnboardingRepositoryImpl(),
 );

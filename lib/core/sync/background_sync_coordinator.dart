@@ -1,3 +1,7 @@
+import 'package:beltech/core/feature_flags/feature_flag.dart';
+import 'package:beltech/core/feature_flags/feature_flag_store.dart';
+import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
+import 'package:beltech/core/sync/mpesa_historical_import_scanner.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/core/sync/os_background_sync_scheduler.dart';
@@ -8,15 +12,21 @@ import 'package:flutter/foundation.dart';
 class BackgroundSyncCoordinator {
   BackgroundSyncCoordinator(
     this._smsAutoImportService,
+    this._historicalImportScanner,
     this._recurringMaterializerService,
     this._notificationInsightsService,
     this._osBackgroundSyncScheduler,
+    this._featureFlagStore,
+    this._accountRepository,
   );
 
   final SmsAutoImportService _smsAutoImportService;
+  final MpesaHistoricalImportScanner _historicalImportScanner;
   final RecurringMaterializerService _recurringMaterializerService;
   final NotificationInsightsService _notificationInsightsService;
   final OsBackgroundSyncScheduler _osBackgroundSyncScheduler;
+  final FeatureFlagStore _featureFlagStore;
+  final AccountRepository _accountRepository;
 
   BackgroundSyncStrategy get _strategy => BackgroundSyncStrategy.forPlatform();
 
@@ -24,6 +34,10 @@ class BackgroundSyncCoordinator {
     if (hasRuntimeEnv('FLUTTER_TEST')) {
       return;
     }
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
+    await _historicalImportScanner.runOnce();
     await _osBackgroundSyncScheduler.initializeAndSchedule();
     await _smsAutoImportService.start(interval: _strategy.smsInterval);
     await _recurringMaterializerService.start(
@@ -38,16 +52,30 @@ class BackgroundSyncCoordinator {
   }
 
   Future<void> syncNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
     await _smsAutoImportService.syncNow();
   }
 
   Future<void> materializeNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
     await _recurringMaterializerService.syncNow();
   }
 
   Future<void> runNotificationSweep() async {
+    if (!await _isEnabled(FeatureFlag.smartNotifications)) {
+      return;
+    }
     await _notificationInsightsService.runSweep();
   }
+
+  Future<bool> _isEnabled(FeatureFlag flag) => _featureFlagStore.isEnabledFor(
+    flag,
+    userId: _accountRepository.currentSession().userId,
+  );
 }
 
 class BackgroundSyncStrategy {

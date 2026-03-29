@@ -1,6 +1,9 @@
-import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_spacing.dart';
+import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/features/auth/presentation/widgets/auth_form_intro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,7 +23,7 @@ class AuthFormCard extends StatelessWidget {
     required this.onTogglePasswordVisibility,
     required this.onToggleConfirmPasswordVisibility,
     required this.onSubmit,
-    required this.onToggleMode,
+    required this.onModeChanged,
   });
 
   final GlobalKey<FormState> formKey;
@@ -36,7 +39,7 @@ class AuthFormCard extends StatelessWidget {
   final VoidCallback onTogglePasswordVisibility;
   final VoidCallback onToggleConfirmPasswordVisibility;
   final VoidCallback onSubmit;
-  final VoidCallback onToggleMode;
+  final ValueChanged<bool> onModeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -50,28 +53,23 @@ class AuthFormCard extends StatelessWidget {
       normalMs: 160,
       reducedMs: 0,
     );
-    return GlassCard(
-      borderRadius: 28,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      child: Form(
-        key: formKey,
+
+    return Form(
+      key: formKey,
+      child: AutofillGroup(
         child: AnimatedSize(
           duration: resizeDuration,
           curve: Curves.easeOutCubic,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                isSignUp ? 'Create Account' : 'Welcome Back',
-                style: Theme.of(context).textTheme.titleLarge,
+              AuthFormIntro(
+                isSignUp: isSignUp,
+                isLoading: isLoading,
+                onModeChanged: onModeChanged,
               ),
-              const SizedBox(height: 6),
-              Text(
-                isSignUp ? 'Join BELTECH today' : 'Sign in to your account',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
               AnimatedSwitcher(
                 duration: sectionDuration,
                 switchInCurve: Curves.easeOutCubic,
@@ -87,48 +85,51 @@ class AuthFormCard extends StatelessWidget {
                           TextFormField(
                             controller: nameController,
                             textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.username],
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(10),
+                            ],
                             decoration: const InputDecoration(
-                              hintText: 'Username',
-                              prefixIcon: Icon(Icons.person_outline),
+                              labelText: 'Username',
+                              hintText: 'Choose a short username',
+                              prefixIcon: Icon(Icons.person_outline_rounded),
                             ),
                             validator: (value) {
-                              if (!isSignUp) {
-                                return null;
-                              }
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Name is required';
-                              }
+                              if (!isSignUp) return null;
+                              final v = value?.trim() ?? '';
+                              if (v.isEmpty) return 'Username is required';
+                              if (v.length > 10) return 'Max 10 characters';
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           TextFormField(
                             controller: phoneController,
                             textInputAction: TextInputAction.next,
                             keyboardType: TextInputType.phone,
+                            autofillHints: const [
+                              AutofillHints.telephoneNumber,
+                            ],
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(10),
                             ],
                             decoration: const InputDecoration(
-                              hintText: 'Phone',
-                              prefixIcon: Icon(Icons.call_outlined),
+                              labelText: 'Phone',
+                              hintText: '07XXXXXXXX',
+                              prefixIcon: Icon(Icons.phone_outlined),
                             ),
                             validator: (value) {
-                              if (!isSignUp) {
-                                return null;
-                              }
+                              if (!isSignUp) return null;
                               final phone = value?.trim() ?? '';
-                              if (phone.isEmpty) {
-                                return 'Phone is required';
-                              }
+                              if (phone.isEmpty) return 'Phone is required';
                               if (!RegExp(r'^\d{10}$').hasMatch(phone)) {
                                 return 'Phone must be exactly 10 digits';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                         ],
                       )
                     : const SizedBox.shrink(
@@ -139,9 +140,11 @@ class AuthFormCard extends StatelessWidget {
                 controller: emailController,
                 textInputAction: TextInputAction.next,
                 keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
                 decoration: const InputDecoration(
-                  hintText: 'Email',
-                  prefixIcon: Icon(Icons.mail_outline),
+                  labelText: 'Email',
+                  hintText: 'you@example.com',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
                 ),
                 validator: (value) {
                   if (value == null || !value.contains('@')) {
@@ -150,20 +153,26 @@ class AuthFormCard extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: passwordController,
                 textInputAction:
                     isSignUp ? TextInputAction.next : TextInputAction.done,
                 obscureText: hidePassword,
+                autofillHints: [
+                  isSignUp
+                      ? AutofillHints.newPassword
+                      : AutofillHints.password,
+                ],
                 onFieldSubmitted: (_) {
-                  if (!isSignUp && !isLoading) {
-                    onSubmit();
-                  }
+                  if (!isSignUp && !isLoading) onSubmit();
                 },
                 decoration: InputDecoration(
-                  hintText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
+                  labelText: 'Password',
+                  hintText: isSignUp
+                      ? 'Create a secure password'
+                      : '••••••••',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
                     onPressed: onTogglePasswordVisibility,
                     icon: Icon(
@@ -192,19 +201,20 @@ class AuthFormCard extends StatelessWidget {
                     ? Column(
                         key: const ValueKey<String>('confirm-password'),
                         children: [
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           TextFormField(
                             controller: confirmPasswordController,
                             textInputAction: TextInputAction.done,
                             obscureText: hideConfirmPassword,
+                            autofillHints: const [AutofillHints.newPassword],
                             onFieldSubmitted: (_) {
-                              if (!isLoading) {
-                                onSubmit();
-                              }
+                              if (!isLoading) onSubmit();
                             },
                             decoration: InputDecoration(
-                              hintText: 'Confirm Password',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              labelText: 'Confirm Password',
+                              hintText: 'Re-enter your password',
+                              prefixIcon:
+                                  const Icon(Icons.lock_outline_rounded),
                               suffixIcon: IconButton(
                                 onPressed: onToggleConfirmPasswordVisibility,
                                 icon: Icon(
@@ -215,9 +225,7 @@ class AuthFormCard extends StatelessWidget {
                               ),
                             ),
                             validator: (value) {
-                              if (!isSignUp) {
-                                return null;
-                              }
+                              if (!isSignUp) return null;
                               if (value != passwordController.text) {
                                 return 'Passwords do not match';
                               }
@@ -230,37 +238,62 @@ class AuthFormCard extends StatelessWidget {
                         key: ValueKey<String>('no-confirm-password'),
                       ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: isLoading ? null : onSubmit,
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(isSignUp ? 'Create Account' : 'Sign In'),
+              if (!isSignUp) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Navigate to forgot password screen when implemented
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          fontSize: AppTypography.sm,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
+              ],
+              const SizedBox(height: 24),
+              AppButton(
+                label: isSignUp ? 'Sign Up' : 'Sign In',
+                onPressed: isLoading ? null : onSubmit,
+                loading: isLoading,
+                variant: AppButtonVariant.primary,
+                size: AppButtonSize.lg,
+                fullWidth: true,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.xxl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     isSignUp
-                        ? 'Already have an account?'
-                        : "Don't have an account?",
-                    style: Theme.of(context).textTheme.bodyMedium,
+                        ? 'Already have an account? '
+                        : 'Don\'t have an account? ',
+                    style: TextStyle(
+                      fontSize: AppTypography.sm,
+                      color: AppColors.textSecondaryFor(Theme.of(context).brightness),
+                    ),
                   ),
-                  TextButton(
-                    onPressed: onToggleMode,
-                    child: Text(
-                      isSignUp ? 'Sign In' : 'Sign Up',
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: isLoading ? null : () => onModeChanged(!isSignUp),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        isSignUp ? 'Sign In' : 'Sign Up',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sm,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
                       ),
                     ),
                   ),

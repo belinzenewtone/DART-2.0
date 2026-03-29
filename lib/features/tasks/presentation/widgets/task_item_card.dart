@@ -1,13 +1,21 @@
 import 'package:beltech/core/theme/app_colors.dart';
+import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_motion.dart';
+import 'package:beltech/core/theme/app_radius.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
+import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/presentation/widgets/task_item_visuals.dart';
 import 'package:flutter/material.dart';
 
 class TaskItemCard extends StatelessWidget {
   const TaskItemCard({
     super.key,
     required this.task,
+    required this.selectionMode,
+    required this.selected,
+    required this.onSelectToggle,
     required this.onToggle,
     required this.busy,
     required this.onEdit,
@@ -15,6 +23,9 @@ class TaskItemCard extends StatelessWidget {
   });
 
   final TaskItem task;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onSelectToggle;
   final Future<void> Function() onToggle;
   final bool busy;
   final Future<void> Function() onEdit;
@@ -25,23 +36,16 @@ class TaskItemCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final brightness = Theme.of(context).brightness;
     final secondaryText = AppColors.textSecondaryFor(brightness);
-    final localizations = MaterialLocalizations.of(context);
     final swipeDuration = AppMotion.swipe(context);
     final resizeDuration = AppMotion.resize(context);
-    final priorityColor = _priorityColor(task.priority);
-    final isOverdue = !task.completed &&
-        task.dueDate != null &&
-        task.dueDate!.isBefore(DateTime.now());
-    final dueLabel = task.completed
-        ? 'Completed'
-        : task.dueDate == null
-            ? 'Pending'
-            : 'Due ${localizations.formatMediumDate(task.dueDate!)} '
-                '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(task.dueDate!), alwaysUse24HourFormat: true)}';
+    final priorityColor = taskPriorityColor(task.priority);
+    final countdownBadge = _buildCountdownBadge(task);
 
     return Dismissible(
       key: ValueKey('task-${task.id}'),
-      direction: busy ? DismissDirection.none : DismissDirection.horizontal,
+      direction: busy || selectionMode
+          ? DismissDirection.none
+          : DismissDirection.horizontal,
       movementDuration: swipeDuration,
       resizeDuration: resizeDuration,
       dismissThresholds: const {
@@ -59,165 +63,226 @@ class TaskItemCard extends StatelessWidget {
         }
         return false;
       },
-      background: const _SwipeBackground(
-        color: Color(0xFF1E5C2A),
+      background: const TaskSwipeBackground(
+        color: AppColors.successMuted,
         icon: Icons.check_circle_outline,
         alignment: Alignment.centerLeft,
+        semanticsLabel: 'Swipe action: mark task complete',
       ),
-      secondaryBackground: const _SwipeBackground(
-        color: Color(0xFF612226),
+      secondaryBackground: const TaskSwipeBackground(
+        color: AppColors.dangerMuted,
         icon: Icons.delete_outline,
         alignment: Alignment.centerRight,
+        semanticsLabel: 'Swipe action: delete task',
       ),
       child: GlassCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 4,
-              height: 76,
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: priorityColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const SizedBox(width: 10),
-            IconButton(
-              onPressed: busy
-                  ? null
-                  : () {
-                      onToggle();
-                    },
-              icon: Icon(
-                task.completed
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: task.completed ? AppColors.success : secondaryText,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    style: textTheme.bodyLarge?.copyWith(
-                      decoration:
-                          task.completed ? TextDecoration.lineThrough : null,
-                    ),
+        tone: selectionMode && selected
+            ? GlassCardTone.accent
+            : GlassCardTone.standard,
+        accentColor: selectionMode && selected ? AppColors.accent : null,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(GlassStyles.borderRadius),
+          onTap: selectionMode ? onSelectToggle : null,
+          onLongPress: busy
+              ? null
+              : () {
+                  AppHaptics.lightImpact();
+                  onSelectToggle();
+                },
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: priorityColor,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  if (task.description != null && task.description!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        task.description!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: secondaryText,
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  tooltip: selectionMode
+                      ? (selected ? 'Deselect task' : 'Select task')
+                      : (task.completed ? 'Mark incomplete' : 'Mark complete'),
+                  onPressed: busy
+                      ? null
+                      : () {
+                          AppHaptics.lightImpact();
+                          if (selectionMode) {
+                            onSelectToggle();
+                            return;
+                          }
+                          onToggle();
+                        },
+                  icon: Icon(
+                    selectionMode
+                        ? (selected
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded)
+                        : (task.completed
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked),
+                    color: selectionMode
+                        ? (selected ? AppColors.accent : secondaryText)
+                        : (task.completed ? AppColors.success : secondaryText),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: textTheme.bodyLarge?.copyWith(
+                          decoration: task.completed
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
-                    ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _PriorityBadge(priority: task.priority),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          dueLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: task.completed
-                                ? AppColors.success
-                                : (isOverdue
-                                    ? AppColors.danger
-                                    : secondaryText),
+                      if (task.description != null &&
+                          task.description!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            task.description!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: secondaryText,
+                            ),
                           ),
                         ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          AppCapsule(
+                            label: _priorityLabel(task.priority),
+                            color: priorityColor,
+                            variant: AppCapsuleVariant.subtle,
+                            size: AppCapsuleSize.sm,
+                          ),
+                          if (countdownBadge != null)
+                            countdownBadge
+                          else if (task.completed)
+                            const AppCapsule(
+                              label: 'Completed',
+                              color: AppColors.success,
+                              variant: AppCapsuleVariant.subtle,
+                              size: AppCapsuleSize.sm,
+                              icon: Icons.check_rounded,
+                            )
+                          else if (task.dueDate != null)
+                            AppCapsule(
+                              label: _formatDate(task.dueDate!),
+                              color: secondaryText,
+                              variant: AppCapsuleVariant.subtle,
+                              size: AppCapsuleSize.sm,
+                              icon: Icons.schedule_rounded,
+                            ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                if (!selectionMode)
+                  IconButton(
+                    tooltip: 'Edit task',
+                    onPressed: busy
+                        ? null
+                        : () {
+                            onEdit();
+                          },
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+              ],
             ),
-            IconButton(
-              onPressed: busy
-                  ? null
-                  : () {
-                      onEdit();
-                    },
-              icon: const Icon(Icons.edit_outlined),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
 
-Color _priorityColor(TaskPriority priority) {
-  return switch (priority) {
-    TaskPriority.high => AppColors.danger,
-    TaskPriority.medium => AppColors.warning,
-    TaskPriority.low => AppColors.accent,
-  };
-}
+  Widget? _buildCountdownBadge(TaskItem task) {
+    if (task.completed || task.dueDate == null) {
+      return null;
+    }
 
-class _SwipeBackground extends StatelessWidget {
-  const _SwipeBackground({
-    required this.color,
-    required this.icon,
-    required this.alignment,
-  });
+    final now = DateTime.now();
+    final due = task.dueDate!;
+    final difference = due.difference(now);
 
-  final Color color;
-  final IconData icon;
-  final Alignment alignment;
+    if (difference.isNegative) {
+      // Overdue
+      final days = (-difference.inDays).abs();
+      final label = days == 0 ? 'Due today' : '${days}d overdue';
+      return AppCapsule(
+        label: label,
+        color: AppColors.danger,
+        variant: AppCapsuleVariant.subtle,
+        size: AppCapsuleSize.sm,
+        icon: Icons.warning_amber_rounded,
+      );
+    } else if (difference.inDays == 0) {
+      // Due today
+      return const AppCapsule(
+        label: 'Today',
+        color: AppColors.warning,
+        variant: AppCapsuleVariant.subtle,
+        size: AppCapsuleSize.sm,
+        icon: Icons.schedule_rounded,
+      );
+    } else if (difference.inHours < 3 && difference.inHours > 0) {
+      // Due in less than 3 hours
+      final hours = difference.inHours;
+      return AppCapsule(
+        label: 'In ${hours}h',
+        color: AppColors.warning,
+        variant: AppCapsuleVariant.subtle,
+        size: AppCapsuleSize.sm,
+        icon: Icons.schedule_rounded,
+      );
+    } else if (difference.inDays == 1) {
+      // Due tomorrow
+      return const AppCapsule(
+        label: 'Tomorrow',
+        color: AppColors.accent,
+        variant: AppCapsuleVariant.subtle,
+        size: AppCapsuleSize.sm,
+        icon: Icons.event_rounded,
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      alignment: alignment,
-      child: Icon(icon, color: Colors.white, size: 30),
-    );
+    return null;
   }
-}
 
-class _PriorityBadge extends StatelessWidget {
-  const _PriorityBadge({required this.priority});
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final tomorrow = now.add(const Duration(days: 1));
 
-  final TaskPriority priority;
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
+      return 'Today';
+    }
+    if (date.year == tomorrow.year &&
+        date.month == tomorrow.month &&
+        date.day == tomorrow.day) {
+      return 'Tomorrow';
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (priority) {
-      TaskPriority.high => ('Urgent', AppColors.danger),
-      TaskPriority.medium => ('Important', AppColors.warning),
-      TaskPriority.low => ('Neutral', AppColors.accent),
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  String _priorityLabel(TaskPriority priority) {
+    return switch (priority) {
+      TaskPriority.high => 'Urgent',
+      TaskPriority.medium => 'Important',
+      TaskPriority.low => 'Neutral',
     };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
   }
 }

@@ -1,4 +1,5 @@
-import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/core/widgets/app_button.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
 import 'package:flutter/material.dart';
 
 class BudgetInput {
@@ -22,69 +23,83 @@ Future<BudgetInput?> showBudgetTargetDialog(
   );
   final formKey = GlobalKey<FormState>();
 
-  final result = await showAppDialog<BudgetInput>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(initialCategory == null ? 'New Budget' : 'Edit Budget'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  try {
+    return await showModalBottomSheet<BudgetInput>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return AppFormSheet(
+          title: initialCategory == null ? 'New Budget' : 'Edit Budget',
+          subtitle: 'Set a monthly limit with the same unified input pattern.',
+          onClose: () => Navigator.of(context).pop(),
+          footer: Row(
             children: [
-              TextFormField(
-                controller: categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Category is required';
-                  }
-                  return null;
-                },
+              Expanded(
+                child: AppButton(
+                  label: 'Cancel',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: limitController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration:
-                    const InputDecoration(labelText: 'Monthly Limit (KES)'),
-                validator: (value) {
-                  final parsed = double.tryParse(value ?? '');
-                  if (parsed == null || parsed <= 0) {
-                    return 'Enter a valid amount';
-                  }
-                  return null;
-                },
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  label: 'Save',
+                  onPressed: () {
+                    if (formKey.currentState?.validate() != true) {
+                      return;
+                    }
+                    Navigator.of(context).pop(
+                      BudgetInput(
+                        category: categoryController.text.trim(),
+                        monthlyLimitKes:
+                            double.parse(limitController.text.trim()),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) {
-                return;
-              }
-              Navigator.of(context).pop(
-                BudgetInput(
-                  category: categoryController.text.trim(),
-                  monthlyLimitKes: double.parse(limitController.text.trim()),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: categoryController,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Category is required';
+                    }
+                    return null;
+                  },
                 ),
-              );
-            },
-            child: const Text('Save'),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: limitController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      const InputDecoration(labelText: 'Monthly Limit (KES)'),
+                  validator: (value) {
+                    final parsed = double.tryParse(value ?? '');
+                    if (parsed == null || parsed <= 0) {
+                      return 'Enter a valid amount';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
-      );
-    },
-  );
-
-  categoryController.dispose();
-  limitController.dispose();
-  return result;
+        );
+      },
+    );
+  } finally {
+    categoryController.dispose();
+    limitController.dispose();
+  }
 }

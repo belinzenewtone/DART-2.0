@@ -1,6 +1,9 @@
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
+import 'package:beltech/core/widgets/app_button.dart';
 import 'package:beltech/core/widgets/app_dialog.dart';
+import 'package:beltech/core/widgets/app_dropdown_field.dart';
+import 'package:beltech/core/widgets/app_form_sheet.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_window.dart';
 import 'package:flutter/material.dart';
 
@@ -20,74 +23,83 @@ Future<SmsImportInput?> showSmsImportDialog(BuildContext context) async {
   final controller = TextEditingController();
   var selectedWindow = ExpenseImportWindow.last30Days;
 
-  return showAppDialog<SmsImportInput>(
+  return showModalBottomSheet<SmsImportInput>(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {
-        final brightness = Theme.of(context).brightness;
-        return AlertDialog(
-          backgroundColor: AppColors.surfaceFor(brightness),
-          title: const Text('Import MPESA SMS'),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<ExpenseImportWindow>(
-                  initialValue: selectedWindow,
-                  decoration: const InputDecoration(labelText: 'Import period'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: ExpenseImportWindow.last24Hours,
-                      child: Text('Last 24 hours'),
-                    ),
-                    DropdownMenuItem(
-                      value: ExpenseImportWindow.last7Days,
-                      child: Text('Last 7 days'),
-                    ),
-                    DropdownMenuItem(
-                      value: ExpenseImportWindow.last30Days,
-                      child: Text('Last 30 days'),
-                    ),
-                    DropdownMenuItem(
-                      value: ExpenseImportWindow.last90Days,
-                      child: Text('Last 90 days'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => selectedWindow = value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  minLines: 6,
-                  maxLines: 12,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Paste MPESA SMS lines only.\nExample:\nQW12AB34CD Confirmed. Ksh1,250.00 sent to DELITOS HOTEL on 7/3/26 at 6:24 PM.',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(
-                SmsImportInput(
-                  payload: controller.text.trim(),
-                  window: selectedWindow,
+        return AppFormSheet(
+          title: 'Import MPESA SMS',
+          subtitle:
+              'Use the same cleaner import controls as the rest of the app.',
+          onClose: () => Navigator.of(context).pop(),
+          footer: Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Cancel',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-              child: const Text('Import'),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  label: 'Import',
+                  onPressed: () => Navigator.of(context).pop(
+                    SmsImportInput(
+                      payload: controller.text.trim(),
+                      window: selectedWindow,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppDropdownField<ExpenseImportWindow>(
+                label: 'Import period',
+                value: selectedWindow,
+                items: const [
+                  DropdownMenuItem(
+                    value: ExpenseImportWindow.last24Hours,
+                    child: Text('Last 24 hours'),
+                  ),
+                  DropdownMenuItem(
+                    value: ExpenseImportWindow.last7Days,
+                    child: Text('Last 7 days'),
+                  ),
+                  DropdownMenuItem(
+                    value: ExpenseImportWindow.last30Days,
+                    child: Text('Last 30 days'),
+                  ),
+                  DropdownMenuItem(
+                    value: ExpenseImportWindow.last90Days,
+                    child: Text('Last 90 days'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => selectedWindow = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                minLines: 6,
+                maxLines: 12,
+                decoration: const InputDecoration(
+                  labelText: 'SMS text',
+                  hintText:
+                      'Paste MPESA SMS lines only.\nExample:\nQW12AB34CD Confirmed. Ksh1,250.00 sent to DELITOS HOTEL on 7/3/26 at 6:24 PM.',
+                ),
+              ),
+            ],
+          ),
         );
       },
     ),

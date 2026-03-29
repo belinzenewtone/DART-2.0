@@ -8,12 +8,11 @@ abstract class TasksRepository {
     String? description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   });
 
-  Future<void> toggleCompleted({
-    required int taskId,
-    required bool completed,
-  });
+  Future<void> toggleCompleted({required int taskId, required bool completed});
 
   Future<void> updateTask({
     required int taskId,
@@ -21,6 +20,8 @@ abstract class TasksRepository {
     String? description,
     required DateTime? dueDate,
     required TaskPriority priority,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 30,
   });
 
   Future<void> deleteTask(int taskId);

@@ -7,40 +7,54 @@ import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
 import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final visibleMonthProvider = StateProvider<DateTime>(
-  (_) {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, 1);
-  },
-);
+final visibleMonthProvider = StateProvider<DateTime>((_) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, 1);
+});
 
 final selectedDayProvider = StateProvider<DateTime>((_) => DateTime.now());
 
-final dayEventsProvider = StreamProvider<List<CalendarEvent>>(
-  (ref) {
-    final day = ref.watch(selectedDayProvider);
-    return ref.watch(calendarRepositoryProvider).watchEventsForDay(day);
-  },
-);
+final dayEventsProvider = StreamProvider<List<CalendarEvent>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  return ref.watch(calendarRepositoryProvider).watchEventsForDay(day);
+});
 
-final monthEventTypesProvider = StreamProvider<Map<int, CalendarEventType>>(
-  (ref) {
-    final visibleMonth = ref.watch(visibleMonthProvider);
-    final monthStart = DateTime(visibleMonth.year, visibleMonth.month, 1);
-    final monthEnd = DateTime(visibleMonth.year, visibleMonth.month + 1, 1);
-    return ref
-        .watch(calendarRepositoryProvider)
-        .watchEventsInRange(monthStart, monthEnd)
-        .map((events) {
-      final dayTypes = <int, CalendarEventType>{};
-      for (final event in events) {
-        dayTypes[event.startAt.day] =
-            _preferType(dayTypes[event.startAt.day], event.type);
-      }
-      return dayTypes;
-    });
-  },
-);
+final agendaEventsProvider = StreamProvider<List<CalendarEvent>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  final rangeStart = DateTime(day.year, day.month, day.day);
+  final rangeEnd = rangeStart.add(const Duration(days: 14));
+  return ref
+      .watch(calendarRepositoryProvider)
+      .watchEventsInRange(rangeStart, rangeEnd)
+      .map((events) {
+        final sorted = [...events]
+          ..sort((left, right) => left.startAt.compareTo(right.startAt));
+        return sorted
+            .where((event) => !event.startAt.isBefore(rangeStart))
+            .toList(growable: false);
+      });
+});
+
+final monthEventTypesProvider = StreamProvider<Map<int, CalendarEventType>>((
+  ref,
+) {
+  final visibleMonth = ref.watch(visibleMonthProvider);
+  final monthStart = DateTime(visibleMonth.year, visibleMonth.month, 1);
+  final monthEnd = DateTime(visibleMonth.year, visibleMonth.month + 1, 1);
+  return ref
+      .watch(calendarRepositoryProvider)
+      .watchEventsInRange(monthStart, monthEnd)
+      .map((events) {
+        final dayTypes = <int, CalendarEventType>{};
+        for (final event in events) {
+          dayTypes[event.startAt.day] = _preferType(
+            dayTypes[event.startAt.day],
+            event.type,
+          );
+        }
+        return dayTypes;
+      });
+});
 
 class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
   @override
@@ -63,6 +77,8 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     CalendarEventType type = CalendarEventType.general,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) async {
     final repository = ref.read(calendarRepositoryProvider);
     final notifications = ref.read(localNotificationServiceProvider);
@@ -75,14 +91,19 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         type: type,
         endAt: endAt,
         note: note,
+        reminderEnabled: reminderEnabled,
+        reminderMinutesBefore: reminderMinutesBefore,
       );
-      await _scheduleCreatedEventReminder(
-        repository: repository,
-        notifications: notifications,
-        title: title,
-        startAt: startAt,
-        note: note,
-      );
+      if (reminderEnabled) {
+        await _scheduleCreatedEventReminder(
+          repository: repository,
+          notifications: notifications,
+          title: title,
+          startAt: startAt,
+          note: note,
+          reminderMinutesBefore: reminderMinutesBefore,
+        );
+      }
     });
   }
 
@@ -94,6 +115,8 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     required CalendarEventType type,
     DateTime? endAt,
     String? note,
+    bool reminderEnabled = true,
+    int reminderMinutesBefore = 15,
   }) async {
     final repository = ref.read(calendarRepositoryProvider);
     final notifications = ref.read(localNotificationServiceProvider);
@@ -107,12 +130,19 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         type: type,
         endAt: endAt,
         note: note,
+        reminderEnabled: reminderEnabled,
+        reminderMinutesBefore: reminderMinutesBefore,
       );
-      await notifications.scheduleEventReminder(
-        eventId: eventId,
-        title: title,
-        startAt: startAt,
-      );
+      if (reminderEnabled) {
+        await notifications.scheduleEventReminder(
+          eventId: eventId,
+          title: title,
+          startAt: startAt,
+          minutesBefore: reminderMinutesBefore,
+        );
+      } else {
+        await notifications.cancelEventReminder(eventId);
+      }
     });
   }
 
@@ -147,6 +177,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
     required String title,
     required DateTime startAt,
     String? note,
+    required int reminderMinutesBefore,
   }) async {
     try {
       final dayStart = DateTime(startAt.year, startAt.month, startAt.day);
@@ -164,6 +195,7 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
         eventId: created.id,
         title: created.title,
         startAt: created.startAt,
+        minutesBefore: reminderMinutesBefore,
       );
     } catch (_) {
       return;
@@ -173,8 +205,8 @@ class CalendarWriteController extends AutoDisposeAsyncNotifier<void> {
 
 final calendarWriteControllerProvider =
     AutoDisposeAsyncNotifierProvider<CalendarWriteController, void>(
-  CalendarWriteController.new,
-);
+      CalendarWriteController.new,
+    );
 
 CalendarEventType _preferType(
   CalendarEventType? current,

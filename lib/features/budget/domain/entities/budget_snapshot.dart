@@ -24,13 +24,22 @@ class BudgetCategoryItem {
     }
     return ratio;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BudgetCategoryItem &&
+          runtimeType == other.runtimeType &&
+          category == other.category &&
+          monthlyLimitKes == other.monthlyLimitKes &&
+          spentKes == other.spentKes;
+
+  @override
+  int get hashCode => Object.hash(category, monthlyLimitKes, spentKes);
 }
 
 class BudgetSnapshot {
-  const BudgetSnapshot({
-    required this.month,
-    required this.items,
-  });
+  const BudgetSnapshot({required this.month, required this.items});
 
   final DateTime month;
   final List<BudgetCategoryItem> items;
@@ -40,4 +49,30 @@ class BudgetSnapshot {
 
   double get totalSpentKes =>
       items.fold<double>(0, (sum, item) => sum + item.spentKes);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BudgetSnapshot &&
+          runtimeType == other.runtimeType &&
+          month == other.month &&
+          _listEquals(items, other.items);
+
+  @override
+  int get hashCode => Object.hash(month, Object.hashAll(items));
+}
+
+bool _listEquals<T>(List<T> left, List<T> right) {
+  if (identical(left, right)) {
+    return true;
+  }
+  if (left.length != right.length) {
+    return false;
+  }
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] != right[i]) {
+      return false;
+    }
+  }
+  return true;
 }

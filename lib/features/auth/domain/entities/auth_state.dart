@@ -11,6 +11,24 @@ class AuthState {
   final bool isAuthenticating;
   final String? errorMessage;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AuthState &&
+          runtimeType == other.runtimeType &&
+          biometricSupported == other.biometricSupported &&
+          biometricEnabled == other.biometricEnabled &&
+          isAuthenticating == other.isAuthenticating &&
+          errorMessage == other.errorMessage;
+
+  @override
+  int get hashCode => Object.hash(
+    biometricSupported,
+    biometricEnabled,
+    isAuthenticating,
+    errorMessage,
+  );
+
   AuthState copyWith({
     bool? biometricSupported,
     bool? biometricEnabled,

@@ -9,11 +9,44 @@ import 'package:timezone/timezone.dart' as tz;
 
 class LocalNotificationService {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
-  static const int _taskOffset = 100000;
-  static const int _eventOffset = 200000;
-  static const int _insightOffset = 300000;
+  final _tapController = StreamController<String>.broadcast();
+
+  /// Emits the route payload string whenever a notification is tapped
+  /// while the app is in the foreground or restored from background.
+  Stream<String> get notificationTapRoutes => _tapController.stream;
+
+  void dispose() => _tapController.close();
+
+  // ── Notification ID namespaces ────────────────────────────────────────────
+  // IDs are computed via FNV-1a hash of (namespace + ":" + recordId), so each
+  // (namespace, recordId) pair maps to a unique, stable positive int32. This
+  // eliminates the collision risk of the old additive-offset approach (which
+  // would collide whenever a taskId exceeded 100,000).
+  static const String _nsTask = 'task';
+  static const String _nsEvent = 'event';
+  static const String _nsInsight = 'insight';
+
+  /// Deterministic FNV-1a hash of [namespace]:[recordId] → positive int32.
+  static int _notifId(String namespace, int recordId) {
+    var hash = 0x811c9dc5; // FNV-1a 32-bit offset basis
+    void fnvByte(int byte) {
+      hash ^= byte;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF; // FNV prime
+    }
+
+    for (final c in namespace.codeUnits) {
+      fnvByte(c);
+    }
+    fnvByte(0x3A); // ':' separator
+    var id = recordId;
+    do {
+      fnvByte(id & 0xFF);
+      id >>= 8;
+    } while (id > 0);
+    return hash & 0x7FFFFFFF; // ensure positive (signed int32 safe)
+  }
 
   static const String _channelId = 'task_event_reminders';
   static const String _channelName = 'Task and Event Reminders';
@@ -28,46 +61,52 @@ class LocalNotificationService {
     required int taskId,
     required String title,
     required DateTime dueDate,
+    int minutesBefore = 30,
   }) async {
     final hasExplicitTime = dueDate.hour != 0 || dueDate.minute != 0;
-    final reminderAt = hasExplicitTime
+    final dueAnchor = hasExplicitTime
         ? dueDate
-        : DateTime(
-            dueDate.year,
-            dueDate.month,
-            dueDate.day,
-            9,
-          );
+        : DateTime(dueDate.year, dueDate.month, dueDate.day, 9);
+    final reminderAt = minutesBefore <= 0
+        ? dueAnchor
+        : dueAnchor.subtract(Duration(minutes: minutesBefore));
     await _scheduleAt(
-      id: _taskOffset + taskId,
+      id: _notifId(_nsTask, taskId),
       title: 'Task Reminder',
       body: '$title is due soon.',
       when: reminderAt,
+      payload: '/tasks',
     );
   }
 
   Future<void> cancelTaskReminder(int taskId) {
-    return _cancelById(_taskOffset + taskId);
+    return _cancelById(_notifId(_nsTask, taskId));
   }
 
   Future<void> scheduleEventReminder({
     required int eventId,
     required String title,
     required DateTime startAt,
+    int minutesBefore = 15,
   }) async {
     final now = DateTime.now();
-    final fifteenBefore = startAt.subtract(const Duration(minutes: 15));
-    final reminderAt = fifteenBefore.isAfter(now) ? fifteenBefore : startAt;
+    final preferredReminderAt = minutesBefore <= 0
+        ? startAt
+        : startAt.subtract(Duration(minutes: minutesBefore));
+    final reminderAt = preferredReminderAt.isAfter(now)
+        ? preferredReminderAt
+        : startAt;
     await _scheduleAt(
-      id: _eventOffset + eventId,
+      id: _notifId(_nsEvent, eventId),
       title: 'Upcoming Event',
       body: '$title starts soon.',
       when: reminderAt,
+      payload: '/calendar',
     );
   }
 
   Future<void> cancelEventReminder(int eventId) {
-    return _cancelById(_eventOffset + eventId);
+    return _cancelById(_notifId(_nsEvent, eventId));
   }
 
   Future<void> showInsight({
@@ -81,10 +120,11 @@ class LocalNotificationService {
     }
     await _ensureInitialized();
     await _plugin.show(
-      id: _insightOffset + (insightId % 99999),
+      id: _notifId(_nsInsight, insightId),
       title: title,
       body: body,
       notificationDetails: _details,
+      payload: '/home',
     );
   }
 
@@ -112,21 +152,18 @@ class LocalNotificationService {
   }) async {
     await _ensureInitialized();
     final pending = await _plugin.pendingNotificationRequests();
-    final taskSet = activeTaskIds.toSet();
-    final eventSet = activeEventIds.toSet();
+
+    // Build the complete set of IDs that should currently be scheduled.
+    // Insights use show() (immediate) so they never appear in pending — safe
+    // to cancel anything not in this whitelist.
+    final validIds = <int>{
+      for (final id in activeTaskIds) _notifId(_nsTask, id),
+      for (final id in activeEventIds) _notifId(_nsEvent, id),
+    };
+
     for (final item in pending) {
-      if (item.id >= _taskOffset && item.id < _eventOffset) {
-        final taskId = item.id - _taskOffset;
-        if (!taskSet.contains(taskId)) {
-          await _plugin.cancel(id: item.id);
-        }
-        continue;
-      }
-      if (item.id >= _eventOffset) {
-        final eventId = item.id - _eventOffset;
-        if (!eventSet.contains(eventId)) {
-          await _plugin.cancel(id: item.id);
-        }
+      if (!validIds.contains(item.id)) {
+        await _plugin.cancel(id: item.id);
       }
     }
   }
@@ -136,6 +173,7 @@ class LocalNotificationService {
     required String title,
     required String body,
     required DateTime when,
+    String? payload,
   }) async {
     final enabled = await isNotificationsEnabled();
     if (!enabled) {
@@ -152,6 +190,7 @@ class LocalNotificationService {
       scheduledDate: tz.TZDateTime.from(when, tz.local),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: payload,
     );
   }
 
@@ -159,6 +198,27 @@ class LocalNotificationService {
     await _ensureInitialized();
     await _plugin.cancel(id: id);
   }
+
+  void _onNotificationTap(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null && !_tapController.isClosed) {
+      _tapController.add(payload);
+    }
+  }
+
+  /// Initialises the plugin and returns the route payload from the notification
+  /// that cold-started the app, or `null` if the app was launched normally.
+  Future<String?> getNotificationLaunchRoute() async {
+    await _ensureInitialized();
+    if (kIsWeb) return null;
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details == null || !details.didNotificationLaunchApp) return null;
+    return details.notificationResponse?.payload;
+  }
+
+  /// Public entry point so callers (e.g. [AppShell]) can eagerly initialise
+  /// the plugin on startup without scheduling a notification first.
+  Future<void> initialize() => _ensureInitialized();
 
   Future<void> _ensureInitialized() async {
     if (_initialized) {
@@ -197,22 +257,28 @@ class LocalNotificationService {
       ),
     );
 
-    await _plugin.initialize(settings: initSettings);
+    await _plugin.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: _onNotificationTap,
+    );
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.requestNotificationsPermission();
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     } else if (defaultTargetPlatform == TargetPlatform.macOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              MacOSFlutterLocalNotificationsPlugin>()
+            MacOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
 

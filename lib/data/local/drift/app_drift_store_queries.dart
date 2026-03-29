@@ -2,7 +2,8 @@ part of 'app_drift_store.dart';
 
 class _AppDriftQueries {
   static Future<HomeOverviewRecord> loadHomeOverview(
-      AppDriftStore store) async {
+    AppDriftStore store,
+  ) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final tomorrowStart = todayStart.add(const Duration(days: 1));
@@ -25,7 +26,8 @@ class _AppDriftQueries {
   }
 
   static Future<ExpensesSnapshotRecord> loadExpensesSnapshot(
-      AppDriftStore store) async {
+    AppDriftStore store,
+  ) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final tomorrowStart = todayStart.add(const Duration(days: 1));
@@ -36,15 +38,16 @@ class _AppDriftQueries {
       'SELECT category, SUM(amount) AS total FROM transactions GROUP BY category',
       const [],
     );
-    final categories = categoryRows
-        .map(
-          (row) => CategoryTotalRecord(
-            category: (row['category'] ?? 'Other') as String,
-            totalKes: store._asDouble(row['total']),
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.totalKes.compareTo(a.totalKes));
+    final categories =
+        categoryRows
+            .map(
+              (row) => CategoryTotalRecord(
+                category: (row['category'] ?? 'Other') as String,
+                totalKes: store._asDouble(row['total']),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.totalKes.compareTo(a.totalKes));
 
     return ExpensesSnapshotRecord(
       todayKes: await sumTransactionsBetween(store, todayStart, tomorrowStart),
@@ -56,7 +59,7 @@ class _AppDriftQueries {
 
   static Future<List<DriftTaskRecord>> loadTasks(AppDriftStore store) async {
     final rows = await store._db.runSelect(
-      'SELECT id, title, description, completed, due_at, priority FROM tasks ORDER BY id DESC',
+      'SELECT id, title, description, completed, due_at, priority, reminder_enabled, reminder_minutes_before FROM tasks ORDER BY id DESC',
       const [],
     );
     return rows
@@ -67,10 +70,13 @@ class _AppDriftQueries {
             description: row['description'] as String?,
             completed: store._asInt(row['completed']) == 1,
             priority: (row['priority'] ?? 'medium') as String,
+            reminderEnabled: store._asInt(row['reminder_enabled']) == 1,
+            reminderMinutesBefore: store._asInt(row['reminder_minutes_before']),
             dueDate: row['due_at'] == null
                 ? null
                 : DateTime.fromMillisecondsSinceEpoch(
-                    store._asInt(row['due_at'])),
+                    store._asInt(row['due_at']),
+                  ),
           ),
         )
         .toList();
@@ -91,7 +97,7 @@ class _AppDriftQueries {
     DateTime end,
   ) async {
     final rows = await store._db.runSelect(
-      'SELECT id, title, start_at, end_at, note, completed, priority, event_type FROM events WHERE start_at >= ? AND start_at < ? ORDER BY completed ASC, start_at ASC',
+      'SELECT id, title, start_at, end_at, note, completed, priority, event_type, reminder_enabled, reminder_minutes_before FROM events WHERE start_at >= ? AND start_at < ? ORDER BY completed ASC, start_at ASC',
       [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
     );
     return rows
@@ -100,14 +106,18 @@ class _AppDriftQueries {
             id: store._asInt(row['id']),
             title: (row['title'] ?? '') as String,
             startAt: DateTime.fromMillisecondsSinceEpoch(
-                store._asInt(row['start_at'])),
+              store._asInt(row['start_at']),
+            ),
             completed: store._asInt(row['completed']) == 1,
             priority: (row['priority'] ?? 'medium') as String,
             eventType: (row['event_type'] ?? 'general') as String,
+            reminderEnabled: store._asInt(row['reminder_enabled']) == 1,
+            reminderMinutesBefore: store._asInt(row['reminder_minutes_before']),
             endAt: row['end_at'] == null
                 ? null
                 : DateTime.fromMillisecondsSinceEpoch(
-                    store._asInt(row['end_at'])),
+                    store._asInt(row['end_at']),
+                  ),
             note: row['note'] as String?,
           ),
         )
@@ -119,7 +129,7 @@ class _AppDriftQueries {
     required int limit,
   }) async {
     final rows = await store._db.runSelect(
-      'SELECT id, title, category, amount, occurred_at FROM transactions ORDER BY occurred_at DESC LIMIT ?',
+      'SELECT id, title, category, amount, occurred_at, balance_after FROM transactions ORDER BY occurred_at DESC LIMIT ?',
       [limit],
     );
     return rows
@@ -130,7 +140,11 @@ class _AppDriftQueries {
             category: (row['category'] ?? 'Other') as String,
             amountKes: store._asDouble(row['amount']),
             occurredAt: DateTime.fromMillisecondsSinceEpoch(
-                store._asInt(row['occurred_at'])),
+              store._asInt(row['occurred_at']),
+            ),
+            balanceAfterKes: row['balance_after'] == null
+                ? null
+                : store._asDouble(row['balance_after']),
           ),
         )
         .toList();
@@ -141,8 +155,11 @@ class _AppDriftQueries {
     DateTime now,
   ) async {
     const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    final startSunday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday % 7));
+    final startSunday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday % 7));
     final result = <String, double>{};
     for (var index = 0; index < labels.length; index++) {
       final start = startSunday.add(Duration(days: index));
@@ -165,8 +182,10 @@ class _AppDriftQueries {
   }
 
   static Future<int> countRows(AppDriftStore store, String tableName) async {
-    final rows = await store._db
-        .runSelect('SELECT COUNT(*) AS total FROM $tableName', const []);
+    final rows = await store._db.runSelect(
+      'SELECT COUNT(*) AS total FROM $tableName',
+      const [],
+    );
     return store._asInt(rows.first['total']);
   }
 
@@ -176,7 +195,9 @@ class _AppDriftQueries {
     String whereSql,
   ) async {
     final rows = await store._db.runSelect(
-        'SELECT COUNT(*) AS total FROM $tableName WHERE $whereSql', const []);
+      'SELECT COUNT(*) AS total FROM $tableName WHERE $whereSql',
+      const [],
+    );
     return store._asInt(rows.first['total']);
   }
 }

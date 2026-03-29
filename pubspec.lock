@@ -241,6 +241,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  cupertino_icons:
+    dependency: "direct main"
+    description:
+      name: cupertino_icons
+      sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.8"
   dart_jsonwebtoken:
     dependency: transitive
     description:
@@ -520,6 +528,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_windowmanager:
+    dependency: "direct main"
+    description:
+      path: "third_party/flutter_windowmanager"
+      relative: true
+    source: path
+    version: "0.2.0"
   functions_client:
     dependency: transitive
     description:
@@ -696,6 +711,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  jni:
+    dependency: transitive
+    description:
+      name: jni
+      sha256: d2c361082d554d4593c3012e26f6b188f902acd291330f13d6427641a92b3da1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.14.2"
   js:
     dependency: transitive
     description:
@@ -1112,6 +1135,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  sentry:
+    dependency: transitive
+    description:
+      name: sentry
+      sha256: a49b4fb1cba576fe216347dc2a0e6d76076fb998e6012857db96f991c23b7b3c
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.15.0"
+  sentry_flutter:
+    dependency: "direct main"
+    description:
+      name: sentry_flutter
+      sha256: "25150030c93bd1d4b727ab61cfb09e99121c69ce90fa820bb9ca16dab433e43a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.15.0"
   share_plus:
     dependency: "direct main"
     description:
@@ -1200,6 +1239,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  shorebird_code_push:
+    dependency: "direct main"
+    description:
+      name: shorebird_code_push
+      sha256: "77511427c51906dd39d3bb1e6b0a8c49777975f9b0a5d073e35c9087a8a36bb6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.6"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -1221,6 +1268,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.2"
+  sqlcipher_flutter_libs:
+    dependency: "direct main"
+    description:
+      path: "third_party/sqlcipher_flutter_libs"
+      relative: true
+    source: path
+    version: "0.5.7"
   sqlite3:
     dependency: transitive
     description:
@@ -1229,14 +1283,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.6"
-  sqlite3_flutter_libs:
-    dependency: "direct main"
-    description:
-      name: sqlite3_flutter_libs
-      sha256: "1e800ebe7f85a80a66adacaa6febe4d5f4d8b75f244e9838a27cb2ffc7aec08d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.41"
   sqlparser:
     dependency: transitive
     description:
@@ -1534,5 +1580,5 @@ packages:
     source: hosted
     version: "2.1.0"
 sdks:
-  dart: ">=3.10.3 <4.0.0"
-  flutter: ">=3.38.4"
+  dart: ">=3.11.4 <4.0.0"
+  flutter: ">=3.41.6 <4.0.0"
