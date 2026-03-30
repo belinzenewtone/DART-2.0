@@ -72,9 +72,9 @@ class _BudgetProgressRow extends StatelessWidget {
                 value: item.usageRatio,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(100),
-                backgroundColor: Colors.white12,
+                backgroundColor: AppColors.surfaceMuted,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  exceeded ? Colors.redAccent : Colors.blueAccent,
+                  exceeded ? AppColors.danger : AppColors.accent,
                 ),
               ),
             ],

@@ -60,12 +60,15 @@ class ExportScreen extends ConsumerWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.16),
+                    color: AppColors.accent.withValues(alpha: 0.30),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.accentLight.withValues(alpha: 0.40),
+                    ),
                   ),
                   child: const Icon(
                     Icons.download_rounded,
-                    color: AppColors.accent,
+                    color: AppColors.accentLight,
                     size: 22,
                   ),
                 ),

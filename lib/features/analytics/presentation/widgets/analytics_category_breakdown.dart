@@ -25,8 +25,12 @@ class AnalyticsCategoryBreakdown extends StatelessWidget {
           if (categories.isEmpty)
             const Text('No spending data available.')
           else
-            for (final entry in categories.take(8)) ...[
-              _CategoryRow(entry: entry),
+            for (int i = 0; i < categories.take(8).length; i++) ...[
+              if (i > 0) ...[
+                const Divider(height: 1, thickness: 1, color: AppColors.border),
+                const SizedBox(height: 10),
+              ],
+              _CategoryRow(entry: categories[i]),
               const SizedBox(height: 10),
             ],
         ],

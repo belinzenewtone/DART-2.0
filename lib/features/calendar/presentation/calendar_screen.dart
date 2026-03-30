@@ -76,10 +76,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final agendaState = ref.watch(agendaEventsProvider);
     final monthEventTypesState = ref.watch(monthEventTypesProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
-    final eventsPaneHeight = (MediaQuery.sizeOf(context).height * 0.36).clamp(
-      240.0,
-      380.0,
-    );
     _syncSearchTargetDay(ref, selectedDay);
 
     ref.listen<AsyncValue<void>>(calendarWriteControllerProvider, (
@@ -114,7 +110,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       agendaState: agendaState,
       monthEventTypesState: monthEventTypesState,
       writeState: writeState,
-      eventsPaneHeight: eventsPaneHeight,
       title: title,
       weekDays: weekDays,
     );

@@ -78,16 +78,19 @@ class ExportScopeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       accentColor: isActive ? meta.color : null,
-      tone: GlassCardTone.muted,
+      tone: GlassCardTone.standard,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: meta.color.withValues(alpha: 0.14),
+              color: meta.color.withValues(alpha: 0.20),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: meta.color.withValues(alpha: 0.30),
+              ),
             ),
             child: Icon(meta.icon, color: meta.color, size: 18),
           ),
@@ -117,7 +120,7 @@ class ExportScopeCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: meta.color.withValues(alpha: 0.12),
+                          color: meta.color.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -136,16 +139,24 @@ class ExportScopeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          OutlinedButton(
-            onPressed: isLoading ? null : onExport,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: meta.color,
-              side: BorderSide(color: meta.color.withValues(alpha: 0.4)),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          GestureDetector(
+            onTap: isLoading ? null : onExport,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: meta.color.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: meta.color.withValues(alpha: 0.45)),
+              ),
+              child: Text(
+                'CSV',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: meta.color,
+                ),
+              ),
             ),
-            child: const Text('CSV', style: TextStyle(fontSize: 12)),
           ),
         ],
       ),

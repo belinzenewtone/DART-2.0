@@ -1,7 +1,10 @@
+import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/core/widgets/error_message.dart';
+import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/core/widgets/loading_indicator.dart';
 import 'package:beltech/core/widgets/page_header.dart';
 import 'package:beltech/core/widgets/page_shell.dart';
@@ -114,6 +117,82 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 const ProfileToolHub(),
+                const SizedBox(height: AppSpacing.sectionGap),
+                // ── Security — password + sign-out (below tool hub) ────────────
+                GlassCard(
+                  tone: GlassCardTone.muted,
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      InkWell(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(GlassStyles.borderRadius),
+                        ),
+                        onTap: () => showPasswordDialog(context, ref),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.warning.withValues(alpha: 0.18),
+                                child: const Icon(Icons.lock_outline_rounded,
+                                    color: AppColors.warning, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text('Password',
+                                    style: AppTypography.cardTitle(context)),
+                              ),
+                              const Icon(Icons.chevron_right_rounded,
+                                  color: AppColors.textMuted, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Divider(height: 1, color: AppColors.border.withValues(alpha: 0.3)),
+                      InkWell(
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(GlassStyles.borderRadius),
+                        ),
+                        onTap: authWriteState.isLoading
+                            ? null
+                            : () async {
+                                await ref
+                                    .read(accountAuthControllerProvider.notifier)
+                                    .signOut();
+                              },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.danger.withValues(alpha: 0.18),
+                                child: const Icon(Icons.logout_rounded,
+                                    color: AppColors.danger, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text('Sign Out',
+                                    style: AppTypography.cardTitle(context)
+                                        .copyWith(color: AppColors.danger)),
+                              ),
+                              if (authWriteState.isLoading)
+                                const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2))
+                              else
+                                const Icon(Icons.chevron_right_rounded,
+                                    color: AppColors.danger, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 Center(
                   child: Text(

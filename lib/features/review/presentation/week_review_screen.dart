@@ -1,6 +1,5 @@
 import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
@@ -22,7 +21,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'week_review_screen_stats.dart';
-part 'week_review_screen_trends.dart';
 
 class WeekReviewScreen extends ConsumerStatefulWidget {
   const WeekReviewScreen({super.key});
@@ -111,13 +109,6 @@ class _ReviewContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final netAmount = review.netKes;
-    final isPositive = netAmount >= 0;
-    final completionRate = review.completionRateThisWeek;
-    final completionMessage = review.tasksDueThisWeek == 0
-        ? 'Set due dates this week to unlock better tracking.'
-        : 'You completed ${(completionRate * 100).toStringAsFixed(0)}% of tasks due this week.';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -156,64 +147,26 @@ class _ReviewContent extends ConsumerWidget {
         ),
         if (ritualState.valueOrNull != null)
           const SizedBox(height: AppSpacing.sectionGap),
-        GlassCard(
-          tone: GlassCardTone.accent,
-          accentColor: AppColors.violet,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your momentum this week',
-                style: AppTypography.sectionTitle(context),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                completionMessage,
-                style: AppTypography.bodySm(context),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionGap),
         _StatGrid(
           topLeft: (
             label: 'Tasks Done',
             value: '${review.completedThisWeek}',
-            color: AppColors.success
+            color: AppColors.success,
           ),
           topRight: (
             label: 'Open Tasks',
             value: '${review.pendingCount}',
-            color: AppColors.warning
+            color: AppColors.warning,
           ),
           bottomLeft: (
             label: 'Weekly Spend',
             value: CurrencyFormatter.money(review.weeklySpendKes),
-            color: AppColors.danger
+            color: AppColors.danger,
           ),
           bottomRight: (
             label: 'Income',
             value: CurrencyFormatter.money(review.weeklyIncomeKes),
-            color: AppColors.success
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionGap),
-        GlassCard(
-          tone: GlassCardTone.muted,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Net this week', style: AppTypography.cardTitle(context)),
-              Text(
-                CurrencyFormatter.money(netAmount),
-                style: AppTypography.amount(context).copyWith(
-                  color: isPositive ? AppColors.success : AppColors.danger,
-                ),
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.fade,
-              ),
-            ],
+            color: AppColors.success,
           ),
         ),
         const SizedBox(height: AppSpacing.sectionGap),
@@ -246,31 +199,14 @@ class _ReviewContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sectionGap),
-        const SectionHeader('Trends vs Last Week'),
-        _TrendGrid(review: review),
-        const SizedBox(height: AppSpacing.sectionGap),
         const SectionHeader('Actionable Insights'),
         const SizedBox(height: 8),
-        ...review.insights.map((insight) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
-              child: _InsightCard(insight: insight),
-            )),
-        const SizedBox(height: AppSpacing.sectionGap),
-        const SectionHeader('Coming Up'),
-        if (review.upcomingEventsCount == 0)
-          const AppEmptyState(
-            icon: Icons.calendar_today_outlined,
-            title: 'No upcoming events',
-            subtitle: 'You\'re all clear for now',
-          )
-        else
-          GlassCard(
-            tone: GlassCardTone.muted,
-            child: Text(
-              '${review.upcomingEventsCount} upcoming event${review.upcomingEventsCount != 1 ? 's' : ''}',
-              style: AppTypography.bodySm(context),
-            ),
+        ...review.insights.map(
+          (insight) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
+            child: _InsightCard(insight: insight),
           ),
+        ),
         const SizedBox(height: AppSpacing.sectionGap),
         // ── Bottom actions row ───────────────────────────────────────────────
         _WeekReviewActions(review: review),
@@ -309,8 +245,11 @@ class _WinsRisksSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.emoji_events_rounded,
-                              size: 14, color: AppColors.success),
+                          const Icon(
+                            Icons.emoji_events_rounded,
+                            size: 14,
+                            color: AppColors.success,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Wins',
@@ -347,8 +286,11 @@ class _WinsRisksSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              size: 14, color: AppColors.warning),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 14,
+                            color: AppColors.warning,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Watch Out',
@@ -383,15 +325,16 @@ class _WinsRisksSection extends StatelessWidget {
     final wins = <String>[];
     if (r.completedThisWeek > 0) {
       wins.add(
-          '${r.completedThisWeek} task${r.completedThisWeek > 1 ? 's' : ''} completed');
+        '${r.completedThisWeek} task${r.completedThisWeek > 1 ? 's' : ''} completed',
+      );
     }
     if (r.spendDeltaKes < 0 && r.previousWeeklySpendKes > 0) {
       final pct = ((-r.spendDeltaKes / r.previousWeeklySpendKes) * 100).round();
       wins.add('Spend down $pct% vs last week');
     }
     if (r.incomeDeltaKes > 0 && r.previousWeeklyIncomeKes > 0) {
-      final pct =
-          ((r.incomeDeltaKes / r.previousWeeklyIncomeKes) * 100).round();
+      final pct = ((r.incomeDeltaKes / r.previousWeeklyIncomeKes) * 100)
+          .round();
       wins.add('Income up $pct% vs last week');
     }
     if (r.completionRateThisWeek >= 0.8 && r.tasksDueThisWeek >= 3) {
@@ -414,7 +357,8 @@ class _WinsRisksSection extends StatelessWidget {
     }
     if (r.completionRateThisWeek < 0.4 && r.tasksDueThisWeek >= 3) {
       risks.add(
-          'Low completion rate — ${r.completedThisWeek}/${r.tasksDueThisWeek} due tasks');
+        'Low completion rate — ${r.completedThisWeek}/${r.tasksDueThisWeek} due tasks',
+      );
     }
     return risks.take(3).toList();
   }
@@ -438,8 +382,11 @@ class _StreakBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.local_fire_department_rounded,
-              color: AppColors.violet, size: 20),
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: AppColors.violet,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Text(
             '$streak-week review streak',
@@ -470,10 +417,7 @@ class _WeekReviewActions extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Wrap Up',
-            style: AppTypography.cardTitle(context),
-          ),
+          Text('Wrap Up', style: AppTypography.cardTitle(context)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -492,7 +436,9 @@ class _WeekReviewActions extends ConsumerWidget {
                             .toList();
                         if (completedIds.isEmpty) {
                           AppFeedback.info(
-                              context, 'No completed tasks to archive.');
+                            context,
+                            'No completed tasks to archive.',
+                          );
                           return;
                         }
                         final count = await ref
@@ -500,7 +446,9 @@ class _WeekReviewActions extends ConsumerWidget {
                             .archiveTasks(completedIds);
                         if (context.mounted) {
                           AppFeedback.success(
-                              context, 'Archived $count completed task(s).');
+                            context,
+                            'Archived $count completed task(s).',
+                          );
                         }
                       },
                 icon: Icons.archive_outlined,
@@ -532,11 +480,14 @@ class _WeekReviewActions extends ConsumerWidget {
     final buffer = StringBuffer();
     buffer.writeln('📊 Week Review Summary');
     buffer.writeln(
-        'Tasks done: ${review.completedThisWeek} | Open: ${review.pendingCount}');
+      'Tasks done: ${review.completedThisWeek} | Open: ${review.pendingCount}',
+    );
     buffer.writeln(
-        'Weekly spend: KES ${review.weeklySpendKes.toStringAsFixed(0)}');
+      'Weekly spend: KES ${review.weeklySpendKes.toStringAsFixed(0)}',
+    );
     buffer.writeln(
-        'Weekly income: KES ${review.weeklyIncomeKes.toStringAsFixed(0)}');
+      'Weekly income: KES ${review.weeklyIncomeKes.toStringAsFixed(0)}',
+    );
     buffer.writeln('Net: KES ${review.netKes.toStringAsFixed(0)}');
     return buffer.toString().trim();
   }

@@ -6,20 +6,16 @@ class _CalendarEventsPane extends StatelessWidget {
     required this.eventsState,
     required this.selectedDay,
     required this.writeState,
-    required this.eventsPaneHeight,
   });
 
   final _CalendarScreenState state;
   final AsyncValue<List<CalendarEvent>> eventsState;
   final DateTime selectedDay;
   final AsyncValue<void> writeState;
-  final double eventsPaneHeight;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: eventsPaneHeight,
-      child: AbsorbPointer(
+    return AbsorbPointer(
         absorbing: state._swiping,
         child: eventsState.when(
           skipLoadingOnReload: true,
@@ -85,7 +81,6 @@ class _CalendarEventsPane extends StatelessWidget {
             onRetry: () => state.ref.invalidate(dayEventsProvider),
           ),
         ),
-      ),
-    );
+      );
   }
 }

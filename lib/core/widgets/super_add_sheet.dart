@@ -30,7 +30,14 @@ Future<SuperEntryInput?> showSuperAddSheet(
   var reminderMinutesBefore =
       initialInput?.reminderMinutesBefore ??
       (kind == SuperEntryKind.event ? 15 : 30);
-  DateTime? dueAt = initialInput?.dueAt;
+  DateTime? dueAt = initialInput?.dueAt ??
+      DateTime(
+        selectedBaseDate.year,
+        selectedBaseDate.month,
+        selectedBaseDate.day,
+        17,
+        0,
+      );
   var startAt =
       initialInput?.startAt ??
       DateTime(

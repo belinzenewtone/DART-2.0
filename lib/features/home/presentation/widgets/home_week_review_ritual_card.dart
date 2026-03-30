@@ -33,7 +33,7 @@ class HomeWeekReviewRitualCard extends ConsumerWidget {
             'WEEK OF ${DateFormat('MMM d').format(weekStart).toUpperCase()}';
 
         return GlassCard(
-          tone: GlassCardTone.accent,
+          tone: GlassCardTone.standard,
           accentColor: accent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: InkWell(

@@ -98,8 +98,8 @@ class SuperAddPrioritySelector extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-              right: priority == SuperEntryPriority.low ? 8 : 0,
-              left: priority == SuperEntryPriority.high ? 8 : 0,
+              right: priority == SuperEntryPriority.low ? 0 : 4,
+              left: priority == SuperEntryPriority.high ? 0 : 4,
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(14),
@@ -109,18 +109,20 @@ class SuperAddPrioritySelector extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: selectedState
-                      ? color.withValues(alpha: 0.88)
-                      : color.withValues(alpha: 0.2),
+                      ? color
+                      : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: selectedState ? color : AppColors.border,
+                  ),
                 ),
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: selectedState
-                        ? textPrimary
-                        : color.withValues(alpha: 0.95),
+                    color: selectedState ? Colors.white : color,
                     fontWeight: FontWeight.w700,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -156,18 +158,22 @@ class SuperAddEventTypeSelector extends StatelessWidget {
           onTap: () => onChanged(item),
           child: AnimatedContainer(
             duration: duration,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: selectedState
                   ? AppColors.accent
-                  : AppColors.accent.withValues(alpha: 0.16),
+                  : AppColors.surfaceMuted,
               borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selectedState ? AppColors.accent : AppColors.border,
+              ),
             ),
             child: Text(
               item.name[0].toUpperCase() + item.name.substring(1),
               style: TextStyle(
-                color: selectedState ? Colors.white : AppColors.accent,
+                color: selectedState ? Colors.white : AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
           ),
@@ -215,20 +221,24 @@ class SuperAddReminderMinutesSelector extends StatelessWidget {
               child: AnimatedContainer(
                 duration: duration,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: 12,
+                  vertical: 7,
                 ),
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.accent
-                      : AppColors.accent.withValues(alpha: 0.16),
+                      : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: selected ? AppColors.accent : AppColors.border,
+                  ),
                 ),
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: selected ? Colors.white : AppColors.accent,
+                    color: selected ? Colors.white : AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
                 ),
               ),

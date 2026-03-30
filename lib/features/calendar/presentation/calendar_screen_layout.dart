@@ -10,7 +10,6 @@ class _CalendarLayout extends StatelessWidget {
     required this.agendaState,
     required this.monthEventTypesState,
     required this.writeState,
-    required this.eventsPaneHeight,
     required this.title,
     required this.weekDays,
   });
@@ -23,7 +22,6 @@ class _CalendarLayout extends StatelessWidget {
   final AsyncValue<List<CalendarEvent>> agendaState;
   final AsyncValue<Map<int, CalendarEventType>> monthEventTypesState;
   final AsyncValue<void> writeState;
-  final double eventsPaneHeight;
   final String title;
   final List<DateTime> weekDays;
 
@@ -257,7 +255,6 @@ class _CalendarLayout extends StatelessWidget {
                         eventsState: eventsState,
                         selectedDay: selectedDay,
                         writeState: writeState,
-                        eventsPaneHeight: eventsPaneHeight,
                       ),
                     ],
                   ),

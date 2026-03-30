@@ -31,8 +31,8 @@ class GlassCard extends StatelessWidget {
     // Resolve colors similar to RN GlassCard tone styles
     final bgColor = switch (tone) {
       GlassCardTone.accent => brightness == Brightness.light
-          ? AppColors.surfaceFor(brightness) // fallback
-          : AppColors.surfaceAccent,
+          ? effectiveAccent.withValues(alpha: 0.10)
+          : effectiveAccent.withValues(alpha: 0.22),
       GlassCardTone.muted => brightness == Brightness.light
           ? AppColors.surfaceMutedFor(brightness)
           : AppColors.surfaceMuted,

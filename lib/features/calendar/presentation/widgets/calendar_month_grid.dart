@@ -72,6 +72,9 @@ class CalendarMonthGrid extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isSelected ? AppColors.accent : Colors.transparent,
+                    border: !isSelected && isToday
+                        ? Border.all(color: AppColors.accentLight, width: 1.5)
+                        : null,
                   ),
                   child: Stack(
                     alignment: Alignment.center,
@@ -81,12 +84,17 @@ class CalendarMonthGrid extends StatelessWidget {
                         style: textTheme.bodyLarge?.copyWith(
                           color: isSelected
                               ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              : isToday
+                                  ? AppColors.accentLight
+                                  : AppColors.textPrimary,
+                          fontWeight: isToday || isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w400,
                         ),
                       ),
-                      if (isToday || hasEvents)
+                      if (hasEvents)
                         Positioned(
-                          bottom: 6,
+                          bottom: 5,
                           child: Container(
                             width: 4,
                             height: 4,

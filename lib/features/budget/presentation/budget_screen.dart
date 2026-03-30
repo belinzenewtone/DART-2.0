@@ -63,7 +63,10 @@ class BudgetScreen extends ConsumerWidget {
         ),
       ],
       child: ListView(
-        padding: AppSpacing.sectionPadding(context),
+        padding: EdgeInsets.only(
+          top: 8,
+          bottom: AppSpacing.sectionBottom + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           GlassCard(
             tone: GlassCardTone.muted,

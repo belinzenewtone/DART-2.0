@@ -110,10 +110,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  Future<void> _finish() async {
+  Future<void> _finishWithMode(DataModePreference mode) async {
+    await persistDataModePreference(mode);
+    ref.read(preferredDataModeProvider.notifier).state = mode;
     await ref.read(onboardingRepositoryProvider).markOnboardingDone();
     widget.onDone();
   }
+
+  Future<void> _finish() => _finishWithMode(DataModePreference.local);
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +244,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     ),
                                   ),
                                 ),
-                                onPressed: _finish,
+                                onPressed: () => _finishWithMode(DataModePreference.local),
                                 child: const Text('Start Local Workspace', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                               ),
                               const SizedBox(height: 12),
@@ -253,7 +257,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                                onPressed: _finish,
+                                onPressed: () => _finishWithMode(DataModePreference.cloud),
                                 child: const Text('Use Cloud Sync', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                               ),
                             ],

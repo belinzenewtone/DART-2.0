@@ -1,9 +1,5 @@
-import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:beltech/core/widgets/app_button.dart';
-import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/profile/domain/entities/user_profile.dart';
 import 'package:beltech/features/profile/presentation/widgets/profile_avatar.dart';
@@ -60,25 +56,34 @@ class ProfileContentSection extends StatelessWidget {
                       children: [
                         Text(
                           profile.name,
-                          style: AppTypography.sectionTitle(context).copyWith(
+                          style: const TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           workspaceLabel,
-                          style: AppTypography.bodySm(context),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8),
-                        AppCapsule(
-                          label: 'Member since ${profile.memberSinceLabel}',
-                          color: AppColors.accent,
-                          variant: AppCapsuleVariant.subtle,
-                          size: AppCapsuleSize.sm,
+                        const SizedBox(height: 6),
+                        Text(
+                          'Member since ${profile.memberSinceLabel}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -108,87 +113,6 @@ class ProfileContentSection extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionGap),
-        // ── Security section — password + sign-out ─────────────────────────────
-        GlassCard(
-          tone: GlassCardTone.muted,
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              InkWell(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(GlassStyles.borderRadius),
-                ),
-                onTap: onChangePassword,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor:
-                            AppColors.warning.withValues(alpha: 0.18),
-                        child: const Icon(Icons.lock_outline_rounded,
-                            color: AppColors.warning, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Password',
-                          style: AppTypography.cardTitle(context),
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: AppColors.textMuted, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-              if (showSignOut) ...[
-                Divider(
-                    height: 1, color: AppColors.border.withValues(alpha: 0.3)),
-                InkWell(
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(GlassStyles.borderRadius),
-                  ),
-                  onTap: signingOut ? null : onSignOut,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor:
-                              AppColors.danger.withValues(alpha: 0.18),
-                          child: const Icon(Icons.logout_rounded,
-                              color: AppColors.danger, size: 18),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Sign Out',
-                            style: AppTypography.cardTitle(context)
-                                .copyWith(color: AppColors.danger),
-                          ),
-                        ),
-                        if (signingOut)
-                          const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                        else
-                          const Icon(Icons.chevron_right_rounded,
-                              color: AppColors.danger, size: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),

@@ -15,46 +15,52 @@ class AnalyticsOverviewCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: 'This Month',
-                value: CurrencyFormatter.money(snapshot.totalSpentThisMonthKes),
-                icon: Icons.payments_outlined,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  title: 'This Month',
+                  value: CurrencyFormatter.money(snapshot.totalSpentThisMonthKes),
+                  icon: Icons.payments_outlined,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _MetricCard(
-                title: 'Daily Avg',
-                value:
-                    CurrencyFormatter.money(snapshot.averageDailySpendingKes),
-                icon: Icons.show_chart,
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MetricCard(
+                  title: 'Daily Avg',
+                  value:
+                      CurrencyFormatter.money(snapshot.averageDailySpendingKes),
+                  icon: Icons.show_chart,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: 'Tasks',
-                value: '${snapshot.totalTasksCompleted} done',
-                secondaryValue: '${snapshot.totalTasksPending} pending',
-                icon: Icons.check_circle_outline,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  title: 'Tasks',
+                  value: '${snapshot.totalTasksCompleted} done',
+                  secondaryValue: '${snapshot.totalTasksPending} pending',
+                  icon: Icons.check_circle_outline,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _MetricCard(
-                title: 'Productivity',
-                value: '${snapshot.productivityScore.toStringAsFixed(0)}%',
-                icon: Icons.bolt_outlined,
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MetricCard(
+                  title: 'Productivity',
+                  value: '${snapshot.productivityScore.toStringAsFixed(0)}%',
+                  icon: Icons.bolt_outlined,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
