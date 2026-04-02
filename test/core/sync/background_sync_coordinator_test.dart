@@ -8,6 +8,7 @@ import 'package:beltech/core/sync/sms_auto_import_service.dart';
 import 'package:beltech/features/auth/domain/entities/account_session.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/features/recurring/data/services/recurring_materializer_service.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -131,4 +132,20 @@ void main() {
       verify(() => insightsService.runSweep()).called(1);
     },
   );
+
+  test('android strategy uses near-real-time sms cadence', () {
+    final strategy = BackgroundSyncStrategy.forTargetPlatform(
+      TargetPlatform.android,
+    );
+    expect(strategy.smsInterval, const Duration(minutes: 2));
+    expect(strategy.recurringInterval, const Duration(minutes: 2));
+  });
+
+  test('non-android strategy keeps conservative cadence', () {
+    final strategy = BackgroundSyncStrategy.forTargetPlatform(
+      TargetPlatform.iOS,
+    );
+    expect(strategy.smsInterval, const Duration(minutes: 10));
+    expect(strategy.recurringInterval, const Duration(minutes: 5));
+  });
 }

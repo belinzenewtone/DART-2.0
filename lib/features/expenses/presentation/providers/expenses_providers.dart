@@ -25,36 +25,50 @@ final importExpensesUseCaseProvider = Provider<ImportExpensesUseCase>(
 
 final manageExpenseImportReviewUseCaseProvider =
     Provider<ManageExpenseImportReviewUseCase>(
-  (ref) => ManageExpenseImportReviewUseCase(
-    ref.watch(expensesRepositoryProvider),
-  ),
-);
+      (ref) => ManageExpenseImportReviewUseCase(
+        ref.watch(expensesRepositoryProvider),
+      ),
+    );
 
-final expenseImportMetricsProvider = FutureProvider<ExpenseImportMetrics>(
-  (ref) => ref.watch(manageExpenseImportReviewUseCaseProvider).fetchMetrics(),
-);
+final expenseImportMetricsProvider = FutureProvider<ExpenseImportMetrics>((
+  ref,
+) {
+  // Keep review/intelligence data fresh whenever the underlying store emits.
+  ref.watch(expensesSnapshotProvider);
+  return ref.watch(manageExpenseImportReviewUseCaseProvider).fetchMetrics();
+});
 
-final expenseReviewQueueProvider = FutureProvider<List<ExpenseReviewItem>>(
-  (ref) => ref
+final expenseReviewQueueProvider = FutureProvider<List<ExpenseReviewItem>>((
+  ref,
+) {
+  ref.watch(expensesSnapshotProvider);
+  return ref
       .watch(manageExpenseImportReviewUseCaseProvider)
-      .fetchReviewQueue(limit: 20),
-);
+      .fetchReviewQueue(limit: 20);
+});
 
 final expenseQuarantineQueueProvider =
-    FutureProvider<List<ExpenseQuarantineItem>>(
-  (ref) => ref
-      .watch(manageExpenseImportReviewUseCaseProvider)
-      .fetchQuarantine(limit: 20),
-);
+    FutureProvider<List<ExpenseQuarantineItem>>((ref) {
+      ref.watch(expensesSnapshotProvider);
+      return ref
+          .watch(manageExpenseImportReviewUseCaseProvider)
+          .fetchQuarantine(limit: 20);
+    });
 
-final expensePaybillProfilesProvider = FutureProvider<List<PaybillProfile>>(
-  (ref) => ref.watch(expensesRepositoryProvider).fetchPaybillProfiles(limit: 8),
-);
+final expensePaybillProfilesProvider = FutureProvider<List<PaybillProfile>>((
+  ref,
+) {
+  ref.watch(expensesSnapshotProvider);
+  return ref.watch(expensesRepositoryProvider).fetchPaybillProfiles(limit: 8);
+});
 
 final expenseFulizaLifecycleProvider =
-    FutureProvider<List<FulizaLifecycleEvent>>(
-  (ref) => ref.watch(expensesRepositoryProvider).fetchFulizaLifecycle(limit: 8),
-);
+    FutureProvider<List<FulizaLifecycleEvent>>((ref) {
+      ref.watch(expensesSnapshotProvider);
+      return ref
+          .watch(expensesRepositoryProvider)
+          .fetchFulizaLifecycle(limit: 8);
+    });
 
 class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   @override
@@ -76,7 +90,9 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(expensesRepositoryProvider).addManualTransaction(
+      await ref
+          .read(expensesRepositoryProvider)
+          .addManualTransaction(
             title: title,
             category: category,
             amountKes: amountKes,
@@ -94,7 +110,9 @@ class ExpenseWriteController extends AutoDisposeAsyncNotifier<void> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(expensesRepositoryProvider).updateTransaction(
+      await ref
+          .read(expensesRepositoryProvider)
+          .updateTransaction(
             transactionId: transactionId,
             title: title,
             category: category,
@@ -231,5 +249,5 @@ DateTime fromWindow(ExpenseImportWindow window) {
 
 final expenseWriteControllerProvider =
     AutoDisposeAsyncNotifierProvider<ExpenseWriteController, void>(
-  ExpenseWriteController.new,
-);
+      ExpenseWriteController.new,
+    );

@@ -1,6 +1,7 @@
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/expenses/data/repositories/expenses_repository_impl.dart';
 import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
+import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -192,6 +193,67 @@ void main() {
     expect(rows, isNotEmpty);
     expect(rows.first['total'], 1);
   });
+
+  test(
+    're-importing same SMS revives retry queue rows for immediate processing',
+    () async {
+      final flaky = _FailsOnceMerchantLearningService();
+      final firstPass = ExpensesRepositoryImpl(
+        store,
+        const MpesaParserService(),
+        flaky,
+      );
+      const message =
+          'LM11NO22PQ Confirmed. Ksh900.00 sent to CITY MART on 7/3/26 at 6:24 PM.';
+
+      final importedFirst = await firstPass.importSmsMessages([message]);
+      expect(importedFirst, 0);
+
+      final retryRows = await store.executor.runSelect(
+        'SELECT status, next_retry_at FROM sms_import_queue WHERE source_hash = ? LIMIT 1',
+        [const MpesaParserService().sourceHash(message)],
+      );
+      expect(retryRows, isNotEmpty);
+      expect('${retryRows.first['status'] ?? ''}', 'retry');
+      expect(retryRows.first['next_retry_at'], isNotNull);
+
+      final secondPass = ExpensesRepositoryImpl(
+        store,
+        const MpesaParserService(),
+      );
+      final importedSecond = await secondPass.importSmsMessages([message]);
+
+      expect(importedSecond, 1);
+      final txRows = await store.executor.runSelect(
+        'SELECT COUNT(*) AS total FROM transactions WHERE LOWER(title) = ? AND amount = ?',
+        ['city mart', 900.0],
+      );
+      expect(txRows, isNotEmpty);
+      expect(txRows.first['total'], 1);
+    },
+  );
+}
+
+class _FailsOnceMerchantLearningService extends MerchantLearningService {
+  bool _hasFailed = false;
+
+  @override
+  Future<String> resolveCategory({
+    required String merchantTitle,
+    required String fallbackCategory,
+  }) async {
+    if (!_hasFailed) {
+      _hasFailed = true;
+      throw Exception('transient merchant learning outage');
+    }
+    return fallbackCategory;
+  }
+
+  @override
+  Future<void> learn({
+    required String merchantTitle,
+    required String category,
+  }) async {}
 }
 
 SmsMessage _sms({

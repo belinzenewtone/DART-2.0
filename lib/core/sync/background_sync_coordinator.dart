@@ -90,16 +90,20 @@ class BackgroundSyncStrategy {
   final String modeLabel;
 
   static BackgroundSyncStrategy forPlatform() {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      // Android-first: tighter cadence for higher reliability.
+    return forTargetPlatform(defaultTargetPlatform);
+  }
+
+  static BackgroundSyncStrategy forTargetPlatform(TargetPlatform platform) {
+    if (platform == TargetPlatform.android) {
+      // Android-first: near-real-time cadence with existing dedupe protections.
       return const BackgroundSyncStrategy(
-        smsInterval: Duration(minutes: 20),
+        smsInterval: Duration(minutes: 2),
         recurringInterval: Duration(minutes: 2),
-        modeLabel: 'android-first',
+        modeLabel: 'android-realtime',
       );
     }
     return const BackgroundSyncStrategy(
-      smsInterval: Duration(minutes: 45),
+      smsInterval: Duration(minutes: 10),
       recurringInterval: Duration(minutes: 5),
       modeLabel: 'foreground-fallback',
     );

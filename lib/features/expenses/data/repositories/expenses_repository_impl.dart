@@ -155,6 +155,44 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
           nowMs,
         ],
       );
+      final sourceTimestampMs =
+          envelope.sourceTimestamp?.millisecondsSinceEpoch;
+      await _store.executor.runUpdate(
+        'UPDATE sms_import_queue SET '
+        'raw_message = ?, '
+        'semantic_hash = ?, '
+        'source_timestamp = CASE '
+        '  WHEN ? IS NULL THEN source_timestamp '
+        '  WHEN source_timestamp IS NULL OR ? > source_timestamp THEN ? '
+        '  ELSE source_timestamp '
+        'END, '
+        'route = ?, '
+        'confidence = ?, '
+        'status = CASE WHEN status IN (?, ?) THEN ? ELSE status END, '
+        'next_retry_at = CASE WHEN status IN (?, ?) THEN NULL ELSE next_retry_at END, '
+        'last_error = CASE WHEN status IN (?, ?) THEN NULL ELSE last_error END, '
+        'updated_at = ? '
+        'WHERE scope = ? AND source_hash = ?',
+        [
+          message,
+          semanticHash,
+          sourceTimestampMs,
+          sourceTimestampMs,
+          sourceTimestampMs,
+          candidate?.route.name ?? MpesaParseRoute.quarantine.name,
+          candidate?.confidenceScore ?? 0,
+          'retry',
+          'failed',
+          'pending',
+          'retry',
+          'failed',
+          'retry',
+          'failed',
+          nowMs,
+          'local',
+          sourceHash,
+        ],
+      );
     }
   }
 

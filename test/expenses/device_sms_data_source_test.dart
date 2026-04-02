@@ -73,6 +73,24 @@ void main() {
     expect(entries.single.body, contains('Confirmed'));
     expect(entries.single.receivedAt, isNotNull);
   });
+
+  test('filters Fuliza notice noise even when sender is MPESA', () async {
+    final source = DeviceSmsDataSource(
+      isAndroid: () => true,
+      requestPermission: () async => true,
+      queryRunner: (_) async => [
+        _sms(
+          body:
+              'Dear customer, Fuliza M-PESA limit update: your available balance is Ksh1,200.00. Dial *234# for details.',
+          sender: 'MPESA',
+          date: DateTime.now(),
+        ),
+      ],
+    );
+
+    final entries = await source.loadLikelyMpesaEntries();
+    expect(entries, isEmpty);
+  });
 }
 
 SmsMessage _sms({

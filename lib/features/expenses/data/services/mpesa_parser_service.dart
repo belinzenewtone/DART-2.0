@@ -21,11 +21,11 @@ class MpesaParserService {
     caseSensitive: false,
   );
   static final RegExp _paybillPattern = RegExp(
-    r'(?:for account|account no\.?)\s*([a-z0-9-]{4,})',
+    r'(?:for\s+(?:account|acc(?:ount)?)(?:\s*(?:no\.?|number|#))?|account\s*(?:no\.?|number|#))\s*([a-z0-9-]{3,})',
     caseSensitive: false,
   );
   static final RegExp _sentToPattern = RegExp(
-    r'sent to\s+([a-z0-9 .,&-]{3,}?)(?=\s+(?:for account|on)\b|[.]|$)',
+    r'sent to\s+([a-z0-9 .,&-]{3,}?)(?=\s+(?:for\s+(?:account|acc(?:ount)?)(?:\s*(?:no\.?|number|#))?|on)\b|[.]|$)',
     caseSensitive: false,
   );
   static final RegExp _receivedFromPattern = RegExp(

@@ -56,7 +56,9 @@ final List<MpesaParserRule> mpesaParserRules = [
     reason: 'paybill',
     requiredPatterns: [
       RegExp('${_wordBoundary}sent\\s+to'),
-      RegExp('${_wordBoundary}for\\s+account'),
+      RegExp(
+        '${_wordBoundary}for\\s+(?:account|acc(?:ount)?)(?:\\s*(?:no\\.?|number|#))?',
+      ),
     ],
   ),
   MpesaParserRule(

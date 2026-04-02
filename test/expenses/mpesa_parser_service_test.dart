@@ -333,6 +333,25 @@ void main() {
       expect(r, isNotNull);
       expect(r!.occurredAt, fallback);
     });
+
+    test('supports 24-hour clock timestamps', () {
+      final r = parser.parseSingleDetailed(
+        'AA11BB22CC Confirmed. Ksh100.00 sent to JOHN on 1/1/26 at 18:24.',
+      );
+      expect(r, isNotNull);
+      expect(r!.occurredAt.hour, 18);
+      expect(r.occurredAt.minute, 24);
+    });
+
+    test('invalid calendar date falls back to provided timestamp', () {
+      final fallback = DateTime(2026, 1, 9, 8, 45);
+      final r = parser.parseSingleDetailed(
+        'AA11BB22CC Confirmed. Ksh100.00 sent to JOHN on 32/13/26 at 9:00 AM.',
+        fallbackOccurredAt: fallback,
+      );
+      expect(r, isNotNull);
+      expect(r!.occurredAt, fallback);
+    });
   });
 
   // ── parseSingleDetailed — quarantine cases ────────────────────────────────
@@ -410,6 +429,14 @@ void main() {
       final r = parser.parseSingleDetailed(
         'AA11BB22CC Confirmed. Ksh850.00 sent to KPLC PREPAID for account 34567 on 3/3/26 at 8:00 AM.',
       );
+      expect(r!.counterparty, 'Kplc Prepaid');
+    });
+
+    test('extracts paybill merchant when sms uses acc shorthand', () {
+      final r = parser.parseSingleDetailed(
+        'AA11BB22CC Confirmed. Ksh850.00 sent to KPLC PREPAID for acc 34567 on 3/3/26 at 8:00 AM.',
+      );
+      expect(r, isNotNull);
       expect(r!.counterparty, 'Kplc Prepaid');
     });
 
@@ -567,6 +594,15 @@ void main() {
         'QW12AB34CD Confirmed. Ksh500.00 sent to SAFARICOM for account 072ABC99 on 1/1/26 at 9:00 AM.',
       );
       expect(r!.paybillAccount, isNotNull);
+    });
+
+    test('extracts account when message uses for acc shorthand', () {
+      final r = parser.parseSingleDetailed(
+        'QW12AB34CD Confirmed. Ksh1,250.00 sent to KPLC PREPAID for acc 998877 on 7/3/26 at 6:24 PM.',
+      );
+      expect(r, isNotNull);
+      expect(r!.paybillAccount, '998877');
+      expect(r.transactionType, MpesaTransactionType.paybill);
     });
 
     test('null paybill account for non-paybill transaction', () {

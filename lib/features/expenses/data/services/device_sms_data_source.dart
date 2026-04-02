@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_filters.dart';
+import 'package:beltech/features/expenses/data/services/mpesa_parser_text.dart';
 
 typedef SmsPermissionRequester = Future<bool> Function();
 typedef SmsQueryRunner = Future<List<SmsMessage>> Function(SmsQuery query);
@@ -57,10 +59,13 @@ class DeviceSmsDataSource {
             }
           }
           final sender = (message.address ?? '').toLowerCase();
-          final normalized = body.toLowerCase();
+          final normalized = normalizeParserText(body);
+          final lowerNormalized = normalized.toLowerCase();
+          if (shouldIgnoreMpesaSms(lowerNormalized)) {
+            return false;
+          }
           final mpesaSender = sender.contains('mpesa');
-          final mpesaBody =
-              normalized.contains('mpesa') || normalized.contains('confirmed');
+          final mpesaBody = looksLikeMpesaMessage(lowerNormalized);
           return mpesaSender || mpesaBody;
         })
         .map(

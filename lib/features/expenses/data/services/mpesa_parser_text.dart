@@ -26,8 +26,10 @@ String titleCaseWords(String text) => text
 
 bool looksLikeMpesaMessage(String message) {
   final lower = message.toLowerCase();
-  final hasTxCode =
-      RegExp(r'^[a-z0-9]{10}\b', caseSensitive: false).hasMatch(message.trim());
+  final hasTxCode = RegExp(
+    r'^[a-z0-9]{10}\b',
+    caseSensitive: false,
+  ).hasMatch(message.trim());
   return lower.contains('mpesa') ||
       lower.contains('m-pesa') ||
       (lower.contains('confirmed') &&
@@ -45,15 +47,40 @@ DateTime? parseMpesaDateTime(String message, RegExp dateTimePattern) {
   var year = int.tryParse(date[2]);
   if (day == null || month == null || year == null) return null;
   if (year < 100) year += 2000;
-  final timeMatch = RegExp(
+  final twelveHourTime = RegExp(
     r'^(\d{1,2}):(\d{2})\s?(am|pm)$',
     caseSensitive: false,
   ).firstMatch(time.trim());
-  if (timeMatch == null) return null;
-  var hour = int.parse(timeMatch.group(1)!);
-  final minute = int.parse(timeMatch.group(2)!);
-  final meridiem = timeMatch.group(3)!.toLowerCase();
-  if (meridiem == 'pm' && hour < 12) hour += 12;
-  if (meridiem == 'am' && hour == 12) hour = 0;
-  return DateTime(year, month, day, hour, minute);
+  if (twelveHourTime != null) {
+    var hour = int.parse(twelveHourTime.group(1)!);
+    final minute = int.parse(twelveHourTime.group(2)!);
+    final meridiem = twelveHourTime.group(3)!.toLowerCase();
+    if (minute > 59 || hour < 1 || hour > 12) {
+      return null;
+    }
+    if (meridiem == 'pm' && hour < 12) hour += 12;
+    if (meridiem == 'am' && hour == 12) hour = 0;
+    return _strictDateTime(year, month, day, hour, minute);
+  }
+
+  final twentyFourHourTime = RegExp(
+    r'^(\d{1,2}):(\d{2})(?::\d{2})?$',
+  ).firstMatch(time.trim());
+  if (twentyFourHourTime == null) {
+    return null;
+  }
+  final hour = int.parse(twentyFourHourTime.group(1)!);
+  final minute = int.parse(twentyFourHourTime.group(2)!);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+  return _strictDateTime(year, month, day, hour, minute);
+}
+
+DateTime? _strictDateTime(int year, int month, int day, int hour, int minute) {
+  final parsed = DateTime(year, month, day, hour, minute);
+  if (parsed.year != year || parsed.month != month || parsed.day != day) {
+    return null;
+  }
+  return parsed;
 }
