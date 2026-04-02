@@ -6,64 +6,55 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test(
-    'agenda provider filters past events and sorts the next 14 days',
-    () async {
-      final repository = _FakeCalendarRepository([
-        CalendarEvent(
-          id: 1,
-          title: 'Planning',
-          startAt: DateTime(2026, 3, 22, 9),
-          completed: false,
-          priority: CalendarEventPriority.high,
-          type: CalendarEventType.work,
-        ),
-        CalendarEvent(
-          id: 2,
-          title: 'Past review',
-          startAt: DateTime(2026, 3, 20, 8),
-          completed: false,
-          priority: CalendarEventPriority.medium,
-          type: CalendarEventType.personal,
-        ),
-        CalendarEvent(
-          id: 3,
-          title: 'Bills',
-          startAt: DateTime(2026, 3, 25, 18),
-          completed: false,
-          priority: CalendarEventPriority.medium,
-          type: CalendarEventType.finance,
-        ),
-        CalendarEvent(
-          id: 4,
-          title: 'Too far out',
-          startAt: DateTime(2026, 4, 8, 12),
-          completed: false,
-          priority: CalendarEventPriority.low,
-          type: CalendarEventType.general,
-        ),
-      ]);
+  test('month event types prefer higher-priority type for each day', () async {
+    final repository = _FakeCalendarRepository([
+      CalendarEvent(
+        id: 1,
+        title: 'Standup',
+        startAt: DateTime(2026, 4, 3, 9),
+        completed: false,
+        priority: CalendarEventPriority.medium,
+        type: CalendarEventType.general,
+      ),
+      CalendarEvent(
+        id: 2,
+        title: 'Sprint Review',
+        startAt: DateTime(2026, 4, 3, 15),
+        completed: false,
+        priority: CalendarEventPriority.high,
+        type: CalendarEventType.work,
+      ),
+      CalendarEvent(
+        id: 3,
+        title: 'Doctor',
+        startAt: DateTime(2026, 4, 9, 10),
+        completed: false,
+        priority: CalendarEventPriority.low,
+        type: CalendarEventType.health,
+      ),
+      CalendarEvent(
+        id: 4,
+        title: 'Outside month',
+        startAt: DateTime(2026, 5, 1, 10),
+        completed: false,
+        priority: CalendarEventPriority.low,
+        type: CalendarEventType.personal,
+      ),
+    ]);
 
-      final container = ProviderContainer(
-        overrides: [
-          calendarRepositoryProvider.overrideWith((ref) => repository),
-        ],
-      );
-      addTearDown(container.dispose);
+    final container = ProviderContainer(
+      overrides: [calendarRepositoryProvider.overrideWith((ref) => repository)],
+    );
+    addTearDown(container.dispose);
 
-      container.read(selectedDayProvider.notifier).state = DateTime(
-        2026,
-        3,
-        21,
-      );
+    container.read(visibleMonthProvider.notifier).state = DateTime(2026, 4, 1);
 
-      final events = await container.read(agendaEventsProvider.future);
+    final dayTypes = await container.read(monthEventTypesProvider.future);
 
-      expect(events.map((event) => event.id), [1, 3]);
-      expect(events.first.title, 'Planning');
-      expect(events.last.title, 'Bills');
-    },
-  );
+    expect(dayTypes[3], CalendarEventType.work);
+    expect(dayTypes[9], CalendarEventType.health);
+    expect(dayTypes.containsKey(1), isFalse);
+  });
 }
 
 class _FakeCalendarRepository implements CalendarRepository {

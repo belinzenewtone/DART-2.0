@@ -22,36 +22,20 @@ Future<SuperEntryInput?> showSuperAddSheet(
   final descriptionController = TextEditingController(
     text: initialInput?.description ?? '',
   );
-  final selectedBaseDate = contextDate ?? DateTime.now();
   var kind = initialInput?.kind ?? defaultKind;
-  var priority = initialInput?.priority ?? SuperEntryPriority.medium;
-  var eventType = initialInput?.eventType ?? SuperEntryEventType.general;
-  var reminderEnabled = initialInput?.reminderEnabled ?? true;
-  var reminderMinutesBefore =
-      initialInput?.reminderMinutesBefore ??
-      (kind == SuperEntryKind.event ? 15 : 30);
-  DateTime? dueAt = initialInput?.dueAt ??
-      DateTime(
-        selectedBaseDate.year,
-        selectedBaseDate.month,
-        selectedBaseDate.day,
-        17,
-        0,
-      );
-  var startAt =
-      initialInput?.startAt ??
-      DateTime(
-        selectedBaseDate.year,
-        selectedBaseDate.month,
-        selectedBaseDate.day,
-        14,
-        0,
-      );
-  DateTime? endAt =
-      initialInput?.endAt ?? startAt.add(const Duration(hours: 1));
+  SuperEntryPriority? priority = initialInput?.priority;
+  SuperEntryEventType? eventType = initialInput?.eventType;
+  var reminderEnabled = initialInput?.reminderEnabled ?? false;
+  int? reminderMinutesBefore = initialInput?.reminderMinutesBefore;
+  DateTime? dueAt = initialInput?.dueAt;
+  DateTime? startAt = initialInput?.startAt;
+  DateTime? endAt = initialInput?.endAt;
   var titleError = false;
   String? timeError;
-  var showDetails = initialInput != null;
+  String? selectionError;
+  // keep picker pre-focus context without auto-filling visible field values
+  final pickerContextDate = contextDate;
+  var showDetails = true;
   return showModalBottomSheet<SuperEntryInput>(
     context: context,
     isScrollControlled: true,
@@ -65,7 +49,12 @@ Future<SuperEntryInput?> showSuperAddSheet(
         final isEvent = kind == SuperEntryKind.event;
         final canSave =
             titleController.text.trim().isNotEmpty &&
-            (!isEvent || (endAt == null || !endAt!.isBefore(startAt)));
+            priority != null &&
+            (!isEvent || eventType != null) &&
+            (!reminderEnabled || reminderMinutesBefore != null) &&
+            (!isEvent ||
+                (startAt != null &&
+                    (endAt == null || !endAt!.isBefore(startAt!))));
 
         return AppFormSheet(
           title: actionLabel == 'Create'
@@ -95,9 +84,36 @@ Future<SuperEntryInput?> showSuperAddSheet(
                             setState(() => titleError = true);
                             return;
                           }
+                          if (priority == null) {
+                            setState(() {
+                              selectionError = 'Choose a priority.';
+                            });
+                            return;
+                          }
+                          if (isEvent && eventType == null) {
+                            setState(() {
+                              selectionError = 'Choose an event type.';
+                            });
+                            return;
+                          }
+                          if (reminderEnabled &&
+                              reminderMinutesBefore == null) {
+                            setState(() {
+                              selectionError = 'Choose reminder lead time.';
+                            });
+                            return;
+                          }
+                          if (isEvent && startAt == null) {
+                            setState(() {
+                              timeError =
+                                  'Select the event start date and time.';
+                            });
+                            return;
+                          }
                           if (isEvent &&
                               endAt != null &&
-                              endAt!.isBefore(startAt)) {
+                              startAt != null &&
+                              endAt!.isBefore(startAt!)) {
                             setState(() {
                               timeError =
                                   'End time must be after the event start.';
@@ -118,7 +134,8 @@ Future<SuperEntryInput?> showSuperAddSheet(
                               endAt: isEvent ? endAt : null,
                               eventType: isEvent ? eventType : null,
                               reminderEnabled: reminderEnabled,
-                              reminderMinutesBefore: reminderMinutesBefore,
+                              reminderMinutesBefore:
+                                  reminderMinutesBefore ?? (isEvent ? 15 : 30),
                             ),
                           );
                         },
@@ -145,6 +162,7 @@ Future<SuperEntryInput?> showSuperAddSheet(
                             : () => setState(() {
                                 kind = item;
                                 timeError = null;
+                                selectionError = null;
                               }),
                         child: AnimatedContainer(
                           duration: choiceDuration,
@@ -192,15 +210,19 @@ Future<SuperEntryInput?> showSuperAddSheet(
                 onPick: (picked) => setState(() {
                   if (isEvent) {
                     startAt = picked;
-                    if (endAt != null && endAt!.isBefore(startAt)) {
-                      endAt = startAt.add(const Duration(hours: 1));
+                    if (endAt != null &&
+                        startAt != null &&
+                        endAt!.isBefore(startAt!)) {
+                      endAt = startAt!.add(const Duration(hours: 1));
                     }
                   } else {
                     dueAt = picked;
                   }
                   timeError = null;
+                  selectionError = null;
                 }),
                 onClear: () => setState(() => dueAt = null),
+                fallbackDate: pickerContextDate,
               ),
               if (isEvent) ...[
                 const SizedBox(height: 10),
@@ -211,14 +233,23 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   onPick: (picked) => setState(() {
                     endAt = picked;
                     timeError = null;
+                    selectionError = null;
                   }),
                   onClear: () => setState(() => endAt = null),
+                  fallbackDate: startAt ?? pickerContextDate,
                 ),
               ],
               if (timeError != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   timeError!,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                ),
+              ],
+              if (selectionError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  selectionError!,
                   style: const TextStyle(color: AppColors.danger, fontSize: 12),
                 ),
               ],
@@ -268,7 +299,10 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   selected: priority,
                   textPrimary: textPrimary,
                   duration: choiceDuration,
-                  onChanged: (value) => setState(() => priority = value),
+                  onChanged: (value) => setState(() {
+                    priority = value;
+                    selectionError = null;
+                  }),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -283,8 +317,12 @@ Future<SuperEntryInput?> showSuperAddSheet(
                     ),
                     Switch.adaptive(
                       value: reminderEnabled,
-                      onChanged: (value) =>
-                          setState(() => reminderEnabled = value),
+                      onChanged: (value) => setState(() {
+                        reminderEnabled = value;
+                        if (!value) {
+                          selectionError = null;
+                        }
+                      }),
                     ),
                   ],
                 ),
@@ -293,8 +331,10 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   SuperAddReminderMinutesSelector(
                     selectedMinutes: reminderMinutesBefore,
                     duration: choiceDuration,
-                    onChanged: (value) =>
-                        setState(() => reminderMinutesBefore = value),
+                    onChanged: (value) => setState(() {
+                      reminderMinutesBefore = value;
+                      selectionError = null;
+                    }),
                   ),
                 ],
                 if (isEvent) ...[
@@ -302,7 +342,10 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   SuperAddEventTypeSelector(
                     selected: eventType,
                     duration: choiceDuration,
-                    onChanged: (value) => setState(() => eventType = value),
+                    onChanged: (value) => setState(() {
+                      eventType = value;
+                      selectionError = null;
+                    }),
                   ),
                 ],
               ],

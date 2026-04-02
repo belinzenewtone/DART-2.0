@@ -94,7 +94,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimaryFor(Theme.of(context).brightness),
+                        color: AppColors.textPrimaryFor(
+                          Theme.of(context).brightness,
+                        ),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -104,7 +106,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondaryFor(Theme.of(context).brightness),
+                        color: AppColors.textSecondaryFor(
+                          Theme.of(context).brightness,
+                        ),
                       ),
                     ),
                   ],
@@ -131,7 +135,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   GestureDetector(
                     onTap: () {
                       AppHaptics.lightImpact();
-                      _showProfileSheet(context, ref, firstName, email, initials);
+                      _showProfileSheet(
+                        context,
+                        ref,
+                        firstName,
+                        email,
+                        initials,
+                      );
                     },
                     child: Container(
                       width: 32,
@@ -152,7 +162,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimaryFor(Theme.of(context).brightness),
+                          color: AppColors.textPrimaryFor(
+                            Theme.of(context).brightness,
+                          ),
                         ),
                       ),
                     ),
@@ -304,6 +316,10 @@ class _ProfileQuickSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardBottom = mediaQuery.viewInsets.bottom;
+    final safeBottom = mediaQuery.padding.bottom;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -316,7 +332,7 @@ class _ProfileQuickSheet extends StatelessWidget {
         top: 12,
         left: 24,
         right: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+        bottom: keyboardBottom + safeBottom + AppSpacing.xl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -399,8 +415,9 @@ class _ProfileQuickSheet extends StatelessWidget {
               ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side:
-                    BorderSide(color: AppColors.danger.withValues(alpha: 0.4)),
+                side: BorderSide(
+                  color: AppColors.danger.withValues(alpha: 0.4),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

@@ -22,13 +22,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'calendar_screen_events.dart';
-part 'calendar_screen_agenda.dart';
+part 'calendar_screen_tasks.dart';
 part 'calendar_screen_layout.dart';
 part 'calendar_screen_actions.dart';
-part 'calendar_screen_week_strip.dart';
 part 'calendar_screen_labels.dart';
+part 'calendar_screen_section_header.dart';
 
-enum _CalendarView { month, week, agenda }
+enum _CalendarView { month, events, tasks }
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -39,8 +39,9 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   _CalendarView _view = _CalendarView.month;
-  bool _showAllEvents = false;
   bool _swiping = false; // blocks events list during a calendar swipe
+  bool _showCompletedEvents = false;
+  bool _showCompletedTasks = false;
   static const double _calendarContentMaxWidth = 360;
 
   static const List<String> _weekDays = [
@@ -73,7 +74,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final visibleMonth = ref.watch(visibleMonthProvider);
     final selectedDay = ref.watch(selectedDayProvider);
     final eventsState = ref.watch(dayEventsProvider);
-    final agendaState = ref.watch(agendaEventsProvider);
+    final tasksState = ref.watch(tasksProvider);
     final monthEventTypesState = ref.watch(monthEventTypesProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
     _syncSearchTargetDay(ref, selectedDay);
@@ -90,16 +91,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final title = switch (_view) {
       _CalendarView.month =>
         '${_months[visibleMonth.month - 1]} ${visibleMonth.year}',
-      _CalendarView.week => _calendarWeekRangeLabel(selectedDay),
-      _CalendarView.agenda =>
-        'Agenda · ${_calendarWeekRangeLabel(selectedDay)}',
+      _CalendarView.events =>
+        'Events · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
+      _CalendarView.tasks =>
+        'Tasks · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
     };
-
-    // Week strip: 7 days starting from Monday of selected week
-    final weekStart = selectedDay.subtract(
-      Duration(days: selectedDay.weekday - 1),
-    );
-    final weekDays = List.generate(7, (i) => weekStart.add(Duration(days: i)));
 
     return _CalendarLayout(
       state: this,
@@ -107,20 +103,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       visibleMonth: visibleMonth,
       selectedDay: selectedDay,
       eventsState: eventsState,
-      agendaState: agendaState,
+      tasksState: tasksState,
       monthEventTypesState: monthEventTypesState,
       writeState: writeState,
       title: title,
-      weekDays: weekDays,
     );
   }
 
   void _setView(_CalendarView view) {
     setState(() => _view = view);
-  }
-
-  void _toggleAllEvents() {
-    setState(() => _showAllEvents = !_showAllEvents);
   }
 
   void _beginSwipe() {
@@ -131,22 +122,37 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     setState(() => _swiping = false);
   }
 
+  void _toggleCompletedEventsVisibility() {
+    setState(() => _showCompletedEvents = !_showCompletedEvents);
+  }
+
+  void _toggleCompletedTasksVisibility() {
+    setState(() => _showCompletedTasks = !_showCompletedTasks);
+  }
+
   void _handleSwipeEnd(DragEndDetails details) {
     setState(() => _swiping = false);
     final velocity = details.primaryVelocity ?? 0;
-    if (_view == _CalendarView.month) {
-      if (velocity < -120) _changeMonth(ref, 1);
-      if (velocity > 120) _changeMonth(ref, -1);
-      return;
-    }
-    if (velocity < -120) _changeWeek(ref, 1);
-    if (velocity > 120) _changeWeek(ref, -1);
+    if (velocity < -120) _changeMonth(ref, 1);
+    if (velocity > 120) _changeMonth(ref, -1);
   }
 
   void _syncSearchTargetDay(WidgetRef ref, DateTime selectedDay) {
     final target = ref.read(globalSearchDeepLinkTargetProvider);
-    if (target?.kind != GlobalSearchKind.event) {
+    final kind = target?.kind;
+    if (kind != GlobalSearchKind.event && kind != GlobalSearchKind.task) {
       return;
+    }
+    final targetView = kind == GlobalSearchKind.task
+        ? _CalendarView.tasks
+        : _CalendarView.events;
+    if (_view != targetView) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _view == targetView) {
+          return;
+        }
+        setState(() => _view = targetView);
+      });
     }
     final recordDate = target?.recordDate;
     if (recordDate == null) {
@@ -231,21 +237,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final selected = ref.read(selectedDayProvider);
     if (selected.year != next.year || selected.month != next.month) {
       ref.read(selectedDayProvider.notifier).state = DateTime(
-        next.year,
-        next.month,
-        1,
-      );
-    }
-  }
-
-  void _changeWeek(WidgetRef ref, int offset) {
-    final selected = ref.read(selectedDayProvider);
-    final next = selected.add(Duration(days: 7 * offset));
-    ref.read(selectedDayProvider.notifier).state = next;
-    // Keep visible month in sync
-    if (next.year != ref.read(visibleMonthProvider).year ||
-        next.month != ref.read(visibleMonthProvider).month) {
-      ref.read(visibleMonthProvider.notifier).state = DateTime(
         next.year,
         next.month,
         1,

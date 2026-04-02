@@ -9,19 +9,19 @@ class SuperEntryInput {
     required this.kind,
     required this.title,
     required this.description,
-    required this.priority,
+    this.priority,
     this.dueAt,
     this.startAt,
     this.endAt,
     this.eventType,
-    this.reminderEnabled = true,
+    this.reminderEnabled = false,
     this.reminderMinutesBefore = 30,
   });
 
   final SuperEntryKind kind;
   final String title;
   final String? description;
-  final SuperEntryPriority priority;
+  final SuperEntryPriority? priority;
   final DateTime? dueAt;
   final DateTime? startAt;
   final DateTime? endAt;

@@ -10,6 +10,7 @@ class SuperAddWhenPickerRow extends StatelessWidget {
     required this.allowClear,
     required this.onPick,
     required this.onClear,
+    this.fallbackDate,
   });
 
   final String label;
@@ -17,6 +18,7 @@ class SuperAddWhenPickerRow extends StatelessWidget {
   final bool allowClear;
   final ValueChanged<DateTime> onPick;
   final VoidCallback onClear;
+  final DateTime? fallbackDate;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,7 @@ class SuperAddWhenPickerRow extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
-        final base = value ?? DateTime.now();
+        final base = value ?? fallbackDate ?? DateTime.now();
         final pickedDate = await showDatePicker(
           context: context,
           firstDate: DateTime(base.year - 2),
@@ -75,7 +77,7 @@ class SuperAddPrioritySelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final SuperEntryPriority selected;
+  final SuperEntryPriority? selected;
   final Color textPrimary;
   final Duration duration;
   final ValueChanged<SuperEntryPriority> onChanged;
@@ -108,9 +110,7 @@ class SuperAddPrioritySelector extends StatelessWidget {
                 duration: duration,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: selectedState
-                      ? color
-                      : AppColors.surfaceMuted,
+                  color: selectedState ? color : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selectedState ? color : AppColors.border,
@@ -142,7 +142,7 @@ class SuperAddEventTypeSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final SuperEntryEventType selected;
+  final SuperEntryEventType? selected;
   final Duration duration;
   final ValueChanged<SuperEntryEventType> onChanged;
 
@@ -160,9 +160,7 @@ class SuperAddEventTypeSelector extends StatelessWidget {
             duration: duration,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: selectedState
-                  ? AppColors.accent
-                  : AppColors.surfaceMuted,
+              color: selectedState ? AppColors.accent : AppColors.surfaceMuted,
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: selectedState ? AppColors.accent : AppColors.border,
@@ -191,7 +189,7 @@ class SuperAddReminderMinutesSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final int selectedMinutes;
+  final int? selectedMinutes;
   final Duration duration;
   final ValueChanged<int> onChanged;
 
@@ -225,9 +223,7 @@ class SuperAddReminderMinutesSelector extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.accent
-                      : AppColors.surfaceMuted,
+                  color: selected ? AppColors.accent : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: selected ? AppColors.accent : AppColors.border,

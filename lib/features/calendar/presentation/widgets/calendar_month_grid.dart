@@ -8,6 +8,7 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.visibleMonth,
     required this.selectedDay,
     required this.eventTypes,
+    required this.taskDays,
     required this.maxWidth,
     required this.onSelect,
   });
@@ -15,14 +16,18 @@ class CalendarMonthGrid extends StatelessWidget {
   final DateTime visibleMonth;
   final DateTime selectedDay;
   final Map<int, CalendarEventType> eventTypes;
+  final Set<int> taskDays;
   final double maxWidth;
   final ValueChanged<DateTime> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final totalDays =
-        DateTime(visibleMonth.year, visibleMonth.month + 1, 0).day;
+    final totalDays = DateTime(
+      visibleMonth.year,
+      visibleMonth.month + 1,
+      0,
+    ).day;
     final leadingBlanks =
         DateTime(visibleMonth.year, visibleMonth.month, 1).weekday - 1;
     final totalItems = ((leadingBlanks + totalDays + 6) ~/ 7) * 7;
@@ -45,21 +50,22 @@ class CalendarMonthGrid extends StatelessWidget {
               return const SizedBox.shrink();
             }
 
-            final current =
-                DateTime(visibleMonth.year, visibleMonth.month, day);
-            final isSelected = selectedDay.year == current.year &&
+            final current = DateTime(
+              visibleMonth.year,
+              visibleMonth.month,
+              day,
+            );
+            final isSelected =
+                selectedDay.year == current.year &&
                 selectedDay.month == current.month &&
                 selectedDay.day == current.day;
-            final isToday = today.year == current.year &&
+            final isToday =
+                today.year == current.year &&
                 today.month == current.month &&
                 today.day == current.day;
             final eventType = eventTypes[day];
             final hasEvents = eventType != null;
-            final dotColor = isSelected
-                ? AppColors.textPrimary
-                : (hasEvents
-                    ? _eventTypeColor(eventType)
-                    : AppColors.textSecondary);
+            final hasTasks = taskDays.contains(day);
 
             return Center(
               child: InkWell(
@@ -85,23 +91,34 @@ class CalendarMonthGrid extends StatelessWidget {
                           color: isSelected
                               ? AppColors.textPrimary
                               : isToday
-                                  ? AppColors.accentLight
-                                  : AppColors.textPrimary,
+                              ? AppColors.accentLight
+                              : AppColors.textPrimary,
                           fontWeight: isToday || isSelected
                               ? FontWeight.w700
                               : FontWeight.w400,
                         ),
                       ),
-                      if (hasEvents)
+                      if (hasEvents || hasTasks)
                         Positioned(
                           bottom: 5,
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: dotColor,
-                              shape: BoxShape.circle,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (hasEvents)
+                                _MarkerDot(
+                                  color: isSelected
+                                      ? AppColors.textPrimary
+                                      : _eventTypeColor(eventType),
+                                ),
+                              if (hasEvents && hasTasks)
+                                const SizedBox(width: 4),
+                              if (hasTasks)
+                                _MarkerDot(
+                                  color: isSelected
+                                      ? AppColors.textPrimary
+                                      : AppColors.teal,
+                                ),
+                            ],
                           ),
                         ),
                     ],
@@ -112,6 +129,21 @@ class CalendarMonthGrid extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _MarkerDot extends StatelessWidget {
+  const _MarkerDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 4,
+      height: 4,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
