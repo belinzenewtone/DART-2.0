@@ -1,6 +1,6 @@
 enum CalendarEventPriority { high, medium, low }
 
-enum CalendarEventType { work, personal, finance, health, general }
+enum CalendarEventType { work, personal, finance, health, general, birthday, anniversary, countdown }
 
 class CalendarEvent {
   const CalendarEvent({
@@ -64,6 +64,9 @@ CalendarEventType calendarEventTypeFromRaw(String raw) {
     'personal' => CalendarEventType.personal,
     'finance' => CalendarEventType.finance,
     'health' => CalendarEventType.health,
+    'birthday' => CalendarEventType.birthday,
+    'anniversary' => CalendarEventType.anniversary,
+    'countdown' => CalendarEventType.countdown,
     _ => CalendarEventType.general,
   };
 }

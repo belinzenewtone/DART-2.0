@@ -165,8 +165,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         context.pushNamed('income');
         return;
       case GlobalSearchKind.task:
-        ref.read(shellTabIndexProvider.notifier).state = ShellTab.tasks.index;
         context.pop();
+        context.pushNamed('tasks');
         return;
       case GlobalSearchKind.event:
         ref.read(shellTabIndexProvider.notifier).state =

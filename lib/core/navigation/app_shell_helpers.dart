@@ -6,16 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Returns the per-tab accent radial glow colour used by [AppShell].
 ///
-/// Tab mapping: 0 = Home, 1 = Calendar, 2 = Expenses, 3 = Tasks,
-///              4 = (reserved), 5 = Profile / Settings.
+/// Tab mapping: 0 = Home, 1 = Finance, 2 = Calendar, 3 = AI, 4 = Profile.
 Color accentForTab(int tab) {
   const palette = [
-    AppColors.accent,   // Home      – primary blue
-    AppColors.teal,     // Calendar  – teal
-    AppColors.azure,    // Expenses  – azure blue
-    AppColors.orange,   // Tasks     – warm orange
-    AppColors.violet,   // (reserved)
-    AppColors.sky,      // Profile   – sky blue
+    AppColors.accent,   // Home     – primary blue
+    AppColors.azure,    // Finance  – azure blue
+    AppColors.teal,     // Calendar – teal
+    AppColors.violet,   // AI       – violet
+    AppColors.sky,      // Profile  – sky blue
   ];
   return palette[tab % palette.length];
 }

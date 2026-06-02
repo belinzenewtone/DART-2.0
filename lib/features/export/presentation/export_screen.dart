@@ -15,11 +15,25 @@ import 'package:share_plus/share_plus.dart';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-class ExportScreen extends ConsumerWidget {
+class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExportScreen> createState() => _ExportScreenState();
+}
+
+class _ExportScreenState extends ConsumerState<ExportScreen> {
+  bool _encrypt = false;
+  final _passwordCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final exportState = ref.watch(exportControllerProvider);
     final latestResult = exportState.valueOrNull;
 
@@ -37,7 +51,7 @@ class ExportScreen extends ConsumerWidget {
         if (result != null) {
           AppFeedback.success(
             context,
-            'Export complete: ${result.rowsExported} row(s).',
+            'Export complete: ${result.rowsExported} row(s).${result.isEncrypted ? ' Encrypted.' : ''}',
           );
           unawaited(_shareExportFile(result));
         }
@@ -103,7 +117,7 @@ class ExportScreen extends ConsumerWidget {
                           }
                           await ref
                               .read(exportControllerProvider.notifier)
-                              .export(ExportScope.all);
+                              .export(ExportScope.all, password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null);
                         },
                   child: exportState.isLoading
                       ? const SizedBox(
@@ -116,6 +130,40 @@ class ExportScreen extends ConsumerWidget {
                         )
                       : const Text('Export'),
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          // ── Encryption toggle ─────────────────────────────────────────────
+          GlassCard(
+            tone: GlassCardTone.muted,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  title: Text('Encrypt export', style: AppTypography.bodyMd(context)),
+                  subtitle: Text('Password-protect with AES-256', style: AppTypography.bodySm(context)),
+                  value: _encrypt,
+                  onChanged: (v) => setState(() => _encrypt = v),
+                  activeColor: AppColors.accent,
+                ),
+                if (_encrypt) ...[
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: TextField(
+                      controller: _passwordCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Min 6 characters',
+                        prefixIcon: Icon(Icons.lock_outline, size: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ],
             ),
           ),
@@ -148,7 +196,7 @@ class ExportScreen extends ConsumerWidget {
                 }
                 await ref
                     .read(exportControllerProvider.notifier)
-                    .export(meta.scope);
+                    .export(meta.scope, password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null);
               },
             ),
             const SizedBox(height: 8),

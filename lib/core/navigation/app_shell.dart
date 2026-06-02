@@ -24,7 +24,6 @@ import 'package:beltech/features/calendar/presentation/calendar_screen.dart';
 import 'package:beltech/features/expenses/presentation/expenses_screen.dart';
 import 'package:beltech/features/home/presentation/home_screen.dart';
 import 'package:beltech/features/profile/presentation/profile_screen.dart';
-import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,9 +35,8 @@ class AppShell extends ConsumerStatefulWidget {
 
   static const List<Widget> _screens = [
     HomeScreen(),
-    CalendarScreen(),
     ExpensesScreen(),
-    TasksScreen(),
+    CalendarScreen(),
     AssistantScreen(),
     ProfileScreen(),
   ];
@@ -50,19 +48,14 @@ class AppShell extends ConsumerStatefulWidget {
       selectedIcon: Icons.grid_view_rounded,
     ),
     AppTabItem(
-      label: 'Calendar',
-      icon: Icons.calendar_today_outlined,
-      selectedIcon: Icons.calendar_today_rounded,
-    ),
-    AppTabItem(
       label: 'Finance',
       icon: Icons.account_balance_wallet_outlined,
       selectedIcon: Icons.account_balance_wallet_rounded,
     ),
     AppTabItem(
-      label: 'Tasks',
-      icon: Icons.task_alt_outlined,
-      selectedIcon: Icons.task_alt_rounded,
+      label: 'Calendar',
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today_rounded,
     ),
     AppTabItem(
       label: 'AI',

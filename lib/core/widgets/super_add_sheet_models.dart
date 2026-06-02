@@ -1,4 +1,4 @@
-enum SuperEntryKind { task, event }
+enum SuperEntryKind { task, event, birthday, anniversary, countdown }
 
 enum SuperEntryPriority { high, medium, low }
 
@@ -14,6 +14,9 @@ class SuperEntryInput {
     this.startAt,
     this.endAt,
     this.eventType,
+    this.year,
+    this.repeatYearly = false,
+    this.remind3DaysBefore = false,
     this.reminderEnabled = false,
     this.reminderMinutesBefore = 30,
   });
@@ -26,6 +29,9 @@ class SuperEntryInput {
   final DateTime? startAt;
   final DateTime? endAt;
   final SuperEntryEventType? eventType;
+  final int? year;
+  final bool repeatYearly;
+  final bool remind3DaysBefore;
   final bool reminderEnabled;
   final int reminderMinutesBefore;
 }

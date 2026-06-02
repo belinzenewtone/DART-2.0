@@ -27,6 +27,8 @@ class LocalNotificationService {
   static const String _nsTask = 'task';
   static const String _nsEvent = 'event';
   static const String _nsInsight = 'insight';
+  static const String _nsBill = 'bill';
+  static const String _nsLearning = 'learning';
 
   /// Deterministic FNV-1a hash of [namespace]:[recordId] → positive int32.
   static int _notifId(String namespace, int recordId) {
@@ -139,6 +141,42 @@ class LocalNotificationService {
     if (!enabled) {
       await cancelAllReminders();
     }
+  }
+
+  Future<void> showBillReminder({
+    required int billId,
+    required String billName,
+    required double amount,
+    required int daysUntil,
+  }) async {
+    final enabled = await isNotificationsEnabled();
+    if (!enabled) return;
+    await _ensureInitialized();
+    final body = daysUntil <= 0
+        ? 'Bill "$billName" is overdue! Amount: ${amount.toStringAsFixed(0)}'
+        : 'Bill "$billName" is due in $daysUntil day(s). Amount: ${amount.toStringAsFixed(0)}';
+    await _plugin.show(
+      id: _notifId(_nsBill, billId),
+      title: 'Bill Reminder',
+      body: body,
+      notificationDetails: _details,
+      payload: '/bills',
+    );
+  }
+
+  Future<void> showLearningReminder({required int dayOffset}) async {
+    final enabled = await isNotificationsEnabled();
+    if (!enabled) return;
+    await _ensureInitialized();
+    await _plugin.show(
+      id: _notifId(_nsLearning, dayOffset),
+      title: 'Learning Streak',
+      body: dayOffset == 0
+          ? 'Log a learning session today to keep your streak alive!'
+          : 'You have not logged a learning session recently. Keep the momentum!',
+      notificationDetails: _details,
+      payload: '/learning',
+    );
   }
 
   Future<void> cancelAllReminders() async {

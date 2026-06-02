@@ -37,16 +37,40 @@ const defaultToolShortcuts = [
     routeName: 'week-review',
   ),
   ToolShortcut(
+    label: 'Bills',
+    icon: Icons.receipt_long_rounded,
+    color: AppColors.warning,
+    routeName: 'bills',
+  ),
+  ToolShortcut(
+    label: 'Loans',
+    icon: Icons.account_balance_outlined,
+    color: AppColors.error,
+    routeName: 'loans',
+  ),
+  ToolShortcut(
+    label: 'Goals',
+    icon: Icons.flag_outlined,
+    color: AppColors.success,
+    routeName: 'goals',
+  ),
+  ToolShortcut(
+    label: 'Learning',
+    icon: Icons.school_outlined,
+    color: AppColors.sky,
+    routeName: 'learning',
+  ),
+  ToolShortcut(
     label: 'Search',
     icon: Icons.search_rounded,
-    color: AppColors.sky,
+    color: AppColors.teal,
     routeName: 'search',
   ),
   ToolShortcut(
-    label: 'Recurring',
-    icon: Icons.repeat_rounded,
-    color: AppColors.teal,
-    routeName: 'recurring',
+    label: 'Fee Analytics',
+    icon: Icons.money_off_csred_rounded,
+    color: AppColors.error,
+    routeName: 'fee-analytics',
   ),
   ToolShortcut(
     label: 'Export',
@@ -57,7 +81,7 @@ const defaultToolShortcuts = [
   ToolShortcut(
     label: 'Assistant',
     icon: Icons.forum_outlined,
-    color: AppColors.success,
+    color: AppColors.accent,
     shellTab: ShellTab.assistant,
   ),
 ];

@@ -181,6 +181,159 @@ class SuperAddEventTypeSelector extends StatelessWidget {
   }
 }
 
+class SuperAddDateOnlyPickerRow extends StatelessWidget {
+  const SuperAddDateOnlyPickerRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onPick,
+    this.fallbackDate,
+  });
+
+  final String label;
+  final DateTime? value;
+  final ValueChanged<DateTime> onPick;
+  final DateTime? fallbackDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final text = value == null
+        ? 'Not set'
+        : localizations.formatMediumDate(value!);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        final base = value ?? fallbackDate ?? DateTime.now();
+        final pickedDate = await showDatePicker(
+          context: context,
+          firstDate: DateTime(base.year - 100),
+          lastDate: DateTime(base.year + 50),
+          initialDate: base,
+        );
+        if (pickedDate == null || !context.mounted) return;
+        onPick(
+          DateTime(pickedDate.year, pickedDate.month, pickedDate.day),
+        );
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.calendar_today_rounded),
+        ),
+        child: Text(text),
+      ),
+    );
+  }
+}
+
+class SuperAddYearSelector extends StatelessWidget {
+  const SuperAddYearSelector({
+    super.key,
+    required this.selectedYear,
+    required this.onChanged,
+  });
+
+  final int? selectedYear;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentYear = DateTime.now().year;
+    final years = List.generate(currentYear - 1900 + 1, (i) => 1900 + i).reversed.toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Birth year (optional)',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: const Text('Not set'),
+              selected: selectedYear == null,
+              onSelected: (_) => onChanged(null),
+            ),
+            ...years.take(10).map((year) => ChoiceChip(
+                  label: Text('$year'),
+                  selected: selectedYear == year,
+                  onSelected: (_) => onChanged(year),
+                )),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class SuperAddRepeatToggle extends StatelessWidget {
+  const SuperAddRepeatToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Repeat yearly',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class SuperAddRemind3DaysToggle extends StatelessWidget {
+  const SuperAddRemind3DaysToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Remind 3 days before',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
 class SuperAddReminderMinutesSelector extends StatelessWidget {
   const SuperAddReminderMinutesSelector({
     super.key,

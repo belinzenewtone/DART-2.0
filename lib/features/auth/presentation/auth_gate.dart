@@ -1,7 +1,8 @@
+import 'package:beltech/core/di/bootstrap_providers.dart';
+import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/navigation/app_shell.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
-import 'package:beltech/core/di/bootstrap_providers.dart';
 import 'package:beltech/core/widgets/app_feedback.dart';
 import 'package:beltech/features/auth/presentation/providers/account_providers.dart';
 import 'package:beltech/features/auth/presentation/widgets/auth_brand_header.dart';
@@ -51,10 +52,27 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         onDone: () => setState(() => _onboardingDone = true),
       );
     }
+    final useSupabase = ref.watch(useSupabaseProvider);
     final sessionState = ref.watch(accountSessionProvider);
     return sessionState.when(
-      data: (session) =>
-          session.isAuthenticated ? const AppShell() : const AuthScreen(),
+      data: (session) {
+        // Local workspace: never require login; auto-authenticate silently
+        if (!useSupabase) {
+          if (!session.isAuthenticated) {
+            // Trigger silent local sign-in after frame builds
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              await ref.read(accountAuthControllerProvider.notifier).signIn(
+                    email: '',
+                    password: '',
+                  );
+            });
+            return const AuthLoadingScreen();
+          }
+          return const AppShell();
+        }
+        // Cloud workspace: require actual authentication
+        return session.isAuthenticated ? const AppShell() : const AuthScreen();
+      },
       loading: () => const AuthLoadingScreen(),
       error: (_, __) => const AuthScreen(),
     );

@@ -34,7 +34,9 @@ Use the attached app screenshots as visual product reference:
 
 - Dark theme baseline.
 - Glassmorphism surfaces (blurred/frosted cards, rounded corners).
-- Bottom tab navigation for: Home, Calendar, Expenses, Tasks, AI, Profile.
+- Bottom tab navigation for: Home, Finance (Expenses), Calendar, AI, Profile.
+- Tasks screen is accessed via pushed route (not bottom tab).
+- Calendar has internal sub-tabs: Month, Tasks, Events.
 - Blue accent highlights for active controls and key actions.
 
 When implementing UI, preserve this design language unless explicitly changed by the user.
@@ -52,6 +54,35 @@ Before large changes, provide:
 - Never include secrets, API keys, or credentials in code or docs.
 - Prefer environment-based configuration.
 - Do not log sensitive personal data.
+
+## Project Progress Log
+
+### Phase 1 — Navigation Redesign & Super Add Expansion (COMPLETE)
+- 5-tab bottom navigation; Tasks moved to pushed route.
+- Super Add sheet expanded to 5 types (Task, Event, Birthday, Anniversary, Countdown).
+- Calendar Month view now renders events; FAB is "Add".
+
+### Phase 2 — Missing Feature Modules (COMPLETE)
+- Added Bills, Loans, Goals, Learning modules with full entity → repository → screen → widget stacks.
+- New tables in Drift schema: `bills`, `loans`, `goals`, `learning_sessions`.
+- Tool shortcuts grid updated with new features.
+
+### Phase 3 — Offline AI Engine Port (COMPLETE)
+- Created full offline rule-based AI engine: DataContextBuilder, FinancialHealthCalculator, AnomalyDetector, CashFlowProjector, IntentClassifier, OfflineAiEngine.
+- 18 intents supported offline; integrated into AssistantRepositoryImpl as primary fallback.
+- 5 new test suites covering intent classification, health scoring, anomaly detection, cash flow projection, and end-to-end replies.
+
+### Phase 4 — Merchant Detail, Fee Analytics, Encrypted Export, Background Workers (COMPLETE)
+- **Merchant Detail**: tap any transaction to see merchant history, total spent, average, first/last seen, monthly average.
+- **Fee Analytics**: detects fee/charge/cost keywords in transactions and shows total fees, monthly trends, top fee categories.
+- **Encrypted Export**: AES-256 password-protected export toggle in ExportScreen; securely deletes plaintext after encryption.
+- **Background Workers**: extended existing WorkManager dispatcher with BillReminderService (upcoming/overdue bills) and LearningReminderService (streak encouragement).
+
+### Phase 5 — Shorebird Build Scripts, Final Tests, Parity Verification (COMPLETE)
+- **Shorebird scripts**: `scripts/build_shorebird.sh` and `scripts/build_shorebird.ps1` for cross-platform release and patch builds.
+- **New repository tests**: `test/bills/`, `test/loans/`, `test/goals/`, `test/learning/` with full CRUD and business-logic tests.
+- **Encrypted export tests**: `test/export/encrypted_export_service_test.dart` covering round-trip, wrong-password rejection, uniqueness, empty, and large payloads.
+- **Parity verdict**: Dart app is definitively superior. See `PARITY.md` for full comparison.
 
 ## Done Criteria
 

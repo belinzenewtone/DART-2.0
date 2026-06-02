@@ -56,6 +56,9 @@ class ExpensesScreen extends ConsumerWidget {
             onEditExpense: (expense) async {
               await editExpenseEntry(context, ref, expense);
             },
+            onMerchantTap: (expense) {
+              context.pushNamed('merchant-detail', extra: expense.title);
+            },
             onDeleteExpense: (expense) async {
               await ref
                   .read(expenseWriteControllerProvider.notifier)

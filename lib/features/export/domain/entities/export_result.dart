@@ -5,11 +5,13 @@ class ExportResult {
     required this.filePath,
     required this.rowsExported,
     required this.scope,
+    this.isEncrypted = false,
   });
 
   final String filePath;
   final int rowsExported;
   final ExportScope scope;
+  final bool isEncrypted;
 
   @override
   bool operator ==(Object other) =>

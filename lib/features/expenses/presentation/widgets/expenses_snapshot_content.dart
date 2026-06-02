@@ -33,6 +33,7 @@ class ExpensesSnapshotContent extends StatefulWidget {
     required this.onFilterChanged,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.onMerchantTap,
     required this.importMetrics,
     required this.reviewItems,
     required this.quarantineItems,
@@ -50,6 +51,7 @@ class ExpensesSnapshotContent extends StatefulWidget {
   final ValueChanged<ExpenseFilter> onFilterChanged;
   final ValueChanged<ExpenseItem> onEditExpense;
   final ValueChanged<ExpenseItem> onDeleteExpense;
+  final ValueChanged<ExpenseItem> onMerchantTap;
   final ExpenseImportMetrics importMetrics;
   final List<ExpenseReviewItem> reviewItems;
   final List<ExpenseQuarantineItem> quarantineItems;
@@ -172,6 +174,7 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
               balanceAfterKes: tx.balanceAfterKes,
               onEdit: () => widget.onEditExpense(tx),
               onDelete: () => widget.onDeleteExpense(tx),
+              onTap: () => widget.onMerchantTap(tx),
               busy: widget.busy,
             ),
             const SizedBox(height: 10),

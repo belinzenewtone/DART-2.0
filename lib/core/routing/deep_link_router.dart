@@ -17,9 +17,8 @@ abstract final class DeepLinkRouter {
   static const _routes = <String, ShellTab>{
     '/': ShellTab.home,
     '/home': ShellTab.home,
-    '/calendar': ShellTab.calendar,
     '/finance': ShellTab.finance,
-    '/tasks': ShellTab.tasks,
+    '/calendar': ShellTab.calendar,
     '/assistant': ShellTab.assistant,
     '/profile': ShellTab.profile,
   };

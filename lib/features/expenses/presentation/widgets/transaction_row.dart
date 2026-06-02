@@ -74,6 +74,7 @@ class ExpenseTransactionRow extends StatelessWidget {
     this.balanceAfterKes,
     required this.onEdit,
     required this.onDelete,
+    this.onTap,
     required this.busy,
   });
 
@@ -85,6 +86,7 @@ class ExpenseTransactionRow extends StatelessWidget {
   final double? balanceAfterKes;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onTap;
   final bool busy;
 
   @override
@@ -122,9 +124,12 @@ class ExpenseTransactionRow extends StatelessWidget {
           label: 'Delete',
           alignment: Alignment.centerRight,
         ),
-        child: GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
@@ -207,7 +212,8 @@ class ExpenseTransactionRow extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
+          ],
+        ),
           ),
         ),
       ),

@@ -8,10 +8,12 @@ class ExportController extends AutoDisposeAsyncNotifier<ExportResult?> {
   @override
   FutureOr<ExportResult?> build() => null;
 
-  Future<ExportResult> export(ExportScope scope) async {
+  Future<ExportResult> export(ExportScope scope, {String? password}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
-      () => ref.read(exportRepositoryProvider).exportCsv(scope: scope),
+      () => password != null && password.isNotEmpty
+          ? ref.read(exportRepositoryProvider).exportEncryptedCsv(scope: scope, password: password)
+          : ref.read(exportRepositoryProvider).exportCsv(scope: scope),
     );
     state = result;
     if (result.hasError) {

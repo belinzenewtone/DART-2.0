@@ -18,9 +18,17 @@ import 'package:beltech/features/assistant/data/repositories/assistant_repositor
 import 'package:beltech/features/assistant/data/repositories/supabase_assistant_repository_impl.dart';
 import 'package:beltech/features/assistant/data/services/assistant_proxy_service.dart';
 import 'package:beltech/features/assistant/domain/repositories/assistant_repository.dart';
+import 'package:beltech/features/bills/data/repositories/bills_repository_impl.dart';
+import 'package:beltech/features/bills/domain/repositories/bills_repository.dart';
 import 'package:beltech/features/budget/data/repositories/budget_repository_impl.dart';
 import 'package:beltech/features/budget/data/repositories/supabase_budget_repository_impl.dart';
 import 'package:beltech/features/budget/domain/repositories/budget_repository.dart';
+import 'package:beltech/features/loans/data/repositories/loans_repository_impl.dart';
+import 'package:beltech/features/loans/domain/repositories/loans_repository.dart';
+import 'package:beltech/features/goals/data/repositories/goals_repository_impl.dart';
+import 'package:beltech/features/goals/domain/repositories/goals_repository.dart';
+import 'package:beltech/features/learning/data/repositories/learning_repository_impl.dart';
+import 'package:beltech/features/learning/domain/repositories/learning_repository.dart';
 import 'package:beltech/features/calendar/data/repositories/calendar_repository_impl.dart';
 import 'package:beltech/features/calendar/data/repositories/supabase_calendar_repository_impl.dart';
 import 'package:beltech/features/calendar/domain/repositories/calendar_repository.dart';
@@ -224,6 +232,10 @@ final assistantRepositoryProvider = Provider<AssistantRepository>((ref) {
     ref.watch(assistantProfileStoreProvider),
     ref.watch(appDriftStoreProvider),
     proxyService: ref.watch(assistantProxyServiceProvider),
+    billsRepository: ref.watch(billsRepositoryProvider),
+    loansRepository: ref.watch(loansRepositoryProvider),
+    goalsRepository: ref.watch(goalsRepositoryProvider),
+    learningRepository: ref.watch(learningRepositoryProvider),
   );
 });
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
@@ -248,6 +260,19 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
 );
 
 /// Onboarding completion flag — device-local, no cloud sync needed.
+final billsRepositoryProvider = Provider<BillsRepository>(
+  (ref) => BillsRepositoryImpl(ref.watch(appDriftStoreProvider)),
+);
+final loansRepositoryProvider = Provider<LoansRepository>(
+  (ref) => LoansRepositoryImpl(ref.watch(appDriftStoreProvider)),
+);
+final goalsRepositoryProvider = Provider<GoalsRepository>(
+  (ref) => GoalsRepositoryImpl(ref.watch(appDriftStoreProvider)),
+);
+final learningRepositoryProvider = Provider<LearningRepository>(
+  (ref) => LearningRepositoryImpl(ref.watch(appDriftStoreProvider)),
+);
+
 final onboardingRepositoryProvider = Provider<OnboardingRepository>(
   (_) => OnboardingRepositoryImpl(),
 );

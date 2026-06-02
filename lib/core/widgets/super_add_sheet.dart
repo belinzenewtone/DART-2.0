@@ -30,12 +30,51 @@ Future<SuperEntryInput?> showSuperAddSheet(
   DateTime? dueAt = initialInput?.dueAt;
   DateTime? startAt = initialInput?.startAt;
   DateTime? endAt = initialInput?.endAt;
+  int? birthYear = initialInput?.year;
+  var repeatYearly = initialInput?.repeatYearly ?? false;
+  var remind3DaysBefore = initialInput?.remind3DaysBefore ?? false;
   var titleError = false;
   String? timeError;
   String? selectionError;
-  // keep picker pre-focus context without auto-filling visible field values
   final pickerContextDate = contextDate;
   var showDetails = true;
+
+  String _kindLabel(SuperEntryKind k) {
+    return switch (k) {
+      SuperEntryKind.task => 'Task',
+      SuperEntryKind.event => 'Event',
+      SuperEntryKind.birthday => 'Birthday',
+      SuperEntryKind.anniversary => 'Anniversary',
+      SuperEntryKind.countdown => 'Countdown',
+    };
+  }
+
+  bool _canSave() {
+    final hasTitle = titleController.text.trim().isNotEmpty;
+    if (!hasTitle) return false;
+    if (kind == SuperEntryKind.task) {
+      return priority != null &&
+          (!reminderEnabled || reminderMinutesBefore != null);
+    }
+    if (kind == SuperEntryKind.event) {
+      return priority != null &&
+          eventType != null &&
+          startAt != null &&
+          (endAt == null || !endAt!.isBefore(startAt!)) &&
+          (!reminderEnabled || reminderMinutesBefore != null);
+    }
+    if (kind == SuperEntryKind.birthday) {
+      return startAt != null;
+    }
+    if (kind == SuperEntryKind.anniversary) {
+      return startAt != null;
+    }
+    if (kind == SuperEntryKind.countdown) {
+      return startAt != null;
+    }
+    return false;
+  }
+
   return showModalBottomSheet<SuperEntryInput>(
     context: context,
     isScrollControlled: true,
@@ -46,22 +85,18 @@ Future<SuperEntryInput?> showSuperAddSheet(
         final textPrimary = AppColors.textPrimaryFor(brightness);
         final textSecondary = AppColors.textSecondaryFor(brightness);
         final choiceDuration = AppMotion.content(context);
-        final isEvent = kind == SuperEntryKind.event;
-        final canSave =
-            titleController.text.trim().isNotEmpty &&
-            priority != null &&
-            (!isEvent || eventType != null) &&
-            (!reminderEnabled || reminderMinutesBefore != null) &&
-            (!isEvent ||
-                (startAt != null &&
-                    (endAt == null || !endAt!.isBefore(startAt!))));
+        final isEventLike = kind == SuperEntryKind.event;
+        final isTask = kind == SuperEntryKind.task;
+        final isBirthday = kind == SuperEntryKind.birthday;
+        final isAnniversary = kind == SuperEntryKind.anniversary;
+        final isCountdown = kind == SuperEntryKind.countdown;
+        final canSave = _canSave();
 
         return AppFormSheet(
           title: actionLabel == 'Create'
-              ? (isEvent ? 'New Planner Event' : 'New Planner Task')
-              : (isEvent ? 'Edit Planner Event' : 'Edit Planner Task'),
-          subtitle:
-              'One super section for capturing both tasks and calendar events.',
+              ? 'New ${_kindLabel(kind)}'
+              : 'Edit ${_kindLabel(kind)}',
+          subtitle: 'Add something to your planner.',
           onClose: () => Navigator.of(context).pop(),
           footer: Row(
             children: [
@@ -84,33 +119,27 @@ Future<SuperEntryInput?> showSuperAddSheet(
                             setState(() => titleError = true);
                             return;
                           }
-                          if (priority == null) {
+                          if (isTask && priority == null) {
                             setState(() {
                               selectionError = 'Choose a priority.';
                             });
                             return;
                           }
-                          if (isEvent && eventType == null) {
+                          if (isEventLike &&
+                              (priority == null || eventType == null)) {
                             setState(() {
-                              selectionError = 'Choose an event type.';
+                              selectionError =
+                                  'Choose event type and priority.';
                             });
                             return;
                           }
-                          if (reminderEnabled &&
-                              reminderMinutesBefore == null) {
+                          if (isEventLike && startAt == null) {
                             setState(() {
-                              selectionError = 'Choose reminder lead time.';
+                              timeError = 'Select the event start date.';
                             });
                             return;
                           }
-                          if (isEvent && startAt == null) {
-                            setState(() {
-                              timeError =
-                                  'Select the event start date and time.';
-                            });
-                            return;
-                          }
-                          if (isEvent &&
+                          if (isEventLike &&
                               endAt != null &&
                               startAt != null &&
                               endAt!.isBefore(startAt!)) {
@@ -120,22 +149,38 @@ Future<SuperEntryInput?> showSuperAddSheet(
                             });
                             return;
                           }
+                          if ((isBirthday || isAnniversary || isCountdown) &&
+                              startAt == null) {
+                            setState(() {
+                              timeError = 'Select the date.';
+                            });
+                            return;
+                          }
                           Navigator.of(context).pop(
                             SuperEntryInput(
                               kind: kind,
                               title: title,
-                              description:
-                                  descriptionController.text.trim().isEmpty
-                                  ? null
-                                  : descriptionController.text.trim(),
+                              description: descriptionController.text
+                                          .trim()
+                                          .isEmpty
+                                      ? null
+                                      : descriptionController.text.trim(),
                               priority: priority,
-                              dueAt: isEvent ? null : dueAt,
-                              startAt: isEvent ? startAt : null,
-                              endAt: isEvent ? endAt : null,
-                              eventType: isEvent ? eventType : null,
+                              dueAt: isTask ? dueAt : null,
+                              startAt: isTask ? null : startAt,
+                              endAt: isEventLike ? endAt : null,
+                              eventType: isEventLike ? eventType : null,
+                              year: isBirthday ? birthYear : null,
+                              repeatYearly:
+                                  isAnniversary || isCountdown
+                                      ? repeatYearly
+                                      : false,
+                              remind3DaysBefore:
+                                  isCountdown ? remind3DaysBefore : false,
                               reminderEnabled: reminderEnabled,
                               reminderMinutesBefore:
-                                  reminderMinutesBefore ?? (isEvent ? 15 : 30),
+                                  reminderMinutesBefore ??
+                                      (isEventLike ? 15 : 30),
                             ),
                           );
                         },
@@ -146,28 +191,31 @@ Future<SuperEntryInput?> showSuperAddSheet(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: SuperEntryKind.values.map((item) {
-                  final selected = item == kind;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: item == SuperEntryKind.task ? 6 : 0,
-                        left: item == SuperEntryKind.event ? 6 : 0,
-                      ),
+              // ── Kind selector ──
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                child: Row(
+                  children: SuperEntryKind.values.map((item) {
+                    final selected = item == kind;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: lockKind
                             ? null
                             : () => setState(() {
-                                kind = item;
-                                timeError = null;
-                                selectionError = null;
-                              }),
+                                  kind = item;
+                                  timeError = null;
+                                  selectionError = null;
+                                }),
                         child: AnimatedContainer(
                           duration: choiceDuration,
                           curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: selected
                                 ? AppColors.accent
@@ -180,51 +228,67 @@ Future<SuperEntryInput?> showSuperAddSheet(
                             ),
                           ),
                           child: Text(
-                            item == SuperEntryKind.task ? 'Task' : 'Event',
+                            _kindLabel(item),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: selected ? Colors.white : textPrimary,
                               fontWeight: FontWeight.w700,
+                              fontSize: 13,
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
               const SizedBox(height: 14),
+
+              // ── Title ──
               TextField(
                 controller: titleController,
                 onChanged: (_) => setState(() => titleError = false),
                 decoration: InputDecoration(
-                  hintText: 'Title',
+                  hintText: isBirthday
+                      ? 'Name'
+                      : isAnniversary
+                          ? 'Occasion'
+                          : 'Title',
                   errorText: titleError ? 'Title is required' : null,
                 ),
               ),
               const SizedBox(height: 12),
-              SuperAddWhenPickerRow(
-                label: isEvent ? 'Starts' : 'Deadline',
-                value: isEvent ? startAt : dueAt,
-                allowClear: !isEvent,
-                onPick: (picked) => setState(() {
-                  if (isEvent) {
+
+              // ── Date pickers ──
+              if (isTask) ...[
+                SuperAddWhenPickerRow(
+                  label: 'Deadline',
+                  value: dueAt,
+                  allowClear: true,
+                  onPick: (picked) => setState(() {
+                    dueAt = picked;
+                    timeError = null;
+                  }),
+                  onClear: () => setState(() => dueAt = null),
+                  fallbackDate: pickerContextDate,
+                ),
+              ] else if (isEventLike) ...[
+                SuperAddWhenPickerRow(
+                  label: 'Starts',
+                  value: startAt,
+                  allowClear: false,
+                  onPick: (picked) => setState(() {
                     startAt = picked;
                     if (endAt != null &&
                         startAt != null &&
                         endAt!.isBefore(startAt!)) {
                       endAt = startAt!.add(const Duration(hours: 1));
                     }
-                  } else {
-                    dueAt = picked;
-                  }
-                  timeError = null;
-                  selectionError = null;
-                }),
-                onClear: () => setState(() => dueAt = null),
-                fallbackDate: pickerContextDate,
-              ),
-              if (isEvent) ...[
+                    timeError = null;
+                  }),
+                  onClear: () {},
+                  fallbackDate: pickerContextDate,
+                ),
                 const SizedBox(height: 10),
                 SuperAddWhenPickerRow(
                   label: 'Ends (optional)',
@@ -233,12 +297,22 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   onPick: (picked) => setState(() {
                     endAt = picked;
                     timeError = null;
-                    selectionError = null;
                   }),
                   onClear: () => setState(() => endAt = null),
                   fallbackDate: startAt ?? pickerContextDate,
                 ),
+              ] else ...[
+                SuperAddDateOnlyPickerRow(
+                  label: isCountdown ? 'Target date' : 'Date',
+                  value: startAt,
+                  onPick: (picked) => setState(() {
+                    startAt = picked;
+                    timeError = null;
+                  }),
+                  fallbackDate: pickerContextDate,
+                ),
               ],
+
               if (timeError != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -254,6 +328,8 @@ Future<SuperEntryInput?> showSuperAddSheet(
                 ),
               ],
               const SizedBox(height: 12),
+
+              // ── Expandable details ──
               InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => setState(() => showDetails = !showDetails),
@@ -295,24 +371,71 @@ Future<SuperEntryInput?> showSuperAddSheet(
                   ),
                 ),
                 const SizedBox(height: 12),
-                SuperAddPrioritySelector(
-                  selected: priority,
-                  textPrimary: textPrimary,
-                  duration: choiceDuration,
-                  onChanged: (value) => setState(() {
-                    priority = value;
-                    selectionError = null;
-                  }),
-                ),
-                const SizedBox(height: 12),
+
+                // ── Priority (task + event only) ──
+                if (isTask || isEventLike) ...[
+                  SuperAddPrioritySelector(
+                    selected: priority,
+                    textPrimary: textPrimary,
+                    duration: choiceDuration,
+                    onChanged: (value) => setState(() {
+                      priority = value;
+                      selectionError = null;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── Event type (event only) ──
+                if (isEventLike) ...[
+                  SuperAddEventTypeSelector(
+                    selected: eventType,
+                    duration: choiceDuration,
+                    onChanged: (value) => setState(() {
+                      eventType = value;
+                      selectionError = null;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── Birthday year ──
+                if (isBirthday) ...[
+                  SuperAddYearSelector(
+                    selectedYear: birthYear,
+                    onChanged: (value) => setState(() => birthYear = value),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── Repeat yearly (anniversary + countdown) ──
+                if (isAnniversary || isCountdown) ...[
+                  SuperAddRepeatToggle(
+                    value: repeatYearly,
+                    onChanged: (value) => setState(() => repeatYearly = value),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── Remind 3 days before (countdown only) ──
+                if (isCountdown) ...[
+                  SuperAddRemind3DaysToggle(
+                    value: remind3DaysBefore,
+                    onChanged: (value) =>
+                        setState(() => remind3DaysBefore = value),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── Reminder ──
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         'Reminder',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                     Switch.adaptive(
@@ -333,17 +456,6 @@ Future<SuperEntryInput?> showSuperAddSheet(
                     duration: choiceDuration,
                     onChanged: (value) => setState(() {
                       reminderMinutesBefore = value;
-                      selectionError = null;
-                    }),
-                  ),
-                ],
-                if (isEvent) ...[
-                  const SizedBox(height: 12),
-                  SuperAddEventTypeSelector(
-                    selected: eventType,
-                    duration: choiceDuration,
-                    onChanged: (value) => setState(() {
-                      eventType = value;
                       selectionError = null;
                     }),
                   ),

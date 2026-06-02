@@ -187,6 +187,51 @@ class _AppDriftSchema {
       'source_hash TEXT'
       ')',
     );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS bills('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'name TEXT NOT NULL,'
+      'amount REAL NOT NULL,'
+      'due_date INTEGER NOT NULL,'
+      'urgency TEXT NOT NULL DEFAULT \'medium\','
+      'recurrence TEXT,'
+      'paid INTEGER NOT NULL DEFAULT 0,'
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS loans('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'name TEXT NOT NULL,'
+      'lender TEXT,'
+      'total_amount REAL NOT NULL,'
+      'outstanding_amount REAL NOT NULL,'
+      'interest_rate REAL,'
+      'start_date INTEGER,'
+      'due_date INTEGER,'
+      'status TEXT NOT NULL DEFAULT \'active\','
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS goals('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'title TEXT NOT NULL,'
+      'target_amount REAL NOT NULL,'
+      'current_amount REAL NOT NULL DEFAULT 0,'
+      'deadline INTEGER,'
+      'color TEXT,'
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS learning_sessions('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'topic TEXT NOT NULL,'
+      'duration_minutes INTEGER NOT NULL,'
+      'date INTEGER NOT NULL'
+      ')',
+    );
 
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_tx_occurred_at ON transactions(occurred_at)',
@@ -244,6 +289,21 @@ class _AppDriftSchema {
     );
     await store._db.runCustom(
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_fuliza_scope_code_kind ON fuliza_lifecycle_events(scope, mpesa_code, event_kind)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_bills_due_date ON bills(due_date)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_bills_paid ON bills(paid)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_goals_deadline ON goals(deadline)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_learning_date ON learning_sessions(date)',
     );
 
     await _AppDriftSchemaMigrations.removeLegacySeedIncome(store);

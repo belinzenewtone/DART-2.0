@@ -1,6 +1,8 @@
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
+import 'package:beltech/features/expenses/domain/entities/fee_analytics.dart';
+import 'package:beltech/features/expenses/domain/entities/merchant_detail.dart';
 
 abstract class ExpensesRepository {
   Stream<ExpensesSnapshot> watchSnapshot();
@@ -44,4 +46,8 @@ abstract class ExpensesRepository {
   });
 
   Future<void> dismissQuarantineItem(int quarantineId);
+
+  Future<MerchantDetail> fetchMerchantDetail(String merchantTitle);
+
+  Future<FeeAnalytics> fetchFeeAnalytics();
 }

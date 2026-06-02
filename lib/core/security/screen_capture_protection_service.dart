@@ -6,8 +6,8 @@ class ScreenCaptureProtectionService {
 
   static bool? _isSecureEnabled;
 
-  /// Finance (2) and Profile (4) are treated as sensitive tabs.
-  static bool shouldProtectTab(int tabIndex) => tabIndex == 2 || tabIndex == 4;
+  /// Finance (1) and Profile (4) are treated as sensitive tabs.
+  static bool shouldProtectTab(int tabIndex) => tabIndex == 1 || tabIndex == 4;
 
   static Future<void> syncForTab(int tabIndex) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {

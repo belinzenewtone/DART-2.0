@@ -1,12 +1,19 @@
 import 'package:beltech/features/auth/presentation/auth_gate.dart';
 import 'package:beltech/features/analytics/presentation/analytics_screen.dart';
+import 'package:beltech/features/bills/presentation/screens/bills_screen.dart';
 import 'package:beltech/features/budget/presentation/budget_screen.dart';
 import 'package:beltech/features/export/presentation/export_screen.dart';
 import 'package:beltech/features/income/presentation/income_screen.dart';
+import 'package:beltech/features/loans/presentation/screens/loans_screen.dart';
+import 'package:beltech/features/goals/presentation/screens/goals_screen.dart';
+import 'package:beltech/features/expenses/presentation/screens/fee_analytics_screen.dart';
+import 'package:beltech/features/expenses/presentation/screens/merchant_detail_screen.dart';
+import 'package:beltech/features/learning/presentation/screens/learning_screen.dart';
 import 'package:beltech/features/recurring/presentation/recurring_screen.dart';
 import 'package:beltech/features/review/presentation/week_review_screen.dart';
 import 'package:beltech/features/search/presentation/global_search_screen.dart';
 import 'package:beltech/features/settings/presentation/settings_screen.dart';
+import 'package:beltech/features/tasks/presentation/tasks_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,6 +65,44 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/week-review',
         name: 'week-review',
         builder: (context, state) => const WeekReviewScreen(),
+      ),
+      GoRoute(
+        path: '/tasks',
+        name: 'tasks',
+        builder: (context, state) => const TasksScreen(),
+      ),
+      GoRoute(
+        path: '/bills',
+        name: 'bills',
+        builder: (context, state) => const BillsScreen(),
+      ),
+      GoRoute(
+        path: '/loans',
+        name: 'loans',
+        builder: (context, state) => const LoansScreen(),
+      ),
+      GoRoute(
+        path: '/goals',
+        name: 'goals',
+        builder: (context, state) => const GoalsScreen(),
+      ),
+      GoRoute(
+        path: '/learning',
+        name: 'learning',
+        builder: (context, state) => const LearningScreen(),
+      ),
+      GoRoute(
+        path: '/merchant-detail',
+        name: 'merchant-detail',
+        builder: (context, state) {
+          final title = state.extra as String? ?? '';
+          return MerchantDetailScreen(merchantTitle: title);
+        },
+      ),
+      GoRoute(
+        path: '/fee-analytics',
+        name: 'fee-analytics',
+        builder: (context, state) => const FeeAnalyticsScreen(),
       ),
     ],
   ),

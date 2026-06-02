@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/export/data/services/csv_builder.dart';
+import 'package:beltech/features/export/data/services/encrypted_export_service.dart';
 import 'package:beltech/features/export/domain/entities/export_result.dart';
 import 'package:beltech/features/export/domain/repositories/export_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -11,10 +12,13 @@ class ExportRepositoryImpl implements ExportRepository {
   ExportRepositoryImpl(
     this._store, {
     CsvBuilder csvBuilder = const CsvBuilder(),
-  }) : _csvBuilder = csvBuilder;
+    EncryptedExportService encryptService = const EncryptedExportService(),
+  })  : _csvBuilder = csvBuilder,
+        _encryptService = encryptService;
 
   final AppDriftStore _store;
   final CsvBuilder _csvBuilder;
+  final EncryptedExportService _encryptService;
 
   @override
   Future<ExportResult> exportCsv({
@@ -42,6 +46,30 @@ class ExportRepositoryImpl implements ExportRepository {
       filePath: file.path,
       rowsExported: totalRows,
       scope: scope,
+      isEncrypted: false,
+    );
+  }
+
+  @override
+  Future<ExportResult> exportEncryptedCsv({
+    required ExportScope scope,
+    required String password,
+  }) async {
+    if (kIsWeb) {
+      throw Exception('Encrypted export is not supported on web builds.');
+    }
+    final plainResult = await exportCsv(scope: scope);
+    final plainText = await File(plainResult.filePath).readAsString();
+    final encrypted = _encryptService.encrypt(plainText: plainText, password: password);
+    final encryptedFile = File('${plainResult.filePath}.enc');
+    await encryptedFile.writeAsString(encrypted);
+    // Remove plain file for security
+    await File(plainResult.filePath).delete();
+    return ExportResult(
+      filePath: encryptedFile.path,
+      rowsExported: plainResult.rowsExported,
+      scope: scope,
+      isEncrypted: true,
     );
   }
 

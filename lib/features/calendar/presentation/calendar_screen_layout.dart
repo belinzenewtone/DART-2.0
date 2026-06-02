@@ -231,12 +231,28 @@ class _CalendarLayout extends StatelessWidget {
                   ),
                 )
               else
-                const GlassCard(
-                  child: AppEmptyState(
-                    icon: Icons.swap_horiz_rounded,
-                    title: 'Choose Events or Tasks',
-                    subtitle:
-                        'Switch tabs above to view what is scheduled for the selected day.',
+                GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CalendarSectionHeader(
+                        title: 'Events',
+                        dateLabel:
+                            '${_calendarWeekdayName(selectedDay.weekday)}, ${_CalendarScreenState._months[selectedDay.month - 1]} ${selectedDay.day.toString().padLeft(2, '0')}',
+                        pendingCount: pendingEvents,
+                        completedCount: completedEvents,
+                        showCompleted: state._showCompletedEvents,
+                        onToggleCompleted:
+                            state._toggleCompletedEventsVisibility,
+                      ),
+                      const SizedBox(height: 8),
+                      _CalendarEventsPane(
+                        state: state,
+                        eventsState: eventsState,
+                        selectedDay: selectedDay,
+                        writeState: writeState,
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -245,16 +261,18 @@ class _CalendarLayout extends StatelessWidget {
         Positioned(
           right: 20,
           bottom: AppSpacing.fabBottom(context),
-          child: AppFab(
-            busy: writeState.isLoading,
-            onPressed: () => _handleSuperAddFromCalendarImpl(
-              state,
-              context,
-              selectedDay,
-              defaultKind: state._view == _CalendarView.tasks
-                  ? SuperEntryKind.task
-                  : SuperEntryKind.event,
-            ),
+          child: FloatingActionButton.extended(
+            onPressed: writeState.isLoading
+                ? null
+                : () => _handleSuperAddFromCalendarImpl(
+                      state,
+                      context,
+                      selectedDay,
+                    ),
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
           ),
         ),
       ],

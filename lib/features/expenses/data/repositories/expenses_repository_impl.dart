@@ -10,6 +10,8 @@ import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dar
 import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/fee_analytics.dart';
+import 'package:beltech/features/expenses/domain/entities/merchant_detail.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 
 part 'expenses_repository_impl_import_pipeline.dart';
@@ -248,6 +250,101 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
 
   @override
   Future<int> replayImportQueue() => _replayImportQueueImpl(this);
+
+  @override
+  Future<MerchantDetail> fetchMerchantDetail(String merchantTitle) async {
+    await _store.ensureInitialized();
+    final normalized = _normalizeMerchantTitle(merchantTitle);
+    final rows = await _store.executor.runSelect(
+      "SELECT id, title, amount, occurred_at, category, balance_after FROM transactions WHERE LOWER(title) LIKE ? OR LOWER(title) = ? ORDER BY occurred_at DESC",
+      ['%$normalized%', normalized],
+    );
+    if (rows.isEmpty) {
+      return MerchantDetail(
+        merchantTitle: merchantTitle,
+        transactions: const [],
+        totalSpent: 0,
+        transactionCount: 0,
+        firstSeen: DateTime.now(),
+        lastSeen: DateTime.now(),
+        averageAmount: 0,
+        category: '',
+      );
+    }
+    final txs = rows.map((r) => MerchantTransaction(
+      id: _asInt(r['id']),
+      amount: _asDouble(r['amount']),
+      date: DateTime.fromMillisecondsSinceEpoch(_asInt(r['occurred_at'])),
+      category: '${r['category'] ?? ''}',
+      balanceAfter: r['balance_after'] != null ? _asDouble(r['balance_after']) : null,
+    )).toList();
+    final total = txs.fold<double>(0, (s, t) => s + t.amount);
+    final categories = <String, int>{};
+    for (final t in txs) {
+      categories[t.category] = (categories[t.category] ?? 0) + 1;
+    }
+    final dominantCategory = categories.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    return MerchantDetail(
+      merchantTitle: merchantTitle,
+      transactions: txs,
+      totalSpent: total,
+      transactionCount: txs.length,
+      firstSeen: txs.last.date,
+      lastSeen: txs.first.date,
+      averageAmount: total / txs.length,
+      category: dominantCategory,
+    );
+  }
+
+  @override
+  Future<FeeAnalytics> fetchFeeAnalytics() async {
+    await _store.ensureInitialized();
+    // Fee detection: look for common fee keywords in title or specific fee categories
+    final feePatterns = ['fee', 'charge', 'cost', 'withdrawal charge', 'transaction fee', 'mpesa charge'];
+    final placeholders = feePatterns.map((_) => '?').join(',');
+    final rows = await _store.executor.runSelect(
+      "SELECT amount, occurred_at, category, title FROM transactions WHERE "
+      "LOWER(title) LIKE '%fee%' OR LOWER(title) LIKE '%charge%' OR LOWER(title) LIKE '%cost%' OR "
+      "LOWER(category) LIKE '%fee%' OR LOWER(category) LIKE '%charge%' "
+      "ORDER BY occurred_at DESC",
+      const [],
+    );
+    final fees = rows.map((r) => (
+      amount: _asDouble(r['amount']),
+      date: DateTime.fromMillisecondsSinceEpoch(_asInt(r['occurred_at'])),
+      category: '${r['category'] ?? ''}',
+    )).toList();
+    final total = fees.fold<double>(0, (s, f) => s + f.amount);
+    final byMonth = <String, MonthlyFee>{};
+    for (final f in fees) {
+      final key = '${f.date.year}-${f.date.month.toString().padLeft(2, '0')}';
+      byMonth.update(key, (existing) => MonthlyFee(
+        year: f.date.year,
+        month: f.date.month,
+        total: existing.total + f.amount,
+        count: existing.count + 1,
+      ), ifAbsent: () => MonthlyFee(year: f.date.year, month: f.date.month, total: f.amount, count: 1));
+    }
+    final byCategory = <String, double>{};
+    for (final f in fees) {
+      byCategory[f.category] = (byCategory[f.category] ?? 0) + f.amount;
+    }
+    final topCats = byCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return FeeAnalytics(
+      totalFees: total,
+      feeCount: fees.length,
+      monthlyFees: byMonth.values.toList()..sort((a, b) {
+        final cmp = a.year.compareTo(b.year);
+        return cmp != 0 ? cmp : a.month.compareTo(b.month);
+      }),
+      averageFee: fees.isEmpty ? 0 : total / fees.length,
+      topFeeCategories: topCats.take(5).map((e) => (e.key, e.value)).toList(),
+    );
+  }
+
+  String _normalizeMerchantTitle(String title) {
+    return title.toLowerCase().trim();
+  }
 
   Future<int> _count(
     String table, {

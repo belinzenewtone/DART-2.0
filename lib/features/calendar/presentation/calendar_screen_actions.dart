@@ -15,6 +15,7 @@ Future<void> _handleSuperAddFromCalendarImpl(
     return;
   }
 
+  // ── Task ──
   if (input.kind == SuperEntryKind.task) {
     final priority = input.priority;
     if (priority == null) {
@@ -48,47 +49,69 @@ Future<void> _handleSuperAddFromCalendarImpl(
     return;
   }
 
+  // ── Event-like entries (event, birthday, anniversary, countdown) ──
   final eventStart = input.startAt;
-  final eventType = input.eventType;
-  final priority = input.priority;
   if (eventStart == null) {
     return;
   }
-  if (priority == null || eventType == null) {
-    if (context.mounted) {
-      AppFeedback.error(
-        context,
-        'Choose event type and priority before saving.',
-        ref: state.ref,
-      );
-    }
-    return;
+
+  final CalendarEventType type;
+  final CalendarEventPriority priority;
+
+  switch (input.kind) {
+    case SuperEntryKind.event:
+      if (input.priority == null || input.eventType == null) {
+        if (context.mounted) {
+          AppFeedback.error(
+            context,
+            'Choose event type and priority before saving.',
+            ref: state.ref,
+          );
+        }
+        return;
+      }
+      type = _eventTypeFromSuper(input.eventType!);
+      priority = _eventPriorityFromSuper(input.priority!);
+    case SuperEntryKind.birthday:
+      type = CalendarEventType.birthday;
+      priority = CalendarEventPriority.medium;
+    case SuperEntryKind.anniversary:
+      type = CalendarEventType.anniversary;
+      priority = CalendarEventPriority.medium;
+    case SuperEntryKind.countdown:
+      type = CalendarEventType.countdown;
+      priority = CalendarEventPriority.high;
+    default:
+      return;
   }
+
+  String? note = input.description;
+  if (input.kind == SuperEntryKind.birthday && input.year != null) {
+    note = '${note ?? ''}\nBorn in ${input.year}';
+  }
+
   await state.ref
       .read(calendarWriteControllerProvider.notifier)
       .addEvent(
         title: input.title,
         startAt: eventStart,
-        priority: switch (priority) {
-          SuperEntryPriority.high => CalendarEventPriority.high,
-          SuperEntryPriority.medium => CalendarEventPriority.medium,
-          SuperEntryPriority.low => CalendarEventPriority.low,
-        },
-        type: switch (eventType) {
-          SuperEntryEventType.work => CalendarEventType.work,
-          SuperEntryEventType.personal => CalendarEventType.personal,
-          SuperEntryEventType.finance => CalendarEventType.finance,
-          SuperEntryEventType.health => CalendarEventType.health,
-          SuperEntryEventType.general => CalendarEventType.general,
-        },
+        priority: priority,
+        type: type,
         endAt: input.endAt,
-        note: input.description,
+        note: note?.trim(),
         reminderEnabled: input.reminderEnabled,
         reminderMinutesBefore: input.reminderMinutesBefore,
       );
   if (context.mounted &&
       !state.ref.read(calendarWriteControllerProvider).hasError) {
-    AppFeedback.success(context, 'Event added', ref: state.ref);
+    final label = switch (input.kind) {
+      SuperEntryKind.event => 'Event',
+      SuperEntryKind.birthday => 'Birthday',
+      SuperEntryKind.anniversary => 'Anniversary',
+      SuperEntryKind.countdown => 'Countdown',
+      _ => 'Entry',
+    };
+    AppFeedback.success(context, '$label added', ref: state.ref);
   }
 }
 
@@ -253,6 +276,6 @@ SuperEntryEventType _superTypeFromEvent(CalendarEventType type) {
     CalendarEventType.personal => SuperEntryEventType.personal,
     CalendarEventType.finance => SuperEntryEventType.finance,
     CalendarEventType.health => SuperEntryEventType.health,
-    CalendarEventType.general => SuperEntryEventType.general,
+    CalendarEventType.general || CalendarEventType.birthday || CalendarEventType.anniversary || CalendarEventType.countdown => SuperEntryEventType.general,
   };
 }

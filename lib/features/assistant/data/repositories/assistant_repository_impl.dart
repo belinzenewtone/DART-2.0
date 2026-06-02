@@ -1,18 +1,45 @@
 import 'package:beltech/data/local/drift/assistant_profile_store.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
+import 'package:beltech/features/assistant/domain/ai_engine/cash_flow_projector.dart';
+import 'package:beltech/features/assistant/domain/ai_engine/models/data_context.dart';
+import 'package:beltech/features/assistant/domain/ai_engine/offline_ai_engine.dart';
 import 'package:beltech/features/assistant/domain/entities/assistant_message.dart';
 import 'package:beltech/features/assistant/domain/repositories/assistant_repository.dart';
 import 'package:beltech/features/assistant/data/services/assistant_proxy_service.dart';
+import 'package:beltech/features/bills/domain/entities/bill_item.dart';
+import 'package:beltech/features/bills/domain/repositories/bills_repository.dart';
+import 'package:beltech/features/goals/domain/entities/goal_item.dart';
+import 'package:beltech/features/goals/domain/repositories/goals_repository.dart';
+import 'package:beltech/features/learning/domain/entities/learning_session.dart';
+import 'package:beltech/features/learning/domain/repositories/learning_repository.dart';
+import 'package:beltech/features/loans/domain/entities/loan_item.dart';
+import 'package:beltech/features/loans/domain/repositories/loans_repository.dart';
 
 class AssistantRepositoryImpl implements AssistantRepository {
-  AssistantRepositoryImpl(this._store, this._appStore,
-      {AssistantProxyService? proxyService})
-      : _proxyService = proxyService;
+  AssistantRepositoryImpl(
+    this._store,
+    this._appStore, {
+    AssistantProxyService? proxyService,
+    BillsRepository? billsRepository,
+    LoansRepository? loansRepository,
+    GoalsRepository? goalsRepository,
+    LearningRepository? learningRepository,
+  })  : _proxyService = proxyService,
+        _billsRepository = billsRepository,
+        _loansRepository = loansRepository,
+        _goalsRepository = goalsRepository,
+        _learningRepository = learningRepository;
 
   final AssistantProfileStore _store;
   final AppDriftStore _appStore;
   final AssistantProxyService? _proxyService;
+  final BillsRepository? _billsRepository;
+  final LoansRepository? _loansRepository;
+  final GoalsRepository? _goalsRepository;
+  final LearningRepository? _learningRepository;
+
+  static const _offlineEngine = OfflineAiEngine();
 
   @override
   Stream<List<AssistantMessage>> watchConversation() {
@@ -34,20 +61,19 @@ class AssistantRepositoryImpl implements AssistantRepository {
   List<AssistantSuggestion> suggestions() {
     return const [
       AssistantSuggestion('How much did I spend today?'),
-      AssistantSuggestion("What's my biggest expense this month?"),
+      AssistantSuggestion("What's my financial health score?"),
       AssistantSuggestion('Show my spending by category'),
-      AssistantSuggestion('How many tasks are pending?'),
-      AssistantSuggestion('What events do I have this week?'),
-      AssistantSuggestion('Am I spending more than last week?'),
+      AssistantSuggestion('Any anomalies in my spending?'),
+      AssistantSuggestion('Project my cash flow for next month'),
+      AssistantSuggestion('How are my goals doing?'),
+      AssistantSuggestion('What bills are due soon?'),
     ];
   }
 
   @override
   Future<void> sendMessage(String text) async {
     final normalized = text.trim();
-    if (normalized.isEmpty) {
-      return;
-    }
+    if (normalized.isEmpty) return;
     await _store.addAssistantMessage(text: normalized, isUser: true);
     await _store.addAssistantMessage(
       text: await _buildReply(normalized),
@@ -61,129 +87,100 @@ class AssistantRepositoryImpl implements AssistantRepository {
   }
 
   Future<String> _buildReply(String prompt) async {
-    final lower = prompt.toLowerCase();
-    final todaySpending = await _sumTransactions(
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)
-          .add(const Duration(days: 1)),
-    );
-    final topCategories = await _topCategoriesInCurrentMonth();
-    final pendingCount = await _pendingTasks();
-    final weekEvents = await _eventsThisWeek();
-    final context = [
-      'today_spending_kes: ${todaySpending.toStringAsFixed(2)}',
-      'pending_tasks: $pendingCount',
-      'events_this_week: $weekEvents',
-      'top_categories: ${topCategories.map((item) => '${item.$1}=${item.$2.toStringAsFixed(2)}').join(', ')}',
-    ].join('\n');
-
+    // Try remote proxy first if available
     final aiReply = await _proxyService?.generateReply(
       userPrompt: prompt,
-      analyticsContext: context,
+      analyticsContext: await _buildAnalyticsContext(),
     );
     if (aiReply != null && aiReply.isNotEmpty) {
       return aiReply;
     }
 
-    if (_containsAny(lower, ['how much', 'spend', 'spent', 'today'])) {
-      return 'Your spending today is ${CurrencyFormatter.money(todaySpending)}.';
-    }
-    if (_containsAny(lower, ['biggest', 'largest']) &&
-        lower.contains('expense')) {
-      final top = await _topCategoryInCurrentMonth();
-      if (top == null) {
-        return 'No expenses found this month yet.';
-      }
-      return 'Your biggest expense category this month is ${top.$1} at ${CurrencyFormatter.money(top.$2)}.';
-    }
-    if (_containsAny(lower, ['category', 'categories']) &&
-        _containsAny(lower, ['spend', 'expense'])) {
-      final categories = await _topCategoriesInCurrentMonth();
-      if (categories.isEmpty) {
-        return 'No categorized spending found for this month.';
-      }
-      final summary = categories
-          .map((item) => '${item.$1}: ${CurrencyFormatter.money(item.$2)}')
-          .join(', ');
-      return 'Your spending by category this month: $summary.';
-    }
-    if (lower.contains('task')) {
-      final pending = await _pendingTasks();
-      return 'You currently have $pending pending task${pending == 1 ? '' : 's'}.';
-    }
-    if (_containsAny(lower, ['event', 'calendar', 'schedule']) &&
-        lower.contains('week')) {
-      final count = await _eventsThisWeek();
-      return count == 0
-          ? 'You have no events scheduled this week.'
-          : 'You have $count event${count == 1 ? '' : 's'} scheduled this week.';
-    }
-    if (_containsAny(
-        lower, ['more than last week', 'than last week', 'compare'])) {
-      final now = DateTime.now();
-      final thisWeekStart = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final thisWeekEnd = thisWeekStart.add(const Duration(days: 7));
-      final previousWeekStart = thisWeekStart.subtract(const Duration(days: 7));
-      final previousWeekEnd = thisWeekStart;
-      final thisWeek = await _sumTransactions(thisWeekStart, thisWeekEnd);
-      final lastWeek =
-          await _sumTransactions(previousWeekStart, previousWeekEnd);
-      if (thisWeek > lastWeek) {
-        return 'You are spending more than last week by ${CurrencyFormatter.money(thisWeek - lastWeek)}.';
-      }
-      if (thisWeek < lastWeek) {
-        return 'You are spending less than last week by ${CurrencyFormatter.money(lastWeek - thisWeek)}.';
-      }
-      return 'Your spending is equal to last week at ${CurrencyFormatter.money(thisWeek)}.';
-    }
-    if (lower.contains('event') ||
-        lower.contains('calendar') ||
-        lower.contains('schedule')) {
-      final todayEvents = await _eventsForDay(DateTime.now());
-      return todayEvents == 0
-          ? 'No events for today. You can add one from Calendar.'
-          : 'You have $todayEvents event${todayEvents == 1 ? '' : 's'} today.';
-    }
-    return 'I can help with spending, tasks, calendar events, and profile activity.';
+    // Fall back to offline engine
+    return _offlineEngine.reply(
+      query: prompt,
+      totalBalance: _totalBalance(),
+      todaySpending: _todaySpending(),
+      weekSpending: _weekSpending(),
+      monthSpending: _monthSpending(),
+      monthIncome: _monthIncome(),
+      pendingTasksCount: _pendingTasks(),
+      overdueTasksCount: _overdueTasks(),
+      weekEventsCount: _eventsThisWeek(),
+      topCategories: _topCategoriesInCurrentMonth(),
+      recentTransactions: _recentTransactions(),
+      billsUpcoming: _upcomingBills(),
+      billsOverdue: _overdueBills(),
+      loansOutstanding: _loansOutstanding(),
+      loansActiveCount: _loansActiveCount(),
+      goals: _goalSummaries(),
+      learningStreak: _learningStreak(),
+      monthlyLearningMinutes: _monthlyLearningMinutes(),
+      avgDailyIncome: _avgDailyIncome(),
+      avgDailyExpense: _avgDailyExpense(),
+      loanPayments: _loanPayments(),
+    );
   }
 
-  Future<double> _sumTransactions(DateTime start, DateTime end) async {
+  Future<String> _buildAnalyticsContext() async {
+    final today = await _todaySpending();
+    final month = await _monthSpending();
+    final pending = await _pendingTasks();
+    final weekEvents = await _eventsThisWeek();
+    final cats = await _topCategoriesInCurrentMonth();
+    return [
+      'today_spending: ${CurrencyFormatter.money(today)}',
+      'month_spending: ${CurrencyFormatter.money(month)}',
+      'pending_tasks: $pending',
+      'events_this_week: $weekEvents',
+      'top_categories: ${cats.map((c) => '${c.\$1}=${CurrencyFormatter.money(c.\$2)}').join(', ')}',
+    ].join('\n');
+  }
+
+  // --- Data suppliers for offline engine ---
+
+  Future<double> _totalBalance() async {
     await _appStore.ensureInitialized();
     final rows = await _appStore.executor.runSelect(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE occurred_at >= ? AND occurred_at < ?',
-      [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      'SELECT COALESCE(SUM(CASE WHEN transaction_type = \'income\' THEN amount ELSE -amount END), 0) AS balance FROM transactions',
+      const [],
     );
-    final value = rows.first['total'];
-    if (value is num) {
-      return value.toDouble();
-    }
-    return double.tryParse('$value') ?? 0;
+    final v = rows.firstOrNull?['balance'];
+    return _asDouble(v);
   }
 
-  Future<(String, double)?> _topCategoryInCurrentMonth() async {
-    final top = await _topCategoriesInCurrentMonth();
-    return top.isEmpty ? null : top.first;
-  }
-
-  Future<List<(String, double)>> _topCategoriesInCurrentMonth() async {
-    await _appStore.ensureInitialized();
+  Future<double> _todaySpending() async {
     final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 1);
-    final rows = await _appStore.executor.runSelect(
-      'SELECT category, COALESCE(SUM(amount), 0) AS total '
-      'FROM transactions WHERE occurred_at >= ? AND occurred_at < ? '
-      'GROUP BY category ORDER BY total DESC LIMIT 3',
-      [monthStart.millisecondsSinceEpoch, monthEnd.millisecondsSinceEpoch],
+    return _sumTransactions(
+      DateTime(now.year, now.month, now.day),
+      DateTime(now.year, now.month, now.day).add(const Duration(days: 1)),
     );
-    return rows.map((row) {
-      final category = (row['category'] ?? 'Other') as String;
-      final total = row['total'];
-      final amount =
-          total is num ? total.toDouble() : (double.tryParse('$total') ?? 0);
-      return (category, amount);
-    }).toList();
+  }
+
+  Future<double> _weekSpending() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    return _sumTransactions(start, start.add(const Duration(days: 7)));
+  }
+
+  Future<double> _monthSpending() async {
+    final now = DateTime.now();
+    return _sumTransactions(
+      DateTime(now.year, now.month, 1),
+      DateTime(now.year, now.month + 1, 1),
+    );
+  }
+
+  Future<double> _monthIncome() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 1);
+    await _appStore.ensureInitialized();
+    final rows = await _appStore.executor.runSelect(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE transaction_type = ? AND occurred_at >= ? AND occurred_at < ?',
+      ['income', start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+    );
+    return _asDouble(rows.firstOrNull?['total']);
   }
 
   Future<int> _pendingTasks() async {
@@ -192,35 +189,175 @@ class AssistantRepositoryImpl implements AssistantRepository {
       'SELECT COUNT(*) AS total FROM tasks WHERE completed = 0',
       const [],
     );
-    final value = rows.first['total'];
-    if (value is num) {
-      return value.toInt();
-    }
-    return int.tryParse('$value') ?? 0;
+    return _asInt(rows.firstOrNull?['total']);
   }
 
-  Future<int> _eventsForDay(DateTime day) async {
-    final events = await _appStore.watchEventsForDay(day).first;
-    return events.length;
+  Future<int> _overdueTasks() async {
+    await _appStore.ensureInitialized();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final rows = await _appStore.executor.runSelect(
+      'SELECT COUNT(*) AS total FROM tasks WHERE completed = 0 AND due_at IS NOT NULL AND due_at < ?',
+      [now],
+    );
+    return _asInt(rows.firstOrNull?['total']);
   }
 
   Future<int> _eventsThisWeek() async {
     final now = DateTime.now();
-    final weekStart = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
     var count = 0;
     for (var i = 0; i < 7; i++) {
-      count += await _eventsForDay(weekStart.add(Duration(days: i)));
+      final day = weekStart.add(Duration(days: i));
+      final events = await _appStore.watchEventsForDay(day).first;
+      count += events.length;
     }
     return count;
   }
 
-  bool _containsAny(String source, List<String> markers) {
-    for (final marker in markers) {
-      if (source.contains(marker)) {
-        return true;
-      }
-    }
-    return false;
+  Future<List<(String, double)>> _topCategoriesInCurrentMonth() async {
+    await _appStore.ensureInitialized();
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final end = DateTime(now.year, now.month + 1, 1);
+    final rows = await _appStore.executor.runSelect(
+      'SELECT category, COALESCE(SUM(amount), 0) AS total FROM transactions '
+      'WHERE occurred_at >= ? AND occurred_at < ? GROUP BY category ORDER BY total DESC LIMIT 5',
+      [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+    );
+    return rows.map((r) {
+      final cat = '${r['category'] ?? 'Other'}';
+      return (cat, _asDouble(r['total']));
+    }).toList();
   }
+
+  Future<List<RecentTransaction>> _recentTransactions() async {
+    await _appStore.ensureInitialized();
+    final rows = await _appStore.executor.runSelect(
+      'SELECT title, category, amount, occurred_at, transaction_type FROM transactions ORDER BY occurred_at DESC LIMIT 30',
+      const [],
+    );
+    return rows.map((r) => RecentTransaction(
+      title: '${r['title'] ?? ''}',
+      category: '${r['category'] ?? ''}',
+      amount: _asDouble(r['amount']),
+      date: DateTime.fromMillisecondsSinceEpoch(_asInt(r['occurred_at'])),
+      type: '${r['transaction_type'] ?? 'expense'}',
+    )).toList();
+  }
+
+  Future<List<UpcomingBill>> _upcomingBills() async {
+    if (_billsRepository == null) return [];
+    final bills = await _billsRepository!.loadBills();
+    final now = DateTime.now();
+    return bills
+        .where((b) => !b.paid && b.dueDate.isAfter(now))
+        .map((b) => UpcomingBill(
+              name: b.name,
+              amount: b.amount,
+              dueDate: b.dueDate,
+              daysUntil: b.dueDate.difference(now).inDays,
+            ))
+        .toList()
+      ..sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
+  }
+
+  Future<List<UpcomingBill>> _overdueBills() async {
+    if (_billsRepository == null) return [];
+    final bills = await _billsRepository!.loadBills();
+    final now = DateTime.now();
+    return bills
+        .where((b) => !b.paid && b.dueDate.isBefore(now))
+        .map((b) => UpcomingBill(
+              name: b.name,
+              amount: b.amount,
+              dueDate: b.dueDate,
+              daysUntil: b.dueDate.difference(now).inDays,
+            ))
+        .toList();
+  }
+
+  Future<double> _loansOutstanding() async {
+    if (_loansRepository == null) return 0;
+    return _loansRepository!.totalOutstanding();
+  }
+
+  Future<int> _loansActiveCount() async {
+    if (_loansRepository == null) return 0;
+    final loans = await _loansRepository!.loadLoans();
+    return loans.where((l) => l.status == LoanStatus.active).length;
+  }
+
+  Future<List<GoalSummary>> _goalSummaries() async {
+    if (_goalsRepository == null) return [];
+    final goals = await _goalsRepository!.loadGoals();
+    return goals.map((g) => GoalSummary(
+      title: g.title,
+      target: g.targetAmount,
+      current: g.currentAmount,
+      progressPercent: g.progressPercent,
+      atRisk: g.isAtRisk,
+    )).toList();
+  }
+
+  Future<int> _learningStreak() async {
+    if (_learningRepository == null) return 0;
+    return _learningRepository!.currentStreak();
+  }
+
+  Future<int> _monthlyLearningMinutes() async {
+    if (_learningRepository == null) return 0;
+    return _learningRepository!.monthlyMinutes(DateTime.now());
+  }
+
+  Future<double> _avgDailyIncome() async {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final days = max(1, now.difference(monthStart).inDays + 1);
+    final income = await _monthIncome();
+    return income / days;
+  }
+
+  Future<double> _avgDailyExpense() async {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final days = max(1, now.difference(monthStart).inDays + 1);
+    final spending = await _monthSpending();
+    return spending / days;
+  }
+
+  Future<List<LoanPayment>> _loanPayments() async {
+    if (_loansRepository == null) return [];
+    final loans = await _loansRepository!.loadLoans();
+    return loans
+        .where((l) => l.status == LoanStatus.active && l.dueDate != null)
+        .map((l) => LoanPayment(
+              loanName: l.name,
+              amount: l.outstandingAmount,
+              dueDate: l.dueDate!,
+            ))
+        .toList();
+  }
+
+  Future<double> _sumTransactions(DateTime start, DateTime end) async {
+    await _appStore.ensureInitialized();
+    final rows = await _appStore.executor.runSelect(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE occurred_at >= ? AND occurred_at < ?',
+      [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+    );
+    return _asDouble(rows.firstOrNull?['total']);
+  }
+
+  double _asDouble(Object? value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value') ?? 0;
+  }
+
+  int _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value') ?? 0;
+  }
+
+  int max(int a, int b) => a > b ? a : b;
 }

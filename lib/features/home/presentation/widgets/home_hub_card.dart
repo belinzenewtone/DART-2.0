@@ -33,8 +33,7 @@ class HomeHubCard extends ConsumerWidget {
                   : '${overview.pendingCount} pending',
               onTap: () {
                 AppHaptics.lightImpact();
-                ref.read(shellTabIndexProvider.notifier).state =
-                    ShellTab.tasks.index;
+                context.pushNamed('tasks');
               },
             ),
             Divider(
