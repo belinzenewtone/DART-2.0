@@ -212,7 +212,7 @@ class _CommitmentCard extends StatelessWidget {
                     height: 16,
                     child: LinearProgressIndicator(),
                   ),
-                  error: (_) => const Text('—'),
+                  error: (_, __) => const Text('—'),
                 ),
               ],
             ),

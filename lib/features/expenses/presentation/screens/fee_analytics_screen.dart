@@ -61,8 +61,7 @@ class FeeAnalyticsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Text('By Category', style: AppTypography.headlineSm(context)),
               const SizedBox(height: 8),
-              for (final cat in fees.topFeeCategories) ...[
-                final (category, amount) = cat;
+              for (final (category, amount) in fees.topFeeCategories) ...[
                 GlassCard(
                   child: ListTile(
                     leading: const Icon(Icons.category_outlined),

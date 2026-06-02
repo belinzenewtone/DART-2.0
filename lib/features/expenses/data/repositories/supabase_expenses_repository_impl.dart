@@ -210,7 +210,13 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   Future<void> dismissQuarantineItem(int quarantineId) =>
       _dismissQuarantineItemImpl(this, quarantineId);
 
-@override
+  @override
+  Future<int> replayImportQueue() {
+    final userId = _requireUserId();
+    return _replayImportQueueImpl(this, userId);
+  }
+
+  @override
   Future<MerchantDetail> fetchMerchantDetail(String merchantTitle) async {
     final userId = _requireUserId();
     final rows = await _client

@@ -68,7 +68,7 @@ class GoalItemCard extends StatelessWidget {
                   minHeight: 6,
                   backgroundColor: AppColors.surfaceMutedFor(brightness),
                   valueColor: AlwaysStoppedAnimation<Color>(
-                      atRisk ? AppColors.error : AppColors.success),
+                      atRisk ? AppColors.danger : AppColors.success),
                 ),
               ),
               const SizedBox(height: 4),

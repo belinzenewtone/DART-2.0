@@ -30,8 +30,8 @@ void main() {
         overdueTasksCount: 5,
         learningStreak: 0,
         goals: const [],
-        billsOverdue: const [UpcomingBill(name: 'Rent', amount: 20000, dueDate: _d, daysUntil: -5)],
-        anomalies: const [Anomaly(type: AnomalyType.dailySurge, description: 'X', severity: AnomalySeverity.high)],
+        billsOverdue: [UpcomingBill(name: 'Rent', amount: 20000, dueDate: _d, daysUntil: -5)],
+        anomalies: [Anomaly(type: AnomalyType.dailySurge, description: 'X', severity: AnomalySeverity.high)],
         loansOutstanding: 200000,
       );
       final score = calculator.calculate(ctx);
@@ -44,8 +44,8 @@ void main() {
         monthIncome: 10000,
         monthSpending: 50000,
         overdueTasksCount: 20,
-        billsOverdue: List.generate(10, (_) => const UpcomingBill(name: 'X', amount: 1, dueDate: _d, daysUntil: -1)),
-        anomalies: List.generate(10, (_) => const Anomaly(type: AnomalyType.duplicate, description: 'X', severity: AnomalySeverity.high)),
+        billsOverdue: List.generate(10, (_) => UpcomingBill(name: 'X', amount: 1, dueDate: _d, daysUntil: -1)),
+        anomalies: List.generate(10, (_) => Anomaly(type: AnomalyType.duplicate, description: 'X', severity: AnomalySeverity.high)),
       );
       final score = calculator.calculate(ctx);
       expect(score, 0);
