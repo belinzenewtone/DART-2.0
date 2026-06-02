@@ -208,10 +208,79 @@ class SupabaseExpensesRepositoryImpl implements ExpensesRepository {
   Future<void> dismissQuarantineItem(int quarantineId) =>
       _dismissQuarantineItemImpl(this, quarantineId);
 
-  @override
-  Future<int> replayImportQueue() {
+@override
+  Future<MerchantDetail> fetchMerchantDetail(String merchantTitle) async {
     final userId = _requireUserId();
-    return _replayImportQueueImpl(this, userId);
+    final rows = await _client
+        .from('transactions')
+        .select('id,amount,occurred_at,category,balance_after,title')
+        .eq('owner_id', userId)
+        .ilike('title', '%$merchantTitle%')
+        .order('occurred_at', ascending: false)
+        .limit(50);
+    if (rows.isEmpty) {
+      return MerchantDetail(
+        merchantTitle: merchantTitle,
+        transactions: [],
+        totalSpent: 0,
+        transactionCount: 0,
+        firstSeen: DateTime.now(),
+        lastSeen: DateTime.now(),
+        averageAmount: 0,
+        category: 'Unknown',
+      );
+    }
+    final txs = rows.map((r) => MerchantTransaction(
+      id: r['id'] as int,
+      amount: (r['amount'] as num).toDouble(),
+      date: DateTime.parse(r['occurred_at'] as String),
+      category: r['category'] as String? ?? 'Unknown',
+      balanceAfter: (r['balance_after'] as num?)?.toDouble(),
+    )).toList();
+    final total = txs.fold<double>(0, (sum, t) => sum + t.amount);
+    return MerchantDetail(
+      merchantTitle: merchantTitle,
+      transactions: txs,
+      totalSpent: total,
+      transactionCount: txs.length,
+      firstSeen: txs.last.date,
+      lastSeen: txs.first.date,
+      averageAmount: txs.isNotEmpty ? total / txs.length : 0,
+      category: txs.first.category,
+    );
+  }
+
+  @override
+  Future<FeeAnalytics> fetchFeeAnalytics() async {
+    final userId = _requireUserId();
+    final rows = await _client
+        .from('transactions')
+        .select('amount,occurred_at,category')
+        .eq('owner_id', userId)
+        .eq('transaction_type', 'expense')
+        .order('occurred_at', ascending: false)
+        .limit(500);
+    final feeKeywords = ['fee', 'charge', 'commission', ' levy ', 'tariff', 'service fee'];
+    final feeRows = rows.where((r) {
+      final title = (r['title'] as String? ?? '').toLowerCase();
+      final cat = (r['category'] as String? ?? '').toLowerCase();
+      return feeKeywords.any((k) => title.contains(k) || cat.contains(k));
+    }).toList();
+    final totalFees = feeRows.fold<double>(0, (s, r) => s + (r['amount'] as num).toDouble());
+    final byCategory = <String, double>{};
+    for (final r in feeRows) {
+      byCategory[r['category'] as String? ?? 'Other'] =
+          (byCategory[r['category'] as String? ?? 'Other'] ?? 0) + (r['amount'] as num).toDouble();
+    }
+    final topCats = byCategory.entries.map((e) => (e.key, e.value)).toList()
+      ..sort((a, b) => b.$2.compareTo(a.$2));
+    return FeeAnalytics(
+      totalFees: totalFees,
+      feeCount: feeRows.length,
+      averageFee: feeRows.isNotEmpty ? totalFees / feeRows.length : 0,
+      topFeeCategories: topCats.take(10).toList(),
+      monthlyFees: [],
+    );
   }
 
   String _requireUserId() {

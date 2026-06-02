@@ -66,6 +66,8 @@ class AppDriftStore {
 
   Stream<List<DriftTaskRecord>> watchTasks() => _watch(_loadTasks);
 
+  Stream<int> watchChangeStream() => _changes.stream;
+
   Stream<List<DriftEventRecord>> watchEventsForDay(DateTime day) =>
       _watch(() => _loadEventsForDay(day));
   Stream<List<DriftEventRecord>> watchEventsInRange(

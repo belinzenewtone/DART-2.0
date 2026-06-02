@@ -81,5 +81,20 @@ String formatEventDateTimeLabel(BuildContext context, DateTime value) {
         color: AppColors.slate,
         icon: Icons.event_note_outlined
       ),
+    CalendarEventType.birthday => (
+        label: 'Birthday',
+        color: AppColors.warning,
+        icon: Icons.cake_outlined
+      ),
+    CalendarEventType.anniversary => (
+        label: 'Anniversary',
+        color: AppColors.danger,
+        icon: Icons.celebration_outlined
+      ),
+    CalendarEventType.countdown => (
+        label: 'Countdown',
+        color: AppColors.accent,
+        icon: Icons.timer_outlined
+      ),
   };
 }

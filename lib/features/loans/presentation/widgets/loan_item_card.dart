@@ -112,6 +112,6 @@ class LoanItemCard extends StatelessWidget {
   Color _statusColor(LoanStatus status) => switch (status) {
         LoanStatus.active => AppColors.warning,
         LoanStatus.cleared => AppColors.success,
-        LoanStatus.defaulted => AppColors.error,
+        LoanStatus.defaulted => AppColors.danger,
       };
 }

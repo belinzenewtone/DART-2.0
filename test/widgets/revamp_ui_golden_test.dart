@@ -216,6 +216,7 @@ void main() {
               onRejectReview: (_) {},
               onDismissQuarantine: (_) {},
               onReplayImportQueue: () async {},
+              onMerchantTap: (_) {},
             ),
           ),
         ),

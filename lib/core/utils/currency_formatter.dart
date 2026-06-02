@@ -24,13 +24,20 @@ class CurrencyFormatter {
     return 'KES ${amount.toStringAsFixed(0)}';
   }
 
-  static String money(double amount) {
+static String money(double amount) {
     final formatted = _formatter.format(amount);
     final decimalSeparator = _formatter.symbols.DECIMAL_SEP;
     final decimalIndex = formatted.lastIndexOf(decimalSeparator);
-    if (decimalIndex == -1 || decimalIndex == formatted.length - 1) {
-      return formatted;
+
+    if (decimalIndex > 0) {
+      final withoutDecimals = formatted.substring(0, decimalIndex);
+      return withoutDecimals;
     }
+    return formatted;
+  }
+
+  static String formatKes(double amount) => money(amount);
+}
     // Prevent fractional digits from wrapping onto a new line.
     return '${formatted.substring(0, decimalIndex + 1)}$_wordJoiner${formatted.substring(decimalIndex + 1)}';
   }

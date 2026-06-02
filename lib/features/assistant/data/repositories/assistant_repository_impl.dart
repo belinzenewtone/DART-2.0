@@ -128,12 +128,13 @@ class AssistantRepositoryImpl implements AssistantRepository {
     final pending = await _pendingTasks();
     final weekEvents = await _eventsThisWeek();
     final cats = await _topCategoriesInCurrentMonth();
+    final catsLine = cats.map((c) => '${c.$1}=${CurrencyFormatter.money(c.$2)}').join(', ');
     return [
       'today_spending: ${CurrencyFormatter.money(today)}',
       'month_spending: ${CurrencyFormatter.money(month)}',
       'pending_tasks: $pending',
       'events_this_week: $weekEvents',
-      'top_categories: ${cats.map((c) => '${c.\$1}=${CurrencyFormatter.money(c.\$2)}').join(', ')}',
+      'top_categories: $catsLine',
     ].join('\n');
   }
 

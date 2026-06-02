@@ -120,6 +120,17 @@ class BillsRepositoryImpl implements BillsRepository {
     return _asDouble(value);
   }
 
+  @override
+  Future<int> overdueCount() async {
+    await _store.ensureInitialized();
+    final now = DateTime.now();
+    final rows = await _store.executor.runSelect(
+      'SELECT COUNT(*) FROM bills WHERE paid = 0 AND due_date < ?',
+      [now.millisecondsSinceEpoch],
+    );
+    return _asInt(rows.firstOrNull?['count']);
+  }
+
   BillItem _rowToBill(Map<String, Object?> row) {
     return BillItem(
       id: _asInt(row['id']),

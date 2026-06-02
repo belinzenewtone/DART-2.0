@@ -22,4 +22,5 @@ abstract interface class BillsRepository {
   });
   Future<void> deleteBill(int id);
   Future<double> monthlyCommitmentTotal();
+  Future<int> overdueCount();
 }

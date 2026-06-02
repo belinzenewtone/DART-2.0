@@ -45,7 +45,7 @@ const defaultToolShortcuts = [
   ToolShortcut(
     label: 'Loans',
     icon: Icons.account_balance_outlined,
-    color: AppColors.error,
+    color: AppColors.danger,
     routeName: 'loans',
   ),
   ToolShortcut(
@@ -69,7 +69,7 @@ const defaultToolShortcuts = [
   ToolShortcut(
     label: 'Fee Analytics',
     icon: Icons.money_off_csred_rounded,
-    color: AppColors.error,
+    color: AppColors.danger,
     routeName: 'fee-analytics',
   ),
   ToolShortcut(

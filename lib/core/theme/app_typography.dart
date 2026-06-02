@@ -67,6 +67,25 @@ class AppTypography {
         color: AppColors.textPrimaryFor(Theme.of(context).brightness),
       );
 
+  /// 20px w600 — section/card title (alias for sectionTitle)
+  static TextStyle title(BuildContext context) => sectionTitle(context);
+
+  /// 20px w600 — small headline
+  static TextStyle headlineSm(BuildContext context) => GoogleFonts.inter(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        height: 28 / 20,
+        color: AppColors.textPrimaryFor(Theme.of(context).brightness),
+      );
+
+  /// 24px w600 — medium headline
+  static TextStyle headlineMd(BuildContext context) => GoogleFonts.inter(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        height: 32 / 24,
+        color: AppColors.textPrimaryFor(Theme.of(context).brightness),
+      );
+
   // ── Body ─────────────────────────────────────────────────────────────────────
 
   /// 15px w400 — default body copy
@@ -76,6 +95,9 @@ class AppTypography {
         height: 22 / 15,
         color: AppColors.textSecondaryFor(Theme.of(context).brightness),
       );
+
+  /// alias of bodyMd
+  static TextStyle body(BuildContext context) => bodyMd(context);
 
   /// 13px w400 — small supporting text, metadata
   static TextStyle bodySm(BuildContext context) => GoogleFonts.inter(

@@ -168,6 +168,9 @@ Color _typeColor(CalendarEventType type) {
     CalendarEventType.finance => AppColors.teal,
     CalendarEventType.health => AppColors.warning,
     CalendarEventType.general => AppColors.slate,
+    CalendarEventType.birthday => AppColors.warning,
+    CalendarEventType.anniversary => AppColors.danger,
+    CalendarEventType.countdown => AppColors.accent,
   };
 }
 
@@ -178,6 +181,9 @@ IconData _typeIcon(CalendarEventType type) {
     CalendarEventType.finance => Icons.account_balance_wallet_outlined,
     CalendarEventType.health => Icons.favorite_outline,
     CalendarEventType.general => Icons.event_note_outlined,
+    CalendarEventType.birthday => Icons.cake_outlined,
+    CalendarEventType.anniversary => Icons.celebration_outlined,
+    CalendarEventType.countdown => Icons.timer_outlined,
   };
 }
 

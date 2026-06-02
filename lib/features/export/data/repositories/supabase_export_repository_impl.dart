@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:beltech/features/export/data/services/csv_builder.dart';
+import 'package:beltech/features/export/data/services/encrypted_export_service.dart';
 import 'package:beltech/features/export/domain/entities/export_result.dart';
 import 'package:beltech/features/export/domain/repositories/export_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +41,37 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
     await file.writeAsString(content);
     return ExportResult(
         filePath: file.path, rowsExported: totalRows, scope: scope);
+  }
+
+  @override
+  Future<ExportResult> exportEncryptedCsv({
+    required ExportScope scope,
+    required String password,
+  }) async {
+    if (kIsWeb) {
+      throw Exception('Encrypted export is not supported on web builds.');
+    }
+    final userId = _requireUserId();
+    final chunks = await _buildChunks(scope, userId);
+    final sections = <String>[];
+    var totalRows = 0;
+    for (final chunk in chunks) {
+      sections.add('## ${chunk.name}');
+      sections.add(chunk.csv);
+      totalRows += chunk.rows;
+    }
+    final content = sections.join('\n');
+    const encryptedService = EncryptedExportService();
+    final encrypted = encryptedService.encrypt(plainText: content, password: password);
+    final dir = await getApplicationDocumentsDirectory();
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    final file = File('${dir.path}${Platform.pathSeparator}dart2_export_$stamp.enc');
+    await file.writeAsString(encrypted);
+    return ExportResult(
+      filePath: file.path,
+      rowsExported: totalRows,
+      scope: scope,
+    );
   }
 
   Future<List<_ExportChunk>> _buildChunks(

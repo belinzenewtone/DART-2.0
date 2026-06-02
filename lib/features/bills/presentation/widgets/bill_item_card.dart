@@ -32,7 +32,7 @@ class BillItemCard extends StatelessWidget {
     };
 
     return GlassCard(
-      tone: bill.paid ? GlassCardTone.muted : GlassCardTone.normal,
+      tone: bill.paid ? GlassCardTone.muted : GlassCardTone.standard,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [

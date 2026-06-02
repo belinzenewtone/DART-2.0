@@ -155,5 +155,8 @@ Color _eventTypeColor(CalendarEventType type) {
     CalendarEventType.finance => AppColors.teal,
     CalendarEventType.health => AppColors.warning,
     CalendarEventType.general => AppColors.slate,
+    CalendarEventType.birthday => AppColors.warning,
+    CalendarEventType.anniversary => AppColors.danger,
+    CalendarEventType.countdown => AppColors.accent,
   };
 }

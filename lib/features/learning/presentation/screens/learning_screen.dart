@@ -1,5 +1,5 @@
 import 'package:beltech/core/di/repository_providers.dart';
-import 'package:beltech/core/layout/secondary_page_shell.dart';
+import 'package:beltech/core/widgets/secondary_page_shell.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/widgets/glass_card.dart';

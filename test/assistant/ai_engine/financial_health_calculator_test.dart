@@ -53,5 +53,4 @@ void main() {
   });
 }
 
-// ignore: unused_element
-final _d = DateTime(2024, 1, 1);
+const _d = DateTime(2024, 1, 1);

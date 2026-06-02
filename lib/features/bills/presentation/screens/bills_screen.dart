@@ -98,7 +98,7 @@ class BillsScreen extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: LoadingIndicator()),
-              error: (e, _) => ErrorMessage(message: '$e'),
+              error: (e, _) => ErrorMessage(label: '$e'),
             ),
           ),
         ],

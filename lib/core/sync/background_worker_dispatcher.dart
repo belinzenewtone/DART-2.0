@@ -249,6 +249,8 @@ class _StubBillsRepository implements BillsRepository {
   @override Future<void> upsertBill({required String name, required double amount, required DateTime dueDate, BillUrgency urgency = BillUrgency.medium, String? recurrence, bool paid = false}) => Future.value();
   @override Future<void> updateBill({required int id, String? name, double? amount, DateTime? dueDate, BillUrgency? urgency, String? recurrence, bool? paid}) => Future.value();
   @override Future<void> deleteBill(int id) => Future.value();
+  @override Future<double> monthlyCommitmentTotal() => Future.value(0);
+  @override Future<int> overdueCount() => Future.value(0);
 }
 class _StubLoansRepository implements LoansRepository {
   @override Stream<List<LoanItem>> watchLoans() => Stream.value([]);
