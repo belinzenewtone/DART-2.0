@@ -246,6 +246,9 @@ class _EventTypeBadge extends StatelessWidget {
       CalendarEventType.finance => ('Finance', AppColors.teal),
       CalendarEventType.health => ('Health', AppColors.warning),
       CalendarEventType.general => ('General', AppColors.slate),
+      CalendarEventType.birthday => ('Birthday', AppColors.warning),
+      CalendarEventType.anniversary => ('Anniversary', AppColors.danger),
+      CalendarEventType.countdown => ('Countdown', AppColors.accent),
     };
     return AppCapsule(
       label: label,

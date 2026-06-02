@@ -20,7 +20,7 @@ class FeeAnalyticsScreen extends ConsumerWidget {
     final feesAsync = ref.watch(_feeAnalyticsProvider);
     return SecondaryPageShell(
       title: 'Fee Analytics',
-      body: feesAsync.when(
+      child: feesAsync.when(
         data: (fees) {
           if (fees.feeCount == 0) {
             return const Center(child: Text('No fee transactions detected'));
@@ -62,11 +62,12 @@ class FeeAnalyticsScreen extends ConsumerWidget {
               Text('By Category', style: AppTypography.headlineSm(context)),
               const SizedBox(height: 8),
               for (final cat in fees.topFeeCategories) ...[
+                final (category, amount) = cat;
                 GlassCard(
                   child: ListTile(
                     leading: const Icon(Icons.category_outlined),
-                    title: Text(cat.\$1, style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w600)),
-                    trailing: Text(CurrencyFormatter.money(cat.\$2), style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w700)),
+                    title: Text(category, style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w600)),
+                    trailing: Text(CurrencyFormatter.money(amount), style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w700)),
                   ),
                 ),
                 const SizedBox(height: 8),

@@ -26,7 +26,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
   late final _rateCtrl = TextEditingController(
       text: widget.loan?.interestRate?.toString() ?? '');
   late var _status = widget.loan?.status ?? LoanStatus.active;
-  DateTime? _dueDate = widget.loan?.dueDate;
+  late final DateTime? _dueDate = widget.loan?.dueDate;
 
   @override
   void dispose() {

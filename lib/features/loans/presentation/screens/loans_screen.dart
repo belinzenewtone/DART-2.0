@@ -25,7 +25,7 @@ class LoansScreen extends ConsumerWidget {
     final outstandingAsync = ref.watch(_loansTotalOutstandingProvider);
     return SecondaryPageShell(
       title: 'Loans',
-      body: Column(
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

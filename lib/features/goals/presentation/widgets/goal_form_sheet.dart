@@ -21,7 +21,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
       text: widget.goal != null ? widget.goal!.targetAmount.toStringAsFixed(0) : '');
   late final _currentCtrl = TextEditingController(
       text: widget.goal != null ? widget.goal!.currentAmount.toStringAsFixed(0) : '');
-  late final DateTime? _deadline = widget.goal?.deadline;
+  late DateTime? _deadline = widget.goal?.deadline;
 
   @override
   void dispose() {

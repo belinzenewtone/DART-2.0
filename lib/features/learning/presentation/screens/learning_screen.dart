@@ -27,7 +27,7 @@ class LearningScreen extends ConsumerWidget {
     final monthlyAsync = ref.watch(_learningMonthlyProvider);
     return SecondaryPageShell(
       title: 'Learning',
-      body: Column(
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

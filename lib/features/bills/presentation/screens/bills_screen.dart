@@ -202,7 +202,7 @@ class _CommitmentCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 commitmentState.when(
                   data: (total) => Text(
-                    formatKes(total),
+                    CurrencyFormatter.formatKes(total),
                     style: AppTypography.title(context).copyWith(
                       fontWeight: FontWeight.w700,
                     ),

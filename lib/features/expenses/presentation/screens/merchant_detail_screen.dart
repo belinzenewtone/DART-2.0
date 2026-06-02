@@ -21,7 +21,7 @@ class MerchantDetailScreen extends ConsumerWidget {
     final detailAsync = ref.watch(_merchantDetailProvider(merchantTitle));
     return SecondaryPageShell(
       title: merchantTitle,
-      body: detailAsync.when(
+      child: detailAsync.when(
         data: (detail) {
           if (detail.transactions.isEmpty) {
             return const Center(child: Text('No transactions found'));

@@ -36,12 +36,12 @@ class GoalItemCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.15),
+                        color: AppColors.danger.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Text('At Risk',
                           style: AppTypography.bodySm(context).copyWith(
-                            color: AppColors.error,
+                            color: AppColors.danger,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           )),

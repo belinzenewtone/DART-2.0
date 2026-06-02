@@ -53,4 +53,4 @@ void main() {
   });
 }
 
-const _d = DateTime(2024, 1, 1);
+final _d = DateTime(2024, 1, 1);

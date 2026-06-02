@@ -21,7 +21,7 @@ class GoalsScreen extends ConsumerWidget {
     final goalsAsync = ref.watch(_goalsProvider);
     return SecondaryPageShell(
       title: 'Goals',
-      body: goalsAsync.when(
+      child: goalsAsync.when(
         data: (goals) {
           if (goals.isEmpty) {
             return const Center(child: Text('No goals yet'));

@@ -80,7 +80,7 @@ class BillItemCard extends StatelessWidget {
             ),
           ),
           Text(
-            formatKes(bill.amount),
+            CurrencyFormatter.formatKes(bill.amount),
             style: AppTypography.body(context).copyWith(
               fontWeight: FontWeight.w700,
               color: bill.paid ? AppColors.textMuted : AppColors.textPrimaryFor(brightness),

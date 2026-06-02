@@ -14,12 +14,14 @@ class SecondaryPageShell extends StatelessWidget {
     required this.child,
     this.scrollable = true,
     this.actions,
+    this.floatingActionButton,
   });
 
   final String title;
   final Widget child;
   final bool scrollable;
   final List<Widget>? actions;
+  final Widget? floatingActionButton;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,7 @@ class SecondaryPageShell extends StatelessWidget {
         bottom: false,
         child: Scaffold(
           backgroundColor: Colors.transparent,
+          floatingActionButton: floatingActionButton,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,

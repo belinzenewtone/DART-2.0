@@ -7,6 +7,8 @@ import 'package:beltech/features/expenses/data/services/mpesa_parser_service.dar
 import 'package:beltech/features/expenses/domain/entities/expense_import_intelligence.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_import_review.dart';
 import 'package:beltech/features/expenses/domain/entities/expense_item.dart';
+import 'package:beltech/features/expenses/domain/entities/fee_analytics.dart';
+import 'package:beltech/features/expenses/domain/entities/merchant_detail.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

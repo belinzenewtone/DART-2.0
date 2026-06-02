@@ -21,6 +21,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'week_review_screen_stats.dart';
+part 'week_review_screen_trends.dart';
 
 class WeekReviewScreen extends ConsumerStatefulWidget {
   const WeekReviewScreen({super.key});
