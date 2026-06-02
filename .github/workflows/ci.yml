@@ -116,10 +116,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cat > android/key.properties << 'EOF'
-          storePassword=$KEYSTORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
+          cat > android/key.properties << EOF
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          keyAlias=${KEY_ALIAS}
           storeFile=app/beltech-release.jks
           EOF
           cat android/key.properties
