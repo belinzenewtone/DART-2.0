@@ -34,6 +34,24 @@ class ExportController extends AutoDisposeAsyncNotifier<ExportResult?> {
     }
     return result.valueOrNull!;
   }
+
+  Future<ExportResult> exportPdfStatement({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(
+      () => ref.read(exportRepositoryProvider).exportPdfStatement(
+            startDate: startDate,
+            endDate: endDate,
+          ),
+    );
+    state = result;
+    if (result.hasError) {
+      throw result.error!;
+    }
+    return result.valueOrNull!;
+  }
 }
 
 final exportControllerProvider =

@@ -120,6 +120,7 @@ Future<void> _resolveReviewItemImpl(
       userId: userId,
       merchantTitle: title,
       fallbackCategory: category,
+      amountKes: parseDouble(row['amount']),
     );
     await repo._client.from('transactions').insert({
       'owner_id': userId,

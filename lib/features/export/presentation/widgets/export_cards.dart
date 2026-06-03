@@ -5,6 +5,93 @@ import 'package:beltech/features/export/domain/entities/export_result.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+class PdfStatementCard extends StatelessWidget {
+  const PdfStatementCard({
+    super.key,
+    required this.isLoading,
+    required this.onGenerate,
+    this.result,
+  });
+
+  final bool isLoading;
+  final VoidCallback onGenerate;
+  final ExportResult? result;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      tone: GlassCardTone.accent,
+      accentColor: AppColors.accent,
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.30),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.accentLight.withValues(alpha: 0.40),
+              ),
+            ),
+            child: const Icon(
+              Icons.picture_as_pdf_rounded,
+              color: AppColors.accentLight,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'PDF Statement',
+                  style: AppTypography.cardTitle(context),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Formatted financial statement with summary, categories, and transactions',
+                  style: AppTypography.bodySm(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: isLoading ? null : onGenerate,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.accent.withValues(alpha: 0.50)),
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accentLight,
+                      ),
+                    )
+                  : const Text(
+                      'Generate',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accentLight,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ExportScopeMeta {
   const ExportScopeMeta({
     required this.scope,

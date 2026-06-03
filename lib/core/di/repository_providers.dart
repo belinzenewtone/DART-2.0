@@ -58,7 +58,9 @@ import 'package:beltech/features/search/data/repositories/supabase_global_search
 import 'package:beltech/features/search/domain/repositories/global_search_repository.dart';
 import 'package:beltech/features/tasks/data/repositories/supabase_tasks_repository_impl.dart';
 import 'package:beltech/features/tasks/data/repositories/tasks_repository_impl.dart';
+import 'package:beltech/features/tasks/data/repositories/time_tracking_repository_impl.dart';
 import 'package:beltech/features/tasks/domain/repositories/tasks_repository.dart';
+import 'package:beltech/features/tasks/domain/repositories/time_tracking_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -271,6 +273,10 @@ final goalsRepositoryProvider = Provider<GoalsRepository>(
 );
 final learningRepositoryProvider = Provider<LearningRepository>(
   (ref) => LearningRepositoryImpl(ref.watch(appDriftStoreProvider)),
+);
+
+final timeTrackingRepositoryProvider = Provider<TimeTrackingRepository>(
+  (ref) => TimeTrackingRepositoryImpl(ref.watch(appDriftStoreProvider)),
 );
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>(

@@ -8,6 +8,7 @@ import 'package:beltech/features/income/presentation/income_screen.dart';
 import 'package:beltech/features/loans/presentation/screens/loans_screen.dart';
 import 'package:beltech/features/goals/presentation/screens/goals_screen.dart';
 import 'package:beltech/features/expenses/presentation/screens/fee_analytics_screen.dart';
+import 'package:beltech/features/expenses/presentation/screens/csv_import_screen.dart';
 import 'package:beltech/features/expenses/presentation/screens/import_health_screen.dart';
 import 'package:beltech/features/expenses/presentation/screens/merchant_detail_screen.dart';
 import 'package:beltech/features/learning/presentation/screens/learning_screen.dart';
@@ -110,6 +111,11 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/fee-analytics',
         name: 'fee-analytics',
         builder: (context, state) => const FeeAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/csv-import',
+        name: 'csv-import',
+        builder: (context, state) => const CsvImportScreen(),
       ),
       GoRoute(
         path: '/import-health',

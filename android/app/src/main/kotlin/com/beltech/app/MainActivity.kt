@@ -8,11 +8,18 @@ import android.os.SystemClock
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.plugin.common.MethodChannel
+import com.beltech.app.sms.MpesaSmsReceiver
 import kotlin.system.exitProcess
 
 class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        val smsChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "beltech.app/sms"
+        )
+        MpesaSmsReceiver.setMethodChannel(smsChannel)
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

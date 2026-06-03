@@ -83,6 +83,14 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
     );
   }
 
+  @override
+  Future<ExportResult> exportPdfStatement({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    throw Exception('PDF statement export is not supported in cloud mode.');
+  }
+
   Future<List<_ExportChunk>> _buildChunks(
       ExportScope scope, String userId,
       {DateTime? startDate, DateTime? endDate}) async {

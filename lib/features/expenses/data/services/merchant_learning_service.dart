@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:beltech/features/expenses/data/services/category_inference_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MerchantLearningService {
   MerchantLearningService();
 
+  static const _inferenceEngine = CategoryInferenceEngine();
   static const String _prefsKey = 'merchant_category_rules_v1';
   Map<String, String>? _cache;
 
@@ -17,6 +19,11 @@ class MerchantLearningService {
     final learned = rules[normalized];
     if (learned != null && learned.isNotEmpty) {
       return learned;
+    }
+    final guess =
+        _inferenceEngine.infer(title: merchantTitle, amountKes: 0);
+    if (guess != null && guess.confidence >= 0.6) {
+      return guess.category;
     }
     return fallbackCategory;
   }

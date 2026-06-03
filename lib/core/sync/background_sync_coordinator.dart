@@ -1,5 +1,6 @@
 import 'package:beltech/core/feature_flags/feature_flag.dart';
 import 'package:beltech/core/feature_flags/feature_flag_store.dart';
+import 'package:beltech/core/sync/cloud_mirror_service.dart';
 import 'package:beltech/core/sync/cloud_sync_dispatcher.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/core/sync/mpesa_historical_import_scanner.dart';
@@ -20,6 +21,7 @@ class BackgroundSyncCoordinator {
     this._featureFlagStore,
     this._accountRepository, [
     this._cloudSyncDispatcher,
+    this._cloudMirrorService,
   ]);
 
   final SmsAutoImportService _smsAutoImportService;
@@ -30,6 +32,7 @@ class BackgroundSyncCoordinator {
   final FeatureFlagStore _featureFlagStore;
   final AccountRepository _accountRepository;
   final CloudSyncDispatcher? _cloudSyncDispatcher;
+  final CloudMirrorService? _cloudMirrorService;
 
   BackgroundSyncStrategy get _strategy => BackgroundSyncStrategy.forPlatform();
 
@@ -61,6 +64,7 @@ class BackgroundSyncCoordinator {
     }
     await _smsAutoImportService.syncNow();
     await _cloudSyncDispatcher?.processQueue();
+    await _cloudMirrorService?.mirrorSync();
   }
 
   Future<void> syncCloudNow() async {
@@ -68,6 +72,14 @@ class BackgroundSyncCoordinator {
       return;
     }
     await _cloudSyncDispatcher?.processQueue();
+    await _cloudMirrorService?.mirrorSync();
+  }
+
+  Future<void> mirrorNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
+    await _cloudMirrorService?.mirrorSync();
   }
 
   Future<void> materializeNow() async {

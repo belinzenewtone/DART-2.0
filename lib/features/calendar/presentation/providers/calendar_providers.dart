@@ -208,3 +208,22 @@ CalendarEventType _preferType(
   };
   return (weight[incoming] ?? 0) >= (weight[current] ?? 0) ? incoming : current;
 }
+
+enum CalendarViewMode { month, week, day }
+
+final calendarViewModeProvider =
+    StateProvider<CalendarViewMode>((_) => CalendarViewMode.month);
+
+final visibleWeekStartProvider = StateProvider<DateTime>((_) {
+  final now = DateTime.now();
+  final monday = now.subtract(Duration(days: now.weekday - 1));
+  return DateTime(monday.year, monday.month, monday.day);
+});
+
+final weekEventsProvider = StreamProvider<List<CalendarEvent>>((ref) {
+  final weekStart = ref.watch(visibleWeekStartProvider);
+  final weekEnd = weekStart.add(const Duration(days: 7));
+  return ref
+      .watch(calendarRepositoryProvider)
+      .watchEventsInRange(weekStart, weekEnd);
+});

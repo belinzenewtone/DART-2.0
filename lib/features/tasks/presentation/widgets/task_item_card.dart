@@ -6,11 +6,13 @@ import 'package:beltech/core/theme/glass_styles.dart';
 import 'package:beltech/core/widgets/app_capsule.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
+import 'package:beltech/features/tasks/presentation/providers/time_tracking_providers.dart';
 import 'package:beltech/features/tasks/presentation/widgets/task_item_visuals.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class TaskItemCard extends StatelessWidget {
+class TaskItemCard extends ConsumerWidget {
   const TaskItemCard({
     super.key,
     required this.task,
@@ -33,7 +35,7 @@ class TaskItemCard extends StatelessWidget {
   final Future<void> Function() onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final brightness = Theme.of(context).brightness;
     final secondaryText = AppColors.textSecondaryFor(brightness);
@@ -41,6 +43,15 @@ class TaskItemCard extends StatelessWidget {
     final resizeDuration = AppMotion.resize(context);
     final priorityColor = taskPriorityColor(task.priority);
     final countdownBadge = _buildCountdownBadge(task);
+
+    final activeEntryAsync = ref.watch(activeTimerProvider(task.id));
+    final tick = ref.watch(timerTickProvider).valueOrNull ?? DateTime.now();
+    final isTimerRunning = activeEntryAsync.valueOrNull?.isRunning ?? false;
+    final Duration elapsed = isTimerRunning && activeEntryAsync.value != null
+        ? tick.difference(activeEntryAsync.value!.startedAt!)
+        : Duration.zero;
+    final elapsedText =
+        isTimerRunning ? _formatElapsed(elapsed) : null;
 
     return Dismissible(
       key: ValueKey('task-${task.id}'),
@@ -190,7 +201,37 @@ class TaskItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!selectionMode)
+                if (!selectionMode) ...[
+                  if (elapsedText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: Center(
+                        child: Text(
+                          elapsedText,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.accent,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ),
+                  IconButton(
+                    tooltip: isTimerRunning ? 'Stop timer' : 'Start timer',
+                    onPressed: busy
+                        ? null
+                        : () {
+                            AppHaptics.lightImpact();
+                            ref
+                                .read(timerControllerProvider(task.id).notifier)
+                                .toggleTimer();
+                          },
+                    icon: Icon(
+                      isTimerRunning
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                    ),
+                    color: isTimerRunning ? AppColors.accent : null,
+                  ),
                   IconButton(
                     tooltip: 'Edit task',
                     onPressed: busy
@@ -200,6 +241,7 @@ class TaskItemCard extends StatelessWidget {
                           },
                     icon: const Icon(Icons.edit_outlined),
                   ),
+                ],
               ],
             ),
           ),
@@ -285,5 +327,15 @@ class TaskItemCard extends StatelessWidget {
       TaskPriority.medium => 'Important',
       TaskPriority.low => 'Neutral',
     };
+  }
+
+  String _formatElapsed(Duration d) {
+    if (d.inHours > 0) {
+      return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+    }
+    if (d.inMinutes > 0) {
+      return '${d.inMinutes}m ${d.inSeconds.remainder(60)}s';
+    }
+    return '${d.inSeconds}s';
   }
 }

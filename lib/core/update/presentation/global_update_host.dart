@@ -5,11 +5,13 @@ import 'package:beltech/core/ota/patch_notes_registry.dart';
 import 'package:beltech/core/ota/patch_ready_info.dart';
 import 'package:beltech/core/ota/shorebird_patch_service.dart';
 import 'package:beltech/core/ota/shorebird_providers.dart';
-import 'package:beltech/core/update/presentation/app_update_dialog.dart';
+import 'package:beltech/core/update/domain/app_update_info.dart';
 import 'package:beltech/core/update/presentation/patch_ready_dialog.dart';
+import 'package:beltech/core/update/presentation/update_prompt_widget.dart';
 import 'package:beltech/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class GlobalUpdateHost extends ConsumerStatefulWidget {
   const GlobalUpdateHost({
@@ -28,6 +30,7 @@ class _GlobalUpdateHostState extends ConsumerState<GlobalUpdateHost>
   bool _checkedBinaryUpdate = false;
   bool _patchDialogOpen = false;
   int? _dismissedPatchForSession;
+  bool _updatePromptOpen = false;
 
   @override
   void initState() {
@@ -60,56 +63,114 @@ class _GlobalUpdateHostState extends ConsumerState<GlobalUpdateHost>
   }
 
   Future<void> _checkForBinaryUpdate() async {
-    if (_checkedBinaryUpdate || !mounted) {
-      return;
-    }
+    if (_checkedBinaryUpdate || !mounted) return;
     _checkedBinaryUpdate = true;
+
+    final stateMachine = ref.read(updateStateMachineProvider);
+    final repository = ref.read(updateRepositoryProvider);
     final service = ref.read(appUpdateServiceProvider);
-    final update = await service.fetchAvailableUpdate();
-    if (!mounted || update == null) {
-      return;
+
+    stateMachine.checkForUpdate();
+
+    try {
+      final update = await service.fetchAvailableUpdate();
+      if (!mounted || update == null) {
+        stateMachine.reset();
+        return;
+      }
+
+      stateMachine.updateAvailable(update);
+
+      final currentVersion = await _currentVersion();
+      if (!mounted) return;
+
+      final row = await repository.fetchActiveUpdateRow();
+      if (!mounted) return;
+      if (row != null && _asString(row['current_version']) == update.latestVersion) {
+        return;
+      }
+
+      await repository.saveUpdate(
+        platform: 'android',
+        currentVersion: update.latestVersion,
+        minimumSupportedVersion: update.minSupportedVersion.isNotEmpty
+            ? update.minSupportedVersion
+            : null,
+        storeUrl: update.apkUrl ?? update.websiteUrl,
+        changelog: update.notes.join('||'),
+        isForce: update.forceUpdate,
+      );
+      if (!mounted) return;
+
+      if (_updatePromptOpen) return;
+      _updatePromptOpen = true;
+
+      await showUpdatePromptSheet(
+        context: context,
+        update: update,
+        currentVersion: currentVersion,
+        onUpdateNow: () {
+          stateMachine.startDownload();
+          _openStoreOrWebsite(update);
+          stateMachine.downloadComplete();
+          _updatePromptOpen = false;
+        },
+        onLater: () {
+          stateMachine.reset();
+          _updatePromptOpen = false;
+        },
+      );
+
+      _updatePromptOpen = false;
+    } catch (_) {
+      stateMachine.reset();
     }
-    await showAppDialog<void>(
-      context: context,
-      barrierDismissible: !update.forceUpdate,
-      builder: (context) => AppUpdateDialog(update: update, service: service),
-    );
   }
 
-  Future<void> _checkShorebirdPatch({required bool includeDelayedCheck}) async {
-    if (!mounted) {
+  Future<void> _openStoreOrWebsite(AppUpdateInfo update) async {
+    final service = ref.read(appUpdateServiceProvider);
+    if (update.apkUrl != null && update.apkUrl!.isNotEmpty) {
+      unawaited(service.installAndroidUpdate(update).drain());
       return;
     }
+    if (update.websiteUrl != null && update.websiteUrl!.isNotEmpty) {
+      unawaited(service.openUpdateWebsite(update));
+    }
+  }
+
+  Future<String> _currentVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return info.version;
+    } catch (_) {
+      return '0.0.0';
+    }
+  }
+
+  String _asString(Object? value) => (value ?? '').toString().trim();
+
+  Future<void> _checkShorebirdPatch({required bool includeDelayedCheck}) async {
+    if (!mounted) return;
 
     final service = ref.read(shorebirdPatchServiceProvider);
     try {
       final available = await service.isShorebirdAvailable();
-      if (!available || !mounted) {
-        return;
-      }
+      if (!available || !mounted) return;
 
       final immediateInfo = await _pendingPatchInfo(service);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       if (immediateInfo != null) {
         await _showPatchDialogIfNeeded(immediateInfo);
         return;
       }
 
-      if (!includeDelayedCheck) {
-        return;
-      }
+      if (!includeDelayedCheck) return;
 
       await Future<void>.delayed(const Duration(seconds: 8));
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       final delayedInfo = await _pendingPatchInfo(service);
-      if (!mounted || delayedInfo == null) {
-        return;
-      }
+      if (!mounted || delayedInfo == null) return;
       await _showPatchDialogIfNeeded(delayedInfo);
     } catch (_) {
       return;

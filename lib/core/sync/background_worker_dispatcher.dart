@@ -7,7 +7,9 @@ import 'package:beltech/core/notifications/local_notification_service.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
 import 'package:beltech/core/sync/bill_reminder_service.dart';
 import 'package:beltech/core/sync/learning_reminder_service.dart';
+import 'package:beltech/core/sync/cloud_mirror_service.dart';
 import 'package:beltech/core/sync/cloud_sync_dispatcher.dart';
+import 'package:beltech/core/sync/sync_mutation_enqueuer.dart';
 import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/sync/sms_auto_import_service.dart';
 import 'package:beltech/core/sync/sync_circuit_breaker.dart';
@@ -134,6 +136,18 @@ class BackgroundWorkerRuntime {
               SyncJobStore(localStore),
               localStore,
             ).processQueue();
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              final jobStore = SyncJobStore(localStore);
+              await CloudMirrorService(
+                localStore,
+                SyncMutationEnqueuer(jobStore),
+                CloudSyncDispatcher(jobStore, localStore),
+                prefs,
+              ).mirrorSync();
+            } catch (_) {
+              // mirror failures don't block other sync tasks
+            }
           }
           await billReminder.checkAndNotify();
           await learningReminder.checkAndNotify();

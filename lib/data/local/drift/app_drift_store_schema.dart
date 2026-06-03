@@ -232,6 +232,38 @@ class _AppDriftSchema {
       'date INTEGER NOT NULL'
       ')',
     );
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS app_updates('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'platform TEXT NOT NULL DEFAULT \'android\','
+      'current_version TEXT NOT NULL,'
+      'minimum_supported_version TEXT,'
+      'store_url TEXT,'
+      'changelog TEXT,'
+      'is_force INTEGER NOT NULL DEFAULT 0,'
+      'active INTEGER NOT NULL DEFAULT 1,'
+      'update_channel TEXT NOT NULL DEFAULT \'stable\','
+      'created_at INTEGER NOT NULL'
+      ')',
+    );
+
+    await store._db.runCustom(
+      'CREATE TABLE IF NOT EXISTS task_time_entries('
+      'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+      'task_id INTEGER NOT NULL,'
+      'started_at INTEGER,'
+      'ended_at INTEGER,'
+      'duration_sec INTEGER,'
+      'note TEXT,'
+      'FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE'
+      ')',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_time_entries_task ON task_time_entries(task_id)',
+    );
+    await store._db.runCustom(
+      'CREATE INDEX IF NOT EXISTS idx_time_entries_started ON task_time_entries(started_at)',
+    );
 
     await store._db.runCustom(
       'CREATE INDEX IF NOT EXISTS idx_tx_occurred_at ON transactions(occurred_at)',

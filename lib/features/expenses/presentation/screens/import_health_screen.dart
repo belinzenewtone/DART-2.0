@@ -1,3 +1,5 @@
+import 'package:beltech/core/di/database_providers.dart';
+import 'package:beltech/core/sync/data_integrity_service.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
@@ -63,6 +65,7 @@ class _ImportHealthScreenState extends ConsumerState<ImportHealthScreen> {
           _paybillSection(),
           const SizedBox(height: AppSpacing.sectionGap),
           _fulizaSection(),
+          _integritySection(),
         ],
       ),
     );
@@ -243,6 +246,57 @@ class _ImportHealthScreenState extends ConsumerState<ImportHealthScreen> {
       },
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _integritySection() {
+    final store = ref.watch(appDriftStoreProvider);
+    return FutureBuilder<IntegrityReport>(
+      future: DataIntegrityService(store).runChecks(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final report = snapshot.data!;
+        return Column(children: [
+          const SizedBox(height: AppSpacing.sectionGap),
+          GlassCard(
+            tone: GlassCardTone.muted,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Text('Data Integrity',
+                      style: AppTypography.cardTitle(context)),
+                  const Spacer(),
+                  Icon(
+                    report.isHealthy ? Icons.check_circle : Icons.warning,
+                    color:
+                        report.isHealthy ? AppColors.success : AppColors.danger,
+                    size: 18,
+                  ),
+                ]),
+                const SizedBox(height: AppSpacing.sm),
+                ...report.checks.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(children: [
+                        Icon(
+                          c.passed ? Icons.check : Icons.close,
+                          size: 14,
+                          color: c.passed
+                              ? AppColors.success
+                              : AppColors.danger,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(c.message,
+                              style: AppTypography.bodySm(context)),
+                        ),
+                      ]),
+                    )),
+              ],
+            ),
+          ),
+        ]);
+      },
     );
   }
 }

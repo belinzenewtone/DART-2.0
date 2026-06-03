@@ -5,6 +5,7 @@ Future<String> _resolveLearnedCategoryImpl(
   required String userId,
   required String merchantTitle,
   required String fallbackCategory,
+  double? amountKes,
 }) async {
   final merchantKey = _normalizeMerchantKey(merchantTitle);
   if (merchantKey.isEmpty) {
@@ -25,10 +26,18 @@ Future<String> _resolveLearnedCategoryImpl(
       return learned;
     }
   }
-  return repo._merchantLearningService.resolveCategory(
+  final learned = await repo._merchantLearningService.resolveCategory(
     merchantTitle: merchantTitle,
     fallbackCategory: fallbackCategory,
   );
+  if (learned == fallbackCategory && amountKes != null) {
+    const engine = CategoryInferenceEngine();
+    final guess = engine.infer(title: merchantTitle, amountKes: amountKes);
+    if (guess != null && guess.confidence >= 0.6) {
+      return guess.category;
+    }
+  }
+  return learned;
 }
 
 Future<void> _learnMerchantCategoryImpl(

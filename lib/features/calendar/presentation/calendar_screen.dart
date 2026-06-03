@@ -12,8 +12,10 @@ import 'package:beltech/core/widgets/page_shell.dart';
 import 'package:beltech/core/widgets/super_add_sheet.dart';
 import 'package:beltech/features/calendar/domain/entities/calendar_event.dart';
 import 'package:beltech/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:beltech/features/calendar/presentation/widgets/calendar_day_view.dart';
 import 'package:beltech/features/calendar/presentation/widgets/calendar_events_card.dart';
 import 'package:beltech/features/calendar/presentation/widgets/calendar_month_grid.dart';
+import 'package:beltech/features/calendar/presentation/widgets/calendar_week_view.dart';
 import 'package:beltech/features/search/domain/entities/global_search_result.dart';
 import 'package:beltech/features/search/presentation/providers/global_search_providers.dart';
 import 'package:beltech/features/tasks/domain/entities/task_item.dart';
@@ -77,6 +79,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final tasksState = ref.watch(tasksProvider);
     final monthEventTypesState = ref.watch(monthEventTypesProvider);
     final writeState = ref.watch(calendarWriteControllerProvider);
+    final viewMode = ref.watch(calendarViewModeProvider);
+    final weekStart = ref.watch(visibleWeekStartProvider);
+    final weekEventsState = ref.watch(weekEventsProvider);
     _syncSearchTargetDay(ref, selectedDay);
 
     ref.listen<AsyncValue<void>>(calendarWriteControllerProvider, (
@@ -88,14 +93,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
     });
 
-    final title = switch (_view) {
-      _CalendarView.month =>
-        '${_months[visibleMonth.month - 1]} ${visibleMonth.year}',
-      _CalendarView.events =>
-        'Events · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
-      _CalendarView.tasks =>
-        'Tasks · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
-    };
+    final title = () {
+      if (viewMode == CalendarViewMode.week) {
+        final weekEnd = weekStart.add(const Duration(days: 6));
+        final startLabel =
+            '${_months[weekStart.month - 1].substring(0, 3)} ${weekStart.day}';
+        final endLabel = weekStart.month == weekEnd.month
+            ? '${weekEnd.day}'
+            : '${_months[weekEnd.month - 1].substring(0, 3)} ${weekEnd.day}';
+        return '$startLabel – $endLabel, ${weekEnd.year}';
+      }
+      if (viewMode == CalendarViewMode.day) {
+        return '${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}';
+      }
+      return switch (_view) {
+        _CalendarView.month =>
+          '${_months[visibleMonth.month - 1]} ${visibleMonth.year}',
+        _CalendarView.events =>
+          'Events · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
+        _CalendarView.tasks =>
+          'Tasks · ${_calendarWeekdayName(selectedDay.weekday)}, ${_months[selectedDay.month - 1].substring(0, 3)} ${selectedDay.day}',
+      };
+    }();
 
     return _CalendarLayout(
       state: this,
@@ -107,6 +126,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       monthEventTypesState: monthEventTypesState,
       writeState: writeState,
       title: title,
+      weekStart: weekStart,
+      weekEventsState: weekEventsState,
     );
   }
 
@@ -242,5 +263,40 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         1,
       );
     }
+  }
+
+  void _changeWeek(WidgetRef ref, int offset) {
+    final current = ref.read(visibleWeekStartProvider);
+    final next = current.add(Duration(days: 7 * offset));
+    ref.read(visibleWeekStartProvider.notifier).state = DateTime(
+      next.year,
+      next.month,
+      next.day,
+    );
+    ref.read(selectedDayProvider.notifier).state = DateTime(
+      next.year,
+      next.month,
+      next.day,
+    );
+    ref.read(visibleMonthProvider.notifier).state = DateTime(
+      next.year,
+      next.month,
+      1,
+    );
+  }
+
+  void _changeDay(WidgetRef ref, int offset) {
+    final current = ref.read(selectedDayProvider);
+    final next = current.add(Duration(days: offset));
+    ref.read(selectedDayProvider.notifier).state = DateTime(
+      next.year,
+      next.month,
+      next.day,
+    );
+    ref.read(visibleMonthProvider.notifier).state = DateTime(
+      next.year,
+      next.month,
+      1,
+    );
   }
 }

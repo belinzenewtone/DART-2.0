@@ -66,6 +66,28 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── PDF Statement — prominent full-width card ─────────────────────
+          PdfStatementCard(
+            isLoading: exportState.isLoading,
+            result: latestResult,
+            onGenerate: () async {
+              final confirmed = await _confirmExport(
+                context,
+                scope: ExportScope.all,
+              );
+              if (confirmed != true) {
+                return;
+              }
+              await ref
+                  .read(exportControllerProvider.notifier)
+                  .exportPdfStatement(
+                    startDate: _startDate,
+                    endDate: _endDate,
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
           // ── Export all — prominent full-width card ───────────────────────
           GlassCard(
             tone: GlassCardTone.accent,

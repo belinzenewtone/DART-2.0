@@ -73,6 +73,12 @@ const defaultToolShortcuts = [
     routeName: 'insights',
   ),
   ToolShortcut(
+    label: 'Import CSV',
+    icon: Icons.upload_file_rounded,
+    color: AppColors.info,
+    routeName: 'csv-import',
+  ),
+  ToolShortcut(
     label: 'Import Health',
     icon: Icons.monitor_heart_outlined,
     color: AppColors.success,

@@ -71,6 +71,7 @@ Future<int> _processQueuedImportsImpl(
             userId: userId,
             merchantTitle: candidate.title,
             fallbackCategory: candidate.category,
+            amountKes: candidate.amountKes,
           );
           await repo._client.from('transactions').insert({
             'owner_id': userId,

@@ -13,4 +13,9 @@ abstract class ExportRepository {
     DateTime? startDate,
     DateTime? endDate,
   });
+
+  Future<ExportResult> exportPdfStatement({
+    DateTime? startDate,
+    DateTime? endDate,
+  });
 }

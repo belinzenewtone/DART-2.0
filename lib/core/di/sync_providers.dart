@@ -3,6 +3,7 @@ import 'package:beltech/core/di/notification_providers.dart';
 import 'package:beltech/core/di/feature_flag_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/sync/background_sync_coordinator.dart';
+import 'package:beltech/core/sync/cloud_mirror_service.dart';
 import 'package:beltech/core/sync/cloud_sync_dispatcher.dart';
 import 'package:beltech/core/sync/mpesa_historical_import_scanner.dart';
 import 'package:beltech/core/sync/os_background_sync_scheduler.dart';
@@ -62,6 +63,14 @@ final cloudSyncDispatcherProvider = Provider<CloudSyncDispatcher>(
   ),
 );
 
+final cloudMirrorServiceProvider = Provider<CloudMirrorService>(
+  (ref) => CloudMirrorService(
+    ref.watch(appDriftStoreProvider),
+    ref.watch(syncMutationEnqueuerProvider),
+    ref.watch(cloudSyncDispatcherProvider),
+  ),
+);
+
 final backgroundSyncCoordinatorProvider = Provider<BackgroundSyncCoordinator>(
   (
     ref,
@@ -75,6 +84,7 @@ final backgroundSyncCoordinatorProvider = Provider<BackgroundSyncCoordinator>(
       ref.watch(featureFlagStoreProvider),
       ref.watch(accountRepositoryProvider),
       ref.watch(cloudSyncDispatcherProvider),
+      ref.watch(cloudMirrorServiceProvider),
     );
     ref.onDispose(() {
       coordinator.stop();

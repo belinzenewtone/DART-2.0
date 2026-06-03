@@ -122,6 +122,7 @@ Future<void> _insertDirectImpl(
     repo,
     merchantTitle: candidate.title,
     fallbackCategory: candidate.category,
+    amountKes: candidate.amountKes,
   );
   await repo._store.addTransaction(
     title: candidate.title,

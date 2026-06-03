@@ -111,6 +111,7 @@ Future<void> _resolveReviewItemImpl(
       repo,
       merchantTitle: title,
       fallbackCategory: category,
+      amountKes: repo._asDouble(row['amount']),
     );
     await repo._store.addTransaction(
       title: title,

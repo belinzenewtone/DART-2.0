@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:beltech/features/export/data/services/csv_builder.dart';
 import 'package:beltech/features/export/data/services/encrypted_export_service.dart';
+import 'package:beltech/features/export/data/services/pdf_statement_service.dart';
 import 'package:beltech/features/export/domain/entities/export_result.dart';
 import 'package:beltech/features/export/domain/repositories/export_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -13,12 +14,15 @@ class ExportRepositoryImpl implements ExportRepository {
     this._store, {
     CsvBuilder csvBuilder = const CsvBuilder(),
     EncryptedExportService encryptService = const EncryptedExportService(),
+    PdfStatementService pdfService = const PdfStatementService(),
   })  : _csvBuilder = csvBuilder,
-        _encryptService = encryptService;
+        _encryptService = encryptService,
+        _pdfService = pdfService;
 
   final AppDriftStore _store;
   final CsvBuilder _csvBuilder;
   final EncryptedExportService _encryptService;
+  final PdfStatementService _pdfService;
 
   @override
   Future<ExportResult> exportCsv({
@@ -78,6 +82,94 @@ class ExportRepositoryImpl implements ExportRepository {
       scope: scope,
       isEncrypted: true,
     );
+  }
+
+  @override
+  Future<ExportResult> exportPdfStatement({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    if (kIsWeb) {
+      throw Exception('PDF export is not supported on web builds.');
+    }
+    await _store.ensureInitialized();
+
+    final txns = await _fetchTransactions(startDate: startDate, endDate: endDate);
+    final incs = await _fetchIncomes(startDate: startDate, endDate: endDate);
+
+    final filePath = await _pdfService.generate(
+      transactions: txns,
+      incomes: incs,
+      startDate: startDate,
+      endDate: endDate,
+    );
+
+    return ExportResult(
+      filePath: filePath,
+      rowsExported: txns.length + incs.length,
+      scope: ExportScope.all,
+      isEncrypted: false,
+    );
+  }
+
+  Future<List<PdfTransactionRow>> _fetchTransactions({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final params = <Object?>[];
+    var query =
+        'SELECT title, category, amount, occurred_at FROM transactions WHERE transaction_type = ?';
+    params.add('expense');
+    if (startDate != null) {
+      params.add(startDate.millisecondsSinceEpoch);
+      query += ' AND occurred_at >= ?';
+    }
+    if (endDate != null) {
+      params.add(endDate.millisecondsSinceEpoch);
+      query += ' AND occurred_at <= ?';
+    }
+    query += ' ORDER BY occurred_at DESC';
+    final rows = await _store.executor.runSelect(query, params);
+    return rows
+        .map((r) => PdfTransactionRow(
+              title: '${r['title'] ?? ''}',
+              category: '${r['category'] ?? ''}',
+              amount: _asDouble(r['amount']),
+              occurredAt: r['occurred_at'] as int?,
+            ))
+        .toList();
+  }
+
+  Future<List<PdfIncomeRow>> _fetchIncomes({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final params = <Object?>[];
+    var query = 'SELECT title, amount, received_at FROM incomes WHERE 1=1';
+    if (startDate != null) {
+      params.add(startDate.millisecondsSinceEpoch);
+      query += ' AND received_at >= ?';
+    }
+    if (endDate != null) {
+      params.add(endDate.millisecondsSinceEpoch);
+      query += ' AND received_at <= ?';
+    }
+    query += ' ORDER BY received_at DESC';
+    final rows = await _store.executor.runSelect(query, params);
+    return rows
+        .map((r) => PdfIncomeRow(
+              title: '${r['title'] ?? ''}',
+              amount: _asDouble(r['amount']),
+              receivedAt: r['received_at'] as int?,
+            ))
+        .toList();
+  }
+
+  double _asDouble(Object? value) {
+    if (value == null) return 0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse('$value') ?? 0;
   }
 
   Future<List<_ExportChunk>> _buildScopedExports(ExportScope scope,

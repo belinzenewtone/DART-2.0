@@ -1,5 +1,6 @@
 import 'package:beltech/data/remote/supabase/supabase_parsers.dart';
 import 'package:beltech/data/remote/supabase/supabase_polling.dart';
+import 'package:beltech/features/expenses/data/services/category_inference_engine.dart';
 import 'package:beltech/features/expenses/data/services/device_sms_data_source.dart';
 import 'package:beltech/features/expenses/data/services/merchant_learning_service.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_models.dart';

@@ -1,5 +1,7 @@
 import 'package:beltech/core/update/domain/version_utils.dart';
 
+enum UpdateState { idle, checking, available, downloading, ready, installed }
+
 class AppUpdateInfo {
   const AppUpdateInfo({
     required this.latestVersion,

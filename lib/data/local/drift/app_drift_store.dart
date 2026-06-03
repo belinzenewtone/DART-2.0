@@ -46,6 +46,11 @@ class AppDriftStore {
       'paybill_registry',
       'merchant_categories',
       'fuliza_lifecycle_events',
+      'bills',
+      'loans',
+      'goals',
+      'learning_sessions',
+      'app_updates',
     ];
     for (final table in tables) {
       await _db.runDelete('DELETE FROM $table', const []);

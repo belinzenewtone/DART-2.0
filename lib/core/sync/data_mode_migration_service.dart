@@ -1,3 +1,4 @@
+import 'package:beltech/core/sync/data_integrity_service.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -144,10 +145,23 @@ class DataModeMigrationService {
         ? await _localGateway.readPayload()
         : await _cloudGateway.readPayload(userId);
 
+    DataMigrationResult result;
     if (toMode == DataStoreMode.local) {
-      return _localGateway.writePayload(payload);
+      result = await _localGateway.writePayload(payload);
+    } else {
+      result = await _cloudGateway.writePayload(payload, userId);
     }
-    return _cloudGateway.writePayload(payload, userId);
+
+    final integrity = DataIntegrityService(_localStore);
+    final report = await integrity.runChecks();
+    if (!report.isHealthy) {
+      for (final c in report.checks.where((c) => !c.passed)) {
+        print(
+            '[DataModeMigrationService] Integrity check failed: ${c.name} — ${c.message}');
+      }
+    }
+
+    return result;
   }
 
   String? _resolveBlocker({

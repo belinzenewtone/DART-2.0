@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:beltech/core/logger/app_logger.dart';
+import 'package:beltech/core/Logger/app_logger.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
+import 'package:beltech/core/sync/native_sms_receiver.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/features/expenses/domain/repositories/expenses_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,18 @@ class SmsAutoImportService {
   Timer? _timer;
   bool _running = false;
   bool _syncInFlight = false;
+  NativeSmsReceiver? _nativeReceiver;
+
+  void registerNativeReceiver() {
+    _nativeReceiver ??= NativeSmsReceiver(
+      onSmsReceived: (message) {
+        final body = message['body'] as String?;
+        if (body != null && body.trim().isNotEmpty) {
+          unawaited(_expensesRepository.importSmsMessages([body.trim()]));
+        }
+      },
+    );
+  }
 
   Future<void> start({Duration interval = defaultInterval}) async {
     if (hasRuntimeEnv('FLUTTER_TEST')) {
@@ -29,6 +42,7 @@ class SmsAutoImportService {
       return;
     }
     _running = true;
+    registerNativeReceiver();
     await syncNow();
     _timer = Timer.periodic(interval, (_) {
       unawaited(syncNow());
