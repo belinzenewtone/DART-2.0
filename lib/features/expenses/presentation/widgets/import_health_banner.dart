@@ -56,10 +56,10 @@ class ImportHealthBanner extends StatelessWidget {
 
     final strip = Container(
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.10),
+        color: accent.withValues(alpha: 0.15),
         border: Border(
           bottom: BorderSide(
-            color: accent.withValues(alpha: 0.25),
+            color: accent.withValues(alpha: 0.30),
             width: 1,
           ),
         ),
@@ -72,10 +72,10 @@ class ImportHealthBanner extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: accent,
+                color: AppColors.textPrimary,
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -86,7 +86,7 @@ class ImportHealthBanner extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               size: 14,
-              color: accent.withValues(alpha: 0.8),
+              color: accent.withValues(alpha: 0.6),
             ),
         ],
       ),

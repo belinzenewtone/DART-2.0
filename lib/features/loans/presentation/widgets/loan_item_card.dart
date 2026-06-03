@@ -17,8 +17,9 @@ class LoanItemCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: GlassCard(
         onTap: onTap,
+        padding: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -28,7 +29,9 @@ class LoanItemCard extends StatelessWidget {
                   Expanded(
                     child: Text(loan.name,
                         style: AppTypography.bodyMd(context)
-                            .copyWith(fontWeight: FontWeight.w600)),
+                            .copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                   ),
                   Container(
                     padding:
@@ -45,6 +48,8 @@ class LoanItemCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         fontSize: 11,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -54,7 +59,9 @@ class LoanItemCard extends StatelessWidget {
                 Text(loan.lender!,
                     style: AppTypography.bodySm(context).copyWith(
                       color: AppColors.textSecondaryFor(brightness),
-                    )),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -65,11 +72,13 @@ class LoanItemCard extends StatelessWidget {
                         Text('Outstanding',
                             style: AppTypography.bodySm(context)),
                         Text(
-                          'XAF ${loan.outstandingAmount.toStringAsFixed(0)}',
+                          'KES ${loan.outstandingAmount.toStringAsFixed(0)}',
                           style: AppTypography.bodyMd(context).copyWith(
                             color: AppColors.warning,
                             fontWeight: FontWeight.w700,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -81,10 +90,12 @@ class LoanItemCard extends StatelessWidget {
                         Text('Total',
                             style: AppTypography.bodySm(context)),
                         Text(
-                          'XAF ${loan.totalAmount.toStringAsFixed(0)}',
+                          'KES ${loan.totalAmount.toStringAsFixed(0)}',
                           style: AppTypography.bodyMd(context).copyWith(
                             fontWeight: FontWeight.w700,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

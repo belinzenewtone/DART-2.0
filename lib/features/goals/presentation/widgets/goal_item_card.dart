@@ -29,12 +29,14 @@ class GoalItemCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(goal.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTypography.bodyMd(context)
                             .copyWith(fontWeight: FontWeight.w600)),
                   ),
                   if (atRisk)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.danger.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -52,9 +54,13 @@ class GoalItemCard extends StatelessWidget {
               Row(
                 children: [
                   Text('XAF ${goal.currentAmount.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMd(context)
                           .copyWith(fontWeight: FontWeight.w700)),
                   Text(' / XAF ${goal.targetAmount.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodySm(context).copyWith(
                         color: AppColors.textSecondaryFor(brightness),
                       )),
@@ -71,8 +77,10 @@ class GoalItemCard extends StatelessWidget {
                       atRisk ? AppColors.danger : AppColors.success),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text('$percent%',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySm(context).copyWith(
                     color: AppColors.textSecondaryFor(brightness),
                   )),

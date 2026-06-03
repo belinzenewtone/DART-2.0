@@ -88,38 +88,6 @@ class _CalendarLayout extends StatelessWidget {
                   },
                 ),
               ),
-              Center(
-                child: SegmentedButton<CalendarViewMode>(
-                  showSelectedIcon: false,
-                  style: const ButtonStyle(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  segments: const [
-                    ButtonSegment(
-                      value: CalendarViewMode.month,
-                      icon: Icon(Icons.calendar_month_outlined, size: 18),
-                      label: Text('Month'),
-                    ),
-                    ButtonSegment(
-                      value: CalendarViewMode.week,
-                      icon: Icon(Icons.view_week_outlined, size: 18),
-                      label: Text('Week'),
-                    ),
-                    ButtonSegment(
-                      value: CalendarViewMode.day,
-                      icon: Icon(Icons.view_day_outlined, size: 18),
-                      label: Text('Day'),
-                    ),
-                  ],
-                  selected: {viewMode},
-                  onSelectionChanged: (v) {
-                    state.ref
-                        .read(calendarViewModeProvider.notifier)
-                        .state = v.first;
-                  },
-                ),
-              ),
               if (viewMode == CalendarViewMode.month) ...[
                 const SizedBox(height: 8),
                 Center(
@@ -129,23 +97,23 @@ class _CalendarLayout extends StatelessWidget {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                     ),
-                    segments: const [
-                      ButtonSegment(
-                        value: _CalendarView.month,
-                        icon: Icon(Icons.grid_view_rounded, size: 18),
-                        label: Text('Events'),
-                      ),
-                      ButtonSegment(
-                        value: _CalendarView.events,
-                        icon: Icon(Icons.event_outlined, size: 18),
-                        label: Text('List'),
-                      ),
-                      ButtonSegment(
-                        value: _CalendarView.tasks,
-                        icon: Icon(Icons.task_alt_outlined, size: 18),
-                        label: Text('Tasks'),
-                      ),
-                    ],
+                  segments: const [
+                    ButtonSegment(
+                      value: _CalendarView.month,
+                      icon: Icon(Icons.calendar_month_outlined, size: 18),
+                      label: Text('Month'),
+                    ),
+                    ButtonSegment(
+                      value: _CalendarView.events,
+                      icon: Icon(Icons.event_outlined, size: 18),
+                      label: Text('Events'),
+                    ),
+                    ButtonSegment(
+                      value: _CalendarView.tasks,
+                      icon: Icon(Icons.task_alt_outlined, size: 18),
+                      label: Text('Tasks'),
+                    ),
+                  ],
                     selected: {state._view},
                     onSelectionChanged: (v) => state._setView(v.first),
                   ),

@@ -1,9 +1,6 @@
 import 'package:beltech/core/di/repository_providers.dart';
+import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/secondary_page_shell.dart';
-import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_radius.dart';
-import 'package:beltech/core/theme/app_typography.dart';
-import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/goals/domain/entities/goal_item.dart';
 import 'package:beltech/features/goals/presentation/widgets/goal_form_sheet.dart';
 import 'package:beltech/features/goals/presentation/widgets/goal_item_card.dart';
@@ -21,10 +18,21 @@ class GoalsScreen extends ConsumerWidget {
     final goalsAsync = ref.watch(_goalsProvider);
     return SecondaryPageShell(
       title: 'Goals',
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showForm(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Goal'),
+      ),
       child: goalsAsync.when(
         data: (goals) {
           if (goals.isEmpty) {
-            return const Center(child: Text('No goals yet'));
+            return const Center(
+              child: AppEmptyState(
+                icon: Icons.flag_outlined,
+                title: 'No goals yet',
+                subtitle: 'Tap + to add your first goal',
+              ),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -36,12 +44,14 @@ class GoalsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showForm(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Goal'),
+        error: (e, _) => Center(
+          child: Text(
+            'Error: $e',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

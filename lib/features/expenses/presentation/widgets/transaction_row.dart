@@ -124,12 +124,10 @@ class ExpenseTransactionRow extends StatelessWidget {
           label: 'Delete',
           alignment: Alignment.centerRight,
         ),
-        child: InkWell(
+        child: GlassCard(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
@@ -191,6 +189,7 @@ class ExpenseTransactionRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     softWrap: false,
                   ),
                   if (balanceAfterKes != null) ...[
@@ -201,6 +200,7 @@ class ExpenseTransactionRow extends StatelessWidget {
                         context,
                       ).copyWith(color: AppColors.textMuted),
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       softWrap: false,
                     ),
                   ],
@@ -212,8 +212,7 @@ class ExpenseTransactionRow extends StatelessWidget {
                   ),
                 ],
               ),
-          ],
-        ),
+            ],
           ),
         ),
       ),

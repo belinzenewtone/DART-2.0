@@ -187,56 +187,47 @@ class ExpensesScreen extends ConsumerWidget {
         // Each child that needs horizontal padding applies it directly.
         PageShell(
           scrollable: false,
-
-          horizontalPadding: 0,
           topPadding: 0, // banner sits above the page title
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Import Health Banner (RN-style full-width top strip) ────────
-              ImportHealthBanner(
-                metrics: importMetrics,
-                onTap: () => context.pushNamed('import-health'),
-              ),
-              // ── Standard content with horizontal padding ────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenHorizontal,
-                  AppSpacing.screenTop,
-                  AppSpacing.screenHorizontal,
-                  0,
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: -AppSpacing.screenHorizontal,
                 ),
-                child: PageHeader(
-                  title: 'Finance',
-                  action: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppIconPillButton(
-                        icon: Icons.upload_file_rounded,
-                        label: 'Export',
-                        tone: AppIconPillTone.subtle,
-                        onPressed: writeBusy
-                            ? null
-                            : () => context.pushNamed('export'),
-                      ),
-                      const SizedBox(width: 8),
-                      AppIconPillButton(
-                        icon: Icons.phone_android_rounded,
-                        label: 'Import',
-                        tone: AppIconPillTone.subtle,
-                        onPressed: writeBusy
-                            ? null
-                            : () => handleExpenseSmsImport(context, ref),
-                      ),
-                    ],
-                  ),
+                child: ImportHealthBanner(
+                  metrics: importMetrics,
+                  onTap: () => context.pushNamed('import-health'),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenHorizontal),
-                child: _DataFreshPill(),
+              const SizedBox(height: AppSpacing.screenTop),
+              PageHeader(
+                title: 'Finance',
+                action: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIconPillButton(
+                      icon: Icons.upload_file_rounded,
+                      label: 'Export',
+                      tone: AppIconPillTone.subtle,
+                      onPressed: writeBusy
+                          ? null
+                          : () => context.pushNamed('export'),
+                    ),
+                    const SizedBox(width: 8),
+                    AppIconPillButton(
+                      icon: Icons.phone_android_rounded,
+                      label: 'Import',
+                      tone: AppIconPillTone.subtle,
+                      onPressed: writeBusy
+                          ? null
+                          : () => handleExpenseSmsImport(context, ref),
+                    ),
+                  ],
+                ),
               ),
+              const _DataFreshPill(),
               const SizedBox(height: AppSpacing.listGap),
               Expanded(
                 child: AnimatedSwitcher(
@@ -345,6 +336,8 @@ class _DataFreshPillState extends State<_DataFreshPill> {
             const SizedBox(width: 6),
             Text(
               text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textMuted,

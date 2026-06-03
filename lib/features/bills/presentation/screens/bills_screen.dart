@@ -1,4 +1,3 @@
-import 'package:beltech/core/feedback/app_haptics.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
@@ -23,7 +22,6 @@ class BillsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final billsState = ref.watch(billsProvider);
     final commitmentState = ref.watch(monthlyCommitmentProvider);
-    final writeState = ref.watch(billsWriteControllerProvider);
 
     ref.listen<AsyncValue<void>>(billsWriteControllerProvider, (
       previous,
@@ -144,7 +142,11 @@ class BillsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Bill'),
-        content: Text('Delete "${bill.name}"?'),
+        content: Text(
+          'Delete "${bill.name}"?',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -170,7 +172,6 @@ class _CommitmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -182,7 +183,7 @@ class _CommitmentCard extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppColors.warning.withValues(alpha: 0.15),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.calendar_month_rounded,
               color: AppColors.warning,
               size: 20,
@@ -203,6 +204,8 @@ class _CommitmentCard extends StatelessWidget {
                 commitmentState.when(
                   data: (total) => Text(
                     CurrencyFormatter.formatKes(total),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.title(context).copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -232,6 +235,8 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: AppTypography.eyebrow(context).copyWith(
         color: AppColors.textMuted,
         letterSpacing: 0.4,

@@ -18,7 +18,7 @@ class AppSpacing {
   static const double screenHorizontal = lg; // 24
   static const double screenTop = md; // 16
   static const double shellHorizontal = md; // 16
-  static const double contentBottomSafe = 172; // RN pageBottom
+  static const double contentBottomSafe = 24; // Consistent bottom padding across all screens
   static const double sectionBottom = 20;
   static const double fabBottomOffset = 132; // RN fabBottom
 

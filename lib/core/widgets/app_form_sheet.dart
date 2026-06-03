@@ -10,6 +10,7 @@ class AppFormSheet extends StatelessWidget {
     required this.onClose,
     this.subtitle,
     this.footer,
+    this.controller,
   });
 
   final String title;
@@ -17,6 +18,7 @@ class AppFormSheet extends StatelessWidget {
   final Widget child;
   final Widget? footer;
   final VoidCallback onClose;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -34,14 +36,7 @@ class AppFormSheet extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: screenHeight * 0.92),
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.surfaceFor(brightness).withValues(alpha: 0.98),
-                  AppColors.surfaceMutedFor(brightness).withValues(alpha: 0.98),
-                ],
-              ),
+              color: AppColors.surfaceFor(brightness),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppRadius.xxl),
               ),
@@ -102,6 +97,8 @@ class AppFormSheet extends StatelessWidget {
                 ),
                 Flexible(
                   child: SingleChildScrollView(
+                    controller: controller,
+                    physics: const ClampingScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                     child: child,
                   ),

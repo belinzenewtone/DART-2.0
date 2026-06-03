@@ -1,8 +1,8 @@
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/widgets/secondary_page_shell.dart';
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/theme/app_typography.dart';
+import 'package:beltech/core/widgets/app_empty_state.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
 import 'package:beltech/features/loans/domain/entities/loan_item.dart';
 import 'package:beltech/features/loans/presentation/widgets/loan_form_sheet.dart';
@@ -25,40 +25,44 @@ class LoansScreen extends ConsumerWidget {
     final outstandingAsync = ref.watch(_loansTotalOutstandingProvider);
     return SecondaryPageShell(
       title: 'Loans',
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showForm(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Loan'),
+      ),
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: GlassCard(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Outstanding',
-                              style: AppTypography.bodyMd(context)),
-                          const SizedBox(height: 4),
-                          Text(
-                            outstandingAsync.when(
-                              data: (v) => 'XAF ${v.toStringAsFixed(0)}',
-                              loading: () => '...',
-                              error: (_, __) => '—',
-                            ),
-                            style: AppTypography.headlineMd(context).copyWith(
-                              color: AppColors.warning,
-                              fontWeight: FontWeight.w700,
-                            ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Outstanding',
+                            style: AppTypography.bodyMd(context)),
+                        const SizedBox(height: 4),
+                        Text(
+                          outstandingAsync.when(
+                            data: (v) => 'KES ${v.toStringAsFixed(0)}',
+                            loading: () => '...',
+                            error: (_, __) => '—',
                           ),
-                        ],
-                      ),
+                          style: AppTypography.headlineMd(context).copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const Icon(Icons.trending_down_rounded,
-                        color: AppColors.warning, size: 32),
-                  ],
-                ),
+                  ),
+                  const Icon(Icons.trending_down_rounded,
+                      color: AppColors.warning, size: 32),
+                ],
               ),
             ),
           ),
@@ -66,7 +70,16 @@ class LoansScreen extends ConsumerWidget {
             child: loansAsync.when(
               data: (loans) {
                 if (loans.isEmpty) {
-                  return const Center(child: Text('No loans yet'));
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: AppEmptyState(
+                        icon: Icons.account_balance_wallet_outlined,
+                        title: 'No loans yet',
+                        subtitle: 'Tap + to add your first loan',
+                      ),
+                    ),
+                  );
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -78,15 +91,17 @@ class LoansScreen extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                child: Text(
+                  'Error: $e',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showForm(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Loan'),
       ),
     );
   }

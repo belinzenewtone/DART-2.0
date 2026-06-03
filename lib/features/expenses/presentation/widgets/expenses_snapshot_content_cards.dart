@@ -59,6 +59,8 @@ class _FulizaSummaryCard extends StatelessWidget {
                 ),
                 child: Text(
                   isSettled ? 'Settled' : 'Outstanding',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -134,6 +136,8 @@ class _FulizaStat extends StatelessWidget {
         children: [
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -143,6 +147,8 @@ class _FulizaStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
@@ -328,6 +334,8 @@ class _CategoryCardState extends State<_CategoryCard> {
                   const SizedBox(width: 10),
                   Text(
                     entry.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.cardTitle(context),
                   ),
                 ],

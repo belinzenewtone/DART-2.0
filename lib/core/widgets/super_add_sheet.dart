@@ -38,6 +38,7 @@ Future<SuperEntryInput?> showSuperAddSheet(
   String? selectionError;
   final pickerContextDate = contextDate;
   var showDetails = true;
+  final scrollController = ScrollController();
 
   String _kindLabel(SuperEntryKind k) {
     return switch (k) {
@@ -93,6 +94,7 @@ Future<SuperEntryInput?> showSuperAddSheet(
         final canSave = _canSave();
 
         return AppFormSheet(
+          controller: scrollController,
           title: actionLabel == 'Create'
               ? 'New ${_kindLabel(kind)}'
               : 'Edit ${_kindLabel(kind)}',
@@ -259,6 +261,15 @@ Future<SuperEntryInput?> showSuperAddSheet(
               ),
               const SizedBox(height: 12),
 
+              // ── Dynamic content: wrapped in AnimatedSize to prevent jump ──
+              AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                clipBehavior: Clip.none,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
               // ── Date pickers ──
               if (isTask) ...[
                 SuperAddWhenPickerRow(
@@ -463,7 +474,10 @@ Future<SuperEntryInput?> showSuperAddSheet(
               ],
             ],
           ),
-        );
+        ),
+      ],
+    ),
+  );
       },
     ),
   );

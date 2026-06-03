@@ -3,13 +3,20 @@ import 'package:flutter/material.dart';
 
 enum GlassCardTone { standard, accent, muted }
 
+/// Unified card component used across the entire app.
+///
+/// Design spec (matching RN reference):
+/// - Flat, solid surfaces — no heavy glassmorphism blur
+/// - Subtle 1px border only — minimal or no shadow
+/// - Consistent 16px border radius (not too round, not too sharp)
+/// - 16px internal padding by default
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin,
-    this.borderRadius = 22,
+    this.borderRadius = 16,
     this.tone = GlassCardTone.standard,
     this.accentColor,
     this.onTap,
@@ -28,7 +35,6 @@ class GlassCard extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final effectiveAccent = accentColor ?? AppColors.accent;
 
-    // Resolve colors similar to RN GlassCard tone styles
     final bgColor = switch (tone) {
       GlassCardTone.accent => brightness == Brightness.light
           ? effectiveAccent.withValues(alpha: 0.10)
@@ -42,7 +48,7 @@ class GlassCard extends StatelessWidget {
     };
 
     final borderColor = switch (tone) {
-      GlassCardTone.accent => effectiveAccent.withValues(alpha: 0.26), // ~44 hex
+      GlassCardTone.accent => effectiveAccent.withValues(alpha: 0.26),
       GlassCardTone.muted => brightness == Brightness.light
           ? AppColors.borderFor(brightness)
           : AppColors.border,
@@ -51,19 +57,16 @@ class GlassCard extends StatelessWidget {
           : AppColors.borderStrong,
     };
 
-    final shadowColor = brightness == Brightness.light
-        ? const Color(0x280F172A)
-        : Colors.black.withValues(alpha: 0.22);
-
     final innerDecoration = BoxDecoration(
       color: bgColor,
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(color: borderColor),
-      boxShadow: [
+      // Minimal elevation — no heavy shadow. RN uses flat cards with borders.
+      boxShadow: const [
         BoxShadow(
-          color: shadowColor,
-          blurRadius: 14,
-          offset: const Offset(0, 4),
+          color: Color(0x0D000000),
+          blurRadius: 4,
+          offset: Offset(0, 2),
         ),
       ],
     );

@@ -27,6 +27,11 @@ class LearningScreen extends ConsumerWidget {
     final monthlyAsync = ref.watch(_learningMonthlyProvider);
     return SecondaryPageShell(
       title: 'Learning',
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showForm(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Session'),
+      ),
       child: Column(
         children: [
           Padding(
@@ -35,38 +40,36 @@ class LearningScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: GlassCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.local_fire_department, color: AppColors.warning),
-                          const SizedBox(height: 4),
-                          Text(
-                            streakAsync.when(data: (v) => '$v', loading: () => '...', error: (_, __) => '0'),
-                            style: AppTypography.headlineSm(context).copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          Text('Day streak', style: AppTypography.bodySm(context)),
-                        ],
-                      ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.local_fire_department, color: AppColors.warning),
+                        const SizedBox(height: 4),
+                        Text(
+                          streakAsync.when(data: (v) => '$v', loading: () => '...', error: (_, __) => '0'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.headlineSm(context).copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text('Day streak', style: AppTypography.bodySm(context)),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: GlassCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.timer_outlined, color: AppColors.accent),
-                          const SizedBox(height: 4),
-                          Text(
-                            monthlyAsync.when(data: (v) => '$v', loading: () => '...', error: (_, __) => '0'),
-                            style: AppTypography.headlineSm(context).copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          Text('Min this month', style: AppTypography.bodySm(context)),
-                        ],
-                      ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.timer_outlined, color: AppColors.accent),
+                        const SizedBox(height: 4),
+                        Text(
+                          monthlyAsync.when(data: (v) => '$v', loading: () => '...', error: (_, __) => '0'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.headlineSm(context).copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text('Min this month', style: AppTypography.bodySm(context)),
+                      ],
                     ),
                   ),
                 ),
@@ -85,29 +88,48 @@ class LearningScreen extends ConsumerWidget {
                   itemBuilder: (context, i) {
                     final s = sessions[i];
                     return GlassCard(
-                      child: ListTile(
-                        leading: const Icon(Icons.school_outlined),
-                        title: Text(s.topic, style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w600)),
-                        subtitle: Text('${s.durationMinutes} min · ${_fmtDate(s.date)}', style: AppTypography.bodySm(context)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          onPressed: () => ref.read(learningRepositoryProvider).deleteSession(s.id),
-                        ),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.school_outlined),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  s.topic,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodyMd(context).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${s.durationMinutes} min · ${_fmtDate(s.date)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodySm(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 18),
+                            onPressed: () => ref.read(learningRepositoryProvider).deleteSession(s.id),
+                          ),
+                        ],
                       ),
                     );
                   },
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text('Error: $e', maxLines: 2, overflow: TextOverflow.ellipsis)),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showForm(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Session'),
       ),
     );
   }

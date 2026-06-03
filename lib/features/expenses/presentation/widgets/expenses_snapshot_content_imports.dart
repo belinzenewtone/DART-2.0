@@ -148,6 +148,8 @@ class _ImportPipelineCard extends StatelessWidget {
                               ),
                               Text(
                                 'Confidence ${(item.confidence * 100).toStringAsFixed(0)}%',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: textTheme.bodySmall,
                               ),
                             ],
@@ -185,6 +187,8 @@ class _ImportPipelineCard extends StatelessWidget {
                               ),
                               Text(
                                 '${item.paybill} · ${item.usageCount} uses',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: textTheme.bodySmall,
                               ),
                             ],
@@ -192,6 +196,8 @@ class _ImportPipelineCard extends StatelessWidget {
                         ),
                         Text(
                           _txDateFormat.format(item.lastSeenAt),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: textTheme.bodySmall,
                         ),
                       ],

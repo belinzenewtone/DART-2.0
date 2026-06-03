@@ -106,26 +106,21 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
           ],
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 38,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: ExpenseFilter.values.map((filter) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: CategoryChip(
-                  label: switch (filter) {
-                    ExpenseFilter.all => 'All',
-                    ExpenseFilter.today => 'Today',
-                    ExpenseFilter.week => 'This Week',
-                    ExpenseFilter.month => 'This Month',
-                  },
-                  selected: widget.selectedFilter == filter,
-                  onTap: () => widget.onFilterChanged(filter),
-                ),
-              );
-            }).toList(),
-          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: ExpenseFilter.values.map((filter) {
+            return CategoryChip(
+              label: switch (filter) {
+                ExpenseFilter.all => 'All',
+                ExpenseFilter.today => 'Today',
+                ExpenseFilter.week => 'This Week',
+                ExpenseFilter.month => 'This Month',
+              },
+              selected: widget.selectedFilter == filter,
+              onTap: () => widget.onFilterChanged(filter),
+            );
+          }).toList(),
         ),
         const SizedBox(height: 12),
         _CategoryCard(categories: widget.snapshot.categories),
@@ -151,7 +146,12 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
           children: [
             Expanded(child: Text('Transactions', style: textTheme.titleMedium)),
             if (transactions.isNotEmpty)
-              Text('${transactions.length} total', style: textTheme.bodySmall),
+              Text(
+                '${transactions.length} total',
+                style: textTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -193,6 +193,8 @@ class _ExpensesSnapshotContentState extends State<ExpensesSnapshotContent> {
                 _showAllTransactions
                     ? 'Show fewer transactions'
                     : 'Show all transactions (${transactions.length})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -270,11 +272,15 @@ class _TransactionDayHeader extends StatelessWidget {
           child: Text(
             isToday ? 'Today' : _expenseDayHeaderFormat.format(group.day),
             style: Theme.of(context).textTheme.bodyLarge,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         Text(
           CurrencyFormatter.money(total),
           style: Theme.of(context).textTheme.bodySmall,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

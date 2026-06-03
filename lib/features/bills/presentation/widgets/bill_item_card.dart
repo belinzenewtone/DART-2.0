@@ -1,6 +1,4 @@
 import 'package:beltech/core/theme/app_colors.dart';
-import 'package:beltech/core/theme/app_radius.dart';
-import 'package:beltech/core/theme/app_spacing.dart';
 import 'package:beltech/core/theme/app_typography.dart';
 import 'package:beltech/core/utils/currency_formatter.dart';
 import 'package:beltech/core/widgets/glass_card.dart';
@@ -51,6 +49,8 @@ class BillItemCard extends StatelessWidget {
               children: [
                 Text(
                   bill.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.body(context).copyWith(
                     fontWeight: FontWeight.w600,
                     decoration: bill.paid ? TextDecoration.lineThrough : null,
@@ -62,6 +62,8 @@ class BillItemCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Due: ${_formatDate(bill.dueDate)}${isOverdue ? ' · Overdue' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySm(context).copyWith(
                     color: isOverdue
                         ? AppColors.danger
@@ -71,9 +73,10 @@ class BillItemCard extends StatelessWidget {
                 if (bill.recurrence != null && bill.recurrence!.isNotEmpty)
                   Text(
                     'Repeats: ${bill.recurrence}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodySm(context).copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 11,
+                      color: AppColors.textSecondary,
                     ),
                   ),
               ],
@@ -81,19 +84,25 @@ class BillItemCard extends StatelessWidget {
           ),
           Text(
             CurrencyFormatter.formatKes(bill.amount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTypography.body(context).copyWith(
               fontWeight: FontWeight.w700,
               color: bill.paid ? AppColors.textMuted : AppColors.textPrimaryFor(brightness),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded,
+            icon: const Icon(Icons.more_vert_rounded,
                 color: AppColors.textMuted, size: 18),
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'toggle',
-                child: Text(bill.paid ? 'Mark unpaid' : 'Mark paid'),
+                child: Text(
+                  bill.paid ? 'Mark unpaid' : 'Mark paid',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const PopupMenuItem(value: 'edit', child: Text('Edit')),
               const PopupMenuItem(value: 'delete', child: Text('Delete')),

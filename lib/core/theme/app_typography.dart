@@ -35,6 +35,9 @@ class AppTypography {
         color: AppColors.textPrimaryFor(Theme.of(context).brightness),
       );
 
+  /// Alias of [pageTitle] for callers that prefer the semantic name.
+  static TextStyle screenTitle(BuildContext context) => pageTitle(context);
+
   /// 11px w600 uppercase + letter-spacing — label above a title
   static TextStyle eyebrow(BuildContext context) => GoogleFonts.inter(
         fontSize: 11,
@@ -117,6 +120,9 @@ class AppTypography {
         color: AppColors.textPrimaryFor(Theme.of(context).brightness),
       );
 
+  /// Alias of [amount] for dashboard / summary statistics.
+  static TextStyle statNumber(BuildContext context) => amount(context);
+
   /// 30px w700 — hero amounts (balance, total)
   static TextStyle amountLg(BuildContext context) => GoogleFonts.inter(
         fontSize: 30,
@@ -157,4 +163,12 @@ class AppTypography {
       style.copyWith(
         color: style.color?.withValues(alpha: 0.5),
       );
+
+  // ── Overflow helpers ─────────────────────────────────────────────────────────
+
+  /// Every Text widget that displays dynamic data should use these constraints
+  /// to prevent layout breakage on small screens or long translations.
+  static TextOverflow get overflow => TextOverflow.ellipsis;
+  static int get maxLinesSingle => 1;
+  static int get maxLinesDouble => 2;
 }

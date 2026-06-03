@@ -196,6 +196,8 @@ class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
                         const SizedBox(height: 2),
                         Text(
                           _formatOccurredAt(_occurredAt),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ],
@@ -249,7 +251,11 @@ class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
       final firstError = result.errors.values.first;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(firstError),
+          content: Text(
+            firstError,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -320,6 +326,8 @@ class _ExpenseCategoryChip extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 category,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: selected ? Colors.white : AppColors.textPrimary,
                   fontSize: 13,
