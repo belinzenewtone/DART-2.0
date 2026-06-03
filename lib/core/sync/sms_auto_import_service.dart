@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:beltech/core/Logger/app_logger.dart';
+import 'package:beltech/core/logger/app_logger.dart';
 import 'package:beltech/core/platform/runtime_env.dart';
 import 'package:beltech/core/sync/native_sms_receiver.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
