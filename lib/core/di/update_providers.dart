@@ -1,3 +1,4 @@
+import 'package:beltech/core/config/app_update_config.dart';
 import 'package:beltech/core/di/database_providers.dart';
 import 'package:beltech/core/di/repository_providers.dart';
 import 'package:beltech/core/update/data/app_update_service.dart';
@@ -7,10 +8,16 @@ import 'package:beltech/core/update/domain/app_update_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final appUpdateServiceProvider = Provider<AppUpdateService>((ref) {
+  final manifestUrl = AppUpdateConfig.remoteManifestUrl.isNotEmpty
+      ? AppUpdateConfig.remoteManifestUrl
+      : null;
   if (ref.watch(useSupabaseProvider)) {
-    return AppUpdateService(supabaseClient: ref.watch(supabaseClientProvider));
+    return AppUpdateService(
+      supabaseClient: ref.watch(supabaseClientProvider),
+      remoteManifestUrl: manifestUrl,
+    );
   }
-  return AppUpdateService();
+  return AppUpdateService(remoteManifestUrl: manifestUrl);
 });
 
 final updateRepositoryProvider = Provider<UpdateRepository>(

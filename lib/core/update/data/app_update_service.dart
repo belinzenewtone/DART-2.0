@@ -1,20 +1,32 @@
+import 'dart:convert';
+
 import 'package:beltech/core/config/app_update_config.dart';
 import 'package:beltech/core/update/data/update_installer.dart';
 import 'package:beltech/core/update/domain/app_update_info.dart';
 import 'package:beltech/core/update/domain/update_install_progress.dart';
+import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppUpdateService {
-  AppUpdateService({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+  AppUpdateService({
+    SupabaseClient? supabaseClient,
+    this.remoteManifestUrl,
+  }) : _supabaseClient = supabaseClient;
 
   final SupabaseClient? _supabaseClient;
 
+  /// Optional remote JSON manifest URL (e.g. GitHub raw file).
+  /// When provided, this is checked first before Supabase or env config.
+  final String? remoteManifestUrl;
+
   Future<AppUpdateInfo?> fetchAvailableUpdate() async {
     final currentVersion = await _currentVersion();
-    final update = await _fetchSupabaseUpdate() ?? _fetchDefinedUpdate();
+    final update =
+        await _fetchRemoteManifest() ??
+        await _fetchSupabaseUpdate() ??
+        _fetchDefinedUpdate();
     if (update == null) {
       return null;
     }
@@ -106,5 +118,28 @@ class AppUpdateService {
       'apk_url': AppUpdateConfig.apkUrl,
       'website_url': AppUpdateConfig.websiteUrl,
     });
+  }
+
+  Future<AppUpdateInfo?> _fetchRemoteManifest() async {
+    final url = remoteManifestUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return null;
+    }
+    try {
+      final uri = Uri.parse(url);
+      final response = await http
+          .get(uri, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) {
+        return null;
+      }
+      final body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic>) {
+        return null;
+      }
+      return AppUpdateInfo.fromMap(body);
+    } catch (_) {
+      return null;
+    }
   }
 }

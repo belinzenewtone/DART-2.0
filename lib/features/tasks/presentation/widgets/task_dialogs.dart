@@ -1,3 +1,4 @@
+import 'package:beltech/core/forms/form_schemas.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_motion.dart';
 import 'package:beltech/core/widgets/app_button.dart';
@@ -65,27 +66,37 @@ Future<NewTaskInput?> _showTaskDialog(
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: AppButton(
-                  label: initialTask == null ? 'Create' : 'Update',
-                  onPressed: () {
-                    final title = titleController.text.trim();
-                    if (title.isEmpty) {
-                      return;
-                    }
-                    Navigator.of(context).pop(
-                      NewTaskInput(
-                        title: title,
-                        description: descriptionController.text.trim().isEmpty
-                            ? null
-                            : descriptionController.text.trim(),
-                        priority: selectedPriority,
-                        dueDate: selectedDate,
-                      ),
-                    );
-                  },
+                Expanded(
+                  child: AppButton(
+                    label: initialTask == null ? 'Create' : 'Update',
+                    onPressed: () {
+                      final result = FormSchemas.taskSchema.validate({
+                        'title': titleController.text,
+                        'description': descriptionController.text,
+                      });
+                      if (!result.isValid) {
+                        final firstError = result.errors.values.first;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(firstError),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.of(context).pop(
+                        NewTaskInput(
+                          title: titleController.text.trim(),
+                          description: descriptionController.text.trim().isEmpty
+                              ? null
+                              : descriptionController.text.trim(),
+                          priority: selectedPriority,
+                          dueDate: selectedDate,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
           child: Column(

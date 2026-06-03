@@ -13,6 +13,8 @@ class AppUpdateConfig {
   static const String apkUrl = String.fromEnvironment('APP_UPDATE_APK_URL');
   static const String websiteUrl =
       String.fromEnvironment('APP_UPDATE_WEBSITE_URL');
+  static const String remoteManifestUrl =
+      String.fromEnvironment('APP_UPDATE_REMOTE_MANIFEST_URL');
 
   static bool get isConfigured => latestVersion.isNotEmpty;
   static bool get forceUpdate => forceUpdateRaw.toLowerCase() == 'true';

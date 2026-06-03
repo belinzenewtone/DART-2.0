@@ -1,3 +1,4 @@
+import 'package:beltech/core/forms/form_schemas.dart';
 import 'package:beltech/core/theme/app_colors.dart';
 import 'package:beltech/core/theme/app_radius.dart';
 import 'package:beltech/core/utils/category_visual.dart';
@@ -239,14 +240,25 @@ class _ExpenseFormSheetState extends State<_ExpenseFormSheet> {
   }
 
   void _submit() {
-    final title = _titleController.text.trim();
-    final amount = double.tryParse(_amountController.text.trim());
-    if (title.isEmpty || amount == null || amount <= 0) {
+    final result = FormSchemas.expenseSchema.validate({
+      'title': _titleController.text,
+      'amount': _amountController.text,
+      'category': _selectedCategory,
+    });
+    if (!result.isValid) {
+      final firstError = result.errors.values.first;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(firstError),
+          duration: const Duration(seconds: 2),
+        ),
+      );
       return;
     }
+    final amount = double.tryParse(_amountController.text.trim())!;
     Navigator.of(context).pop(
       ManualExpenseInput(
-        title: title,
+        title: _titleController.text.trim(),
         category: _selectedCategory,
         amountKes: amount,
         occurredAt: _occurredAt,

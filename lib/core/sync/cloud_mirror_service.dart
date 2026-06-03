@@ -30,8 +30,10 @@ class CloudMirrorService {
     await _scanTable('tasks', 'due_at', lastSync);
     await _scanTable('events', 'start_at', lastSync);
     await _scanTable('incomes', 'received_at', lastSync);
-    await _scanTable('budgets', 'id', lastSync);
     await _scanTable('recurring_templates', 'next_run_at', lastSync);
+    // Budgets have no timestamp column; they are config data with very few
+    // rows, so we scan all of them on every mirror sync.
+    await _scanAllRows('budgets');
 
     await _dispatcher.processQueue();
 
@@ -42,6 +44,20 @@ class CloudMirrorService {
     final rows = await _store.executor.runSelect(
       'SELECT id FROM $table WHERE $dateColumn > ? ORDER BY $dateColumn DESC LIMIT 200',
       [since],
+    );
+    for (final row in rows) {
+      final id = _asInt(row['id']);
+      final entityType = table == 'recurring_templates'
+          ? 'recurring'
+          : table.replaceAll(RegExp(r's$'), '');
+      await _mutationEnqueuer.enqueuePush(entityType, id, {'id': id});
+    }
+  }
+
+  Future<void> _scanAllRows(String table) async {
+    final rows = await _store.executor.runSelect(
+      'SELECT id FROM $table ORDER BY id DESC LIMIT 200',
+      const [],
     );
     for (final row in rows) {
       final id = _asInt(row['id']);
