@@ -7,10 +7,12 @@ import 'package:beltech/core/notifications/local_notification_service.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
 import 'package:beltech/core/sync/bill_reminder_service.dart';
 import 'package:beltech/core/sync/learning_reminder_service.dart';
+import 'package:beltech/core/sync/cloud_sync_dispatcher.dart';
 import 'package:beltech/core/telemetry/revamp_telemetry_service.dart';
 import 'package:beltech/core/sync/sms_auto_import_service.dart';
 import 'package:beltech/core/sync/sync_circuit_breaker.dart';
 import 'package:beltech/data/local/drift/app_drift_store.dart';
+import 'package:beltech/data/local/drift/sync_job_store.dart';
 import 'package:beltech/features/analytics/data/repositories/analytics_repository_impl.dart';
 import 'package:beltech/features/analytics/data/repositories/supabase_analytics_repository_impl.dart';
 import 'package:beltech/features/analytics/domain/repositories/analytics_repository.dart';
@@ -91,8 +93,14 @@ class BackgroundWorkerRuntime {
         repositories.recurring,
       );
       final notifications = LocalNotificationService();
-      final billReminder = BillReminderService(repositories.bills, notifications);
-      final learningReminder = LearningReminderService(repositories.learning, notifications);
+      final billReminder = BillReminderService(
+        repositories.bills,
+        notifications,
+      );
+      final learningReminder = LearningReminderService(
+        repositories.learning,
+        notifications,
+      );
       final flagStore = FeatureFlagStore();
       final insights = NotificationInsightsService(
         notifications,
@@ -121,6 +129,12 @@ class BackgroundWorkerRuntime {
         try {
           await smsService.syncNow();
           await recurringService.syncNow();
+          if (localStore != null) {
+            await CloudSyncDispatcher(
+              SyncJobStore(localStore),
+              localStore,
+            ).processQueue();
+          }
           await billReminder.checkAndNotify();
           await learningReminder.checkAndNotify();
           await circuit.recordSuccess();
@@ -244,34 +258,112 @@ class _WorkerRepositories {
 // Minimal stub repositories for background worker when using Supabase
 // (real implementations would be added for Supabase if needed)
 class _StubBillsRepository implements BillsRepository {
-  @override Stream<List<BillItem>> watchBills() => Stream.value([]);
-  @override Future<List<BillItem>> loadBills() => Future.value([]);
-  @override Future<void> upsertBill({required String name, required double amount, required DateTime dueDate, BillUrgency urgency = BillUrgency.medium, String? recurrence, bool paid = false}) => Future.value();
-  @override Future<void> updateBill({required int id, String? name, double? amount, DateTime? dueDate, BillUrgency? urgency, String? recurrence, bool? paid}) => Future.value();
-  @override Future<void> deleteBill(int id) => Future.value();
-  @override Future<double> monthlyCommitmentTotal() => Future.value(0);
-  @override Future<int> overdueCount() => Future.value(0);
+  @override
+  Stream<List<BillItem>> watchBills() => Stream.value([]);
+  @override
+  Future<List<BillItem>> loadBills() => Future.value([]);
+  @override
+  Future<void> upsertBill({
+    required String name,
+    required double amount,
+    required DateTime dueDate,
+    BillUrgency urgency = BillUrgency.medium,
+    String? recurrence,
+    bool paid = false,
+  }) => Future.value();
+  @override
+  Future<void> updateBill({
+    required int id,
+    String? name,
+    double? amount,
+    DateTime? dueDate,
+    BillUrgency? urgency,
+    String? recurrence,
+    bool? paid,
+  }) => Future.value();
+  @override
+  Future<void> deleteBill(int id) => Future.value();
+  @override
+  Future<double> monthlyCommitmentTotal() => Future.value(0);
+  @override
+  Future<int> overdueCount() => Future.value(0);
 }
+
 class _StubLoansRepository implements LoansRepository {
-  @override Stream<List<LoanItem>> watchLoans() => Stream.value([]);
-  @override Future<List<LoanItem>> loadLoans() => Future.value([]);
-  @override Future<void> addLoan({required String name, String? lender, required double totalAmount, required double outstandingAmount, double? interestRate, DateTime? startDate, DateTime? dueDate, LoanStatus status = LoanStatus.active}) => Future.value();
-  @override Future<void> updateLoan({required int id, String? name, String? lender, double? totalAmount, double? outstandingAmount, double? interestRate, DateTime? startDate, DateTime? dueDate, LoanStatus? status}) => Future.value();
-  @override Future<void> deleteLoan(int id) => Future.value();
-  @override Future<double> totalOutstanding() => Future.value(0);
+  @override
+  Stream<List<LoanItem>> watchLoans() => Stream.value([]);
+  @override
+  Future<List<LoanItem>> loadLoans() => Future.value([]);
+  @override
+  Future<void> addLoan({
+    required String name,
+    String? lender,
+    required double totalAmount,
+    required double outstandingAmount,
+    double? interestRate,
+    DateTime? startDate,
+    DateTime? dueDate,
+    LoanStatus status = LoanStatus.active,
+  }) => Future.value();
+  @override
+  Future<void> updateLoan({
+    required int id,
+    String? name,
+    String? lender,
+    double? totalAmount,
+    double? outstandingAmount,
+    double? interestRate,
+    DateTime? startDate,
+    DateTime? dueDate,
+    LoanStatus? status,
+  }) => Future.value();
+  @override
+  Future<void> deleteLoan(int id) => Future.value();
+  @override
+  Future<double> totalOutstanding() => Future.value(0);
 }
+
 class _StubGoalsRepository implements GoalsRepository {
-  @override Stream<List<GoalItem>> watchGoals() => Stream.value([]);
-  @override Future<List<GoalItem>> loadGoals() => Future.value([]);
-  @override Future<void> addGoal({required String title, required double targetAmount, double currentAmount = 0, DateTime? deadline, String? color}) => Future.value();
-  @override Future<void> updateGoal({required int id, String? title, double? targetAmount, double? currentAmount, DateTime? deadline, String? color}) => Future.value();
-  @override Future<void> deleteGoal(int id) => Future.value();
+  @override
+  Stream<List<GoalItem>> watchGoals() => Stream.value([]);
+  @override
+  Future<List<GoalItem>> loadGoals() => Future.value([]);
+  @override
+  Future<void> addGoal({
+    required String title,
+    required double targetAmount,
+    double currentAmount = 0,
+    DateTime? deadline,
+    String? color,
+  }) => Future.value();
+  @override
+  Future<void> updateGoal({
+    required int id,
+    String? title,
+    double? targetAmount,
+    double? currentAmount,
+    DateTime? deadline,
+    String? color,
+  }) => Future.value();
+  @override
+  Future<void> deleteGoal(int id) => Future.value();
 }
+
 class _StubLearningRepository implements LearningRepository {
-  @override Stream<List<LearningSession>> watchSessions() => Stream.value([]);
-  @override Future<List<LearningSession>> loadSessions() => Future.value([]);
-  @override Future<void> addSession({required String topic, required int durationMinutes, required DateTime date}) => Future.value();
-  @override Future<void> deleteSession(int id) => Future.value();
-  @override Future<int> currentStreak() => Future.value(0);
-  @override Future<int> monthlyMinutes(DateTime month) => Future.value(0);
+  @override
+  Stream<List<LearningSession>> watchSessions() => Stream.value([]);
+  @override
+  Future<List<LearningSession>> loadSessions() => Future.value([]);
+  @override
+  Future<void> addSession({
+    required String topic,
+    required int durationMinutes,
+    required DateTime date,
+  }) => Future.value();
+  @override
+  Future<void> deleteSession(int id) => Future.value();
+  @override
+  Future<int> currentStreak() => Future.value(0);
+  @override
+  Future<int> monthlyMinutes(DateTime month) => Future.value(0);
 }

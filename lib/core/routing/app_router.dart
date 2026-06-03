@@ -3,10 +3,12 @@ import 'package:beltech/features/analytics/presentation/analytics_screen.dart';
 import 'package:beltech/features/bills/presentation/screens/bills_screen.dart';
 import 'package:beltech/features/budget/presentation/budget_screen.dart';
 import 'package:beltech/features/export/presentation/export_screen.dart';
+import 'package:beltech/features/insights/presentation/screens/insights_screen.dart';
 import 'package:beltech/features/income/presentation/income_screen.dart';
 import 'package:beltech/features/loans/presentation/screens/loans_screen.dart';
 import 'package:beltech/features/goals/presentation/screens/goals_screen.dart';
 import 'package:beltech/features/expenses/presentation/screens/fee_analytics_screen.dart';
+import 'package:beltech/features/expenses/presentation/screens/import_health_screen.dart';
 import 'package:beltech/features/expenses/presentation/screens/merchant_detail_screen.dart';
 import 'package:beltech/features/learning/presentation/screens/learning_screen.dart';
 import 'package:beltech/features/recurring/presentation/recurring_screen.dart';
@@ -62,6 +64,11 @@ final appRouterProvider = Provider<GoRouter>(
         builder: (context, state) => const AnalyticsScreen(),
       ),
       GoRoute(
+        path: '/insights',
+        name: 'insights',
+        builder: (context, state) => const InsightsScreen(),
+      ),
+      GoRoute(
         path: '/week-review',
         name: 'week-review',
         builder: (context, state) => const WeekReviewScreen(),
@@ -103,6 +110,11 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/fee-analytics',
         name: 'fee-analytics',
         builder: (context, state) => const FeeAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/import-health',
+        name: 'import-health',
+        builder: (context, state) => const ImportHealthScreen(),
       ),
     ],
   ),

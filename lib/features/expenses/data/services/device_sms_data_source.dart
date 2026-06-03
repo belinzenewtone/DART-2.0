@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:beltech/core/widgets/sms_permission_rationale.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_filters.dart';
 import 'package:beltech/features/expenses/data/services/mpesa_parser_text.dart';
 
@@ -30,6 +32,20 @@ class DeviceSmsDataSource {
   final SmsPermissionRequester _requestPermission;
   final SmsQueryRunner _queryRunner;
   final PlatformCheck _isAndroid;
+
+  Future<bool> get hasRequestedPermission async =>
+      await Permission.sms.isGranted && _isAndroid();
+
+  static Future<bool> requestPermissionWithRationale(
+    BuildContext context,
+  ) async {
+    final accepted = await showSmsPermissionRationale(context);
+    if (!accepted) {
+      return false;
+    }
+    final status = await Permission.sms.request();
+    return status.isGranted;
+  }
 
   Future<List<String>> loadLikelyMpesaMessages({DateTime? from}) async {
     final entries = await loadLikelyMpesaEntries(from: from);

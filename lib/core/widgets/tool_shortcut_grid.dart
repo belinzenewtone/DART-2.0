@@ -67,6 +67,18 @@ const defaultToolShortcuts = [
     routeName: 'search',
   ),
   ToolShortcut(
+    label: 'Insights',
+    icon: Icons.insights_rounded,
+    color: AppColors.violet,
+    routeName: 'insights',
+  ),
+  ToolShortcut(
+    label: 'Import Health',
+    icon: Icons.monitor_heart_outlined,
+    color: AppColors.success,
+    routeName: 'import-health',
+  ),
+  ToolShortcut(
     label: 'Fee Analytics',
     icon: Icons.money_off_csred_rounded,
     color: AppColors.danger,

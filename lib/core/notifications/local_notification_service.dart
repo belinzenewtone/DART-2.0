@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+import 'package:beltech/core/widgets/permission_rationale.dart';
 
 class LocalNotificationService {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
@@ -143,6 +146,36 @@ class LocalNotificationService {
     }
   }
 
+  Future<bool> requestNotificationPermissionWithRationale(
+    BuildContext context,
+  ) async {
+    final alreadyEnabled = await isNotificationsEnabled();
+    if (alreadyEnabled) {
+      return true;
+    }
+    if (!context.mounted) return false;
+    final accepted = await showPermissionRationaleSheet(
+      context: context,
+      icon: Icons.notifications_outlined,
+      title: 'Stay on Track',
+      description:
+          'Get reminded about tasks, events, bills, and learning sessions so you never miss a deadline.',
+      bulletPoints: const [
+        'Task and event reminders',
+        'Bill due date alerts',
+        'Learning streak nudges',
+        'You can disable anytime in Settings',
+      ],
+    );
+    if (!accepted) {
+      return false;
+    }
+    await setNotificationsEnabled(true);
+    await _ensureInitialized();
+    await _requestPlatformPermission();
+    return true;
+  }
+
   Future<void> showBillReminder({
     required int billId,
     required String billName,
@@ -258,6 +291,29 @@ class LocalNotificationService {
   /// the plugin on startup without scheduling a notification first.
   Future<void> initialize() => _ensureInitialized();
 
+  Future<void> _requestPlatformPermission() async {
+    await _ensureInitialized();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    }
+  }
+
   Future<void> _ensureInitialized() async {
     if (_initialized) {
       return;
@@ -299,26 +355,6 @@ class LocalNotificationService {
       settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.requestNotificationsPermission();
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin
-          >()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin
-          >()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-    }
 
     _initialized = true;
   }

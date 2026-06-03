@@ -196,10 +196,7 @@ class ExpensesScreen extends ConsumerWidget {
               // ── Import Health Banner (RN-style full-width top strip) ────────
               ImportHealthBanner(
                 metrics: importMetrics,
-                onTap: importMetrics.failedQueueCount > 0 ||
-                        importMetrics.quarantineCount > 0
-                    ? () => context.pushNamed('analytics')
-                    : null,
+                onTap: () => context.pushNamed('import-health'),
               ),
               // ── Standard content with horizontal padding ────────────────────
               Padding(

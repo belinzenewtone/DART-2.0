@@ -24,6 +24,8 @@ class ExportScreen extends ConsumerStatefulWidget {
 
 class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _encrypt = false;
+  DateTime? _startDate;
+  DateTime? _endDate;
   final _passwordCtrl = TextEditingController();
 
   @override
@@ -117,7 +119,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                           }
                           await ref
                               .read(exportControllerProvider.notifier)
-                              .export(ExportScope.all, password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null);
+                              .export(ExportScope.all,
+                                  password: _passwordCtrl.text.isNotEmpty
+                                      ? _passwordCtrl.text
+                                      : null,
+                                  startDate: _startDate,
+                                  endDate: _endDate);
                         },
                   child: exportState.isLoading
                       ? const SizedBox(
@@ -168,6 +175,69 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ),
 
+          const SizedBox(height: 12),
+          // ── Date range ───────────────────────────────────────────────────────
+          GlassCard(
+            tone: GlassCardTone.muted,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Date range', style: AppTypography.bodyMd(context)),
+                    const Spacer(),
+                    if (_startDate != null || _endDate != null)
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() {
+                              _startDate = null;
+                              _endDate = null;
+                            }),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.close, size: 16,
+                                color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text('Clear',
+                                style: AppTypography.bodySm(context).copyWith(
+                                    color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DateField(
+                        label: 'Start',
+                        date: _startDate,
+                        lastDate: _endDate,
+                        onChanged: (d) => setState(() => _startDate = d),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text('to',
+                          style: AppTypography.bodySm(context)
+                              .copyWith(color: AppColors.textSecondary)),
+                    ),
+                    Expanded(
+                      child: _DateField(
+                        label: 'End',
+                        date: _endDate,
+                        firstDate: _startDate,
+                        onChanged: (d) => setState(() => _endDate = d),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 16),
           Text(
             'By Category',
@@ -196,7 +266,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 }
                 await ref
                     .read(exportControllerProvider.notifier)
-                    .export(meta.scope, password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null);
+                    .export(meta.scope,
+                        password: _passwordCtrl.text.isNotEmpty
+                            ? _passwordCtrl.text
+                            : null,
+                        startDate: _startDate,
+                        endDate: _endDate);
               },
             ),
             const SizedBox(height: 8),
@@ -244,6 +319,90 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     } catch (_) {
       // Best-effort share trigger: export remains available via the card.
     }
+  }
+}
+
+class _DateField extends StatelessWidget {
+  const _DateField({
+    required this.label,
+    required this.date,
+    required this.onChanged,
+    this.firstDate,
+    this.lastDate,
+  });
+
+  final String label;
+  final DateTime? date;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+  final ValueChanged<DateTime> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: date ?? DateTime.now(),
+          firstDate: firstDate ?? DateTime(2020),
+          lastDate: lastDate ?? DateTime.now().add(const Duration(days: 365)),
+          builder: (context, child) => Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: AppColors.accent,
+                    onPrimary: Colors.white,
+                    surface: AppColors.surfaceElevated,
+                  ),
+            ),
+            child: child!,
+          ),
+        );
+        if (picked != null) {
+          onChanged(picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: date != null
+                ? AppColors.accent.withValues(alpha: 0.40)
+                : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color:
+                  date != null ? AppColors.accentLight : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                date != null ? _fmt(date!) : label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: date != null ? FontWeight.w600 : FontWeight.w400,
+                  color: date != null
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fmt(DateTime d) {
+    return '${d.day}/${d.month}/${d.year}';
   }
 }
 

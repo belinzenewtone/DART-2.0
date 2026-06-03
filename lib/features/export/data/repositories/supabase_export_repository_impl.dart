@@ -20,12 +20,15 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
   @override
   Future<ExportResult> exportCsv({
     required ExportScope scope,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     if (kIsWeb) {
       throw Exception('CSV export is not supported on web builds.');
     }
     final userId = _requireUserId();
-    final chunks = await _buildChunks(scope, userId);
+    final chunks = await _buildChunks(scope, userId,
+        startDate: startDate, endDate: endDate);
     final sections = <String>[];
     var totalRows = 0;
     for (final chunk in chunks) {
@@ -36,8 +39,9 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
     final content = sections.join('\n');
     final dir = await getApplicationDocumentsDirectory();
     final stamp = DateTime.now().millisecondsSinceEpoch;
-    final file =
-        File('${dir.path}${Platform.pathSeparator}dart2_export_$stamp.csv');
+    final dateTag = _dateTag(startDate: startDate, endDate: endDate);
+    final file = File(
+        '${dir.path}${Platform.pathSeparator}dart2_export${dateTag}_$stamp.csv');
     await file.writeAsString(content);
     return ExportResult(
         filePath: file.path, rowsExported: totalRows, scope: scope);
@@ -47,12 +51,15 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
   Future<ExportResult> exportEncryptedCsv({
     required ExportScope scope,
     required String password,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     if (kIsWeb) {
       throw Exception('Encrypted export is not supported on web builds.');
     }
     final userId = _requireUserId();
-    final chunks = await _buildChunks(scope, userId);
+    final chunks = await _buildChunks(scope, userId,
+        startDate: startDate, endDate: endDate);
     final sections = <String>[];
     var totalRows = 0;
     for (final chunk in chunks) {
@@ -65,7 +72,9 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
     final encrypted = encryptedService.encrypt(plainText: content, password: password);
     final dir = await getApplicationDocumentsDirectory();
     final stamp = DateTime.now().millisecondsSinceEpoch;
-    final file = File('${dir.path}${Platform.pathSeparator}dart2_export_$stamp.enc');
+    final dateTag = _dateTag(startDate: startDate, endDate: endDate);
+    final file = File(
+        '${dir.path}${Platform.pathSeparator}dart2_export${dateTag}_$stamp.enc');
     await file.writeAsString(encrypted);
     return ExportResult(
       filePath: file.path,
@@ -75,16 +84,23 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
   }
 
   Future<List<_ExportChunk>> _buildChunks(
-      ExportScope scope, String userId) async {
+      ExportScope scope, String userId,
+      {DateTime? startDate, DateTime? endDate}) async {
     final chunks = <_ExportChunk>[];
     if (scope == ExportScope.all || scope == ExportScope.expenses) {
+      var query = _client
+          .from('transactions')
+          .select('id,title,category,amount,occurred_at,source')
+          .eq('owner_id', userId);
+      if (startDate != null) {
+        query = query.gte('occurred_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('occurred_at', endDate.toIso8601String());
+      }
       chunks.add(await _buildChunk(
         name: 'expenses',
-        rows: await _client
-            .from('transactions')
-            .select('id,title,category,amount,occurred_at,source')
-            .eq('owner_id', userId)
-            .order('occurred_at', ascending: false),
+        rows: await query.order('occurred_at', ascending: false),
         headers: const [
           'id',
           'title',
@@ -96,24 +112,36 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.incomes) {
+      var query = _client
+          .from('incomes')
+          .select('id,title,amount,received_at,source')
+          .eq('owner_id', userId);
+      if (startDate != null) {
+        query = query.gte('received_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('received_at', endDate.toIso8601String());
+      }
       chunks.add(await _buildChunk(
         name: 'incomes',
-        rows: await _client
-            .from('incomes')
-            .select('id,title,amount,received_at,source')
-            .eq('owner_id', userId)
-            .order('received_at', ascending: false),
+        rows: await query.order('received_at', ascending: false),
         headers: const ['id', 'title', 'amount', 'received_at', 'source'],
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.tasks) {
+      var query = _client
+          .from('tasks')
+          .select('id,title,description,completed,due_at,priority')
+          .eq('owner_id', userId);
+      if (startDate != null) {
+        query = query.gte('due_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('due_at', endDate.toIso8601String());
+      }
       chunks.add(await _buildChunk(
         name: 'tasks',
-        rows: await _client
-            .from('tasks')
-            .select('id,title,description,completed,due_at,priority')
-            .eq('owner_id', userId)
-            .order('id', ascending: false),
+        rows: await query.order('id', ascending: false),
         headers: const [
           'id',
           'title',
@@ -125,13 +153,19 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.events) {
+      var query = _client
+          .from('events')
+          .select('id,title,start_at,end_at,note')
+          .eq('owner_id', userId);
+      if (startDate != null) {
+        query = query.gte('start_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('start_at', endDate.toIso8601String());
+      }
       chunks.add(await _buildChunk(
         name: 'events',
-        rows: await _client
-            .from('events')
-            .select('id,title,start_at,end_at,note')
-            .eq('owner_id', userId)
-            .order('start_at', ascending: false),
+        rows: await query.order('start_at', ascending: false),
         headers: const ['id', 'title', 'start_at', 'end_at', 'note'],
       ));
     }
@@ -170,6 +204,20 @@ class SupabaseExportRepositoryImpl implements ExportRepository {
       ));
     }
     return chunks;
+  }
+
+  String _dateTag({DateTime? startDate, DateTime? endDate}) {
+    final parts = <String>[];
+    if (startDate != null) {
+      parts.add(
+          '${startDate.year}${startDate.month.toString().padLeft(2, '0')}${startDate.day.toString().padLeft(2, '0')}');
+    }
+    if (endDate != null) {
+      parts.add(
+          '${endDate.year}${endDate.month.toString().padLeft(2, '0')}${endDate.day.toString().padLeft(2, '0')}');
+    }
+    if (parts.isEmpty) return '';
+    return '_${parts.join('_to_')}';
   }
 
   Future<_ExportChunk> _buildChunk({

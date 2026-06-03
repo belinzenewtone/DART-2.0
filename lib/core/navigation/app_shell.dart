@@ -82,6 +82,7 @@ class _AppShellState extends ConsumerState<AppShell>
   bool _appLocked = false;
   bool _biometricUnlockInProgress = false;
   String? _biometricLockMessage;
+  String? _pinError;
   DateTime? _lastPausedAt;
 
   @override
@@ -190,6 +191,8 @@ class _AppShellState extends ConsumerState<AppShell>
               busy: _biometricUnlockInProgress,
               message: _biometricLockMessage,
               onUnlock: _unlockWithBiometrics,
+              pinError: _pinError,
+              onPinSubmit: _unlockWithPin,
             ),
         ],
       ),
@@ -269,6 +272,7 @@ class _AppShellState extends ConsumerState<AppShell>
     setState(() {
       _biometricUnlockInProgress = true;
       _biometricLockMessage = null;
+      _pinError = null;
     });
     final authenticated = await ref.read(authRepositoryProvider).authenticate();
     if (!mounted) return;
@@ -279,6 +283,33 @@ class _AppShellState extends ConsumerState<AppShell>
           ? null
           : 'Authentication was not completed.';
       if (authenticated) _lastPausedAt = null;
+    });
+  }
+
+  Future<void> _unlockWithPin(String pin) async {
+    final store = ref.read(secureCredentialsStoreProvider);
+    final hasher = ref.read(passwordHasherProvider);
+    final hash = await store.readPasswordHash();
+    if (hash == null) {
+      if (!mounted) return;
+      setState(() {
+        _pinError = 'No PIN has been set. Use fingerprint instead.';
+      });
+      return;
+    }
+    if (!hasher.verify(pin, hash)) {
+      if (!mounted) return;
+      setState(() {
+        _pinError = 'Incorrect PIN. Please try again.';
+      });
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _pinError = null;
+      _appLocked = false;
+      _biometricLockMessage = null;
+      _lastPausedAt = null;
     });
   }
 }

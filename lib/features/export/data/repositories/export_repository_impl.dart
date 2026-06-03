@@ -23,12 +23,15 @@ class ExportRepositoryImpl implements ExportRepository {
   @override
   Future<ExportResult> exportCsv({
     required ExportScope scope,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     if (kIsWeb) {
       throw Exception('CSV export is not supported on web builds.');
     }
     await _store.ensureInitialized();
-    final exports = await _buildScopedExports(scope);
+    final exports = await _buildScopedExports(scope,
+        startDate: startDate, endDate: endDate);
     final sections = <String>[];
     var totalRows = 0;
     for (final export in exports) {
@@ -39,8 +42,9 @@ class ExportRepositoryImpl implements ExportRepository {
     final content = sections.join('\n');
     final dir = await getApplicationDocumentsDirectory();
     final stamp = DateTime.now().millisecondsSinceEpoch;
-    final file =
-        File('${dir.path}${Platform.pathSeparator}dart2_export_$stamp.csv');
+    final dateTag = _dateTag(startDate: startDate, endDate: endDate);
+    final file = File(
+        '${dir.path}${Platform.pathSeparator}dart2_export${dateTag}_$stamp.csv');
     await file.writeAsString(content);
     return ExportResult(
       filePath: file.path,
@@ -54,11 +58,14 @@ class ExportRepositoryImpl implements ExportRepository {
   Future<ExportResult> exportEncryptedCsv({
     required ExportScope scope,
     required String password,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     if (kIsWeb) {
       throw Exception('Encrypted export is not supported on web builds.');
     }
-    final plainResult = await exportCsv(scope: scope);
+    final plainResult = await exportCsv(
+        scope: scope, startDate: startDate, endDate: endDate);
     final plainText = await File(plainResult.filePath).readAsString();
     final encrypted = _encryptService.encrypt(plainText: plainText, password: password);
     final encryptedFile = File('${plainResult.filePath}.enc');
@@ -73,13 +80,18 @@ class ExportRepositoryImpl implements ExportRepository {
     );
   }
 
-  Future<List<_ExportChunk>> _buildScopedExports(ExportScope scope) async {
+  Future<List<_ExportChunk>> _buildScopedExports(ExportScope scope,
+      {DateTime? startDate, DateTime? endDate}) async {
     final chunks = <_ExportChunk>[];
     if (scope == ExportScope.all || scope == ExportScope.expenses) {
+      final params = <Object?>[];
+      var query =
+          'SELECT id, title, category, amount, occurred_at, source FROM transactions';
+      query += _dateWhere('occurred_at', startDate, endDate, params);
+      query += ' ORDER BY occurred_at DESC';
       chunks.add(await _buildChunk(
         name: 'expenses',
-        query:
-            'SELECT id, title, category, amount, occurred_at, source FROM transactions ORDER BY occurred_at DESC',
+        query: query,
         headers: const [
           'id',
           'title',
@@ -88,21 +100,31 @@ class ExportRepositoryImpl implements ExportRepository {
           'occurred_at',
           'source'
         ],
+        params: params,
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.incomes) {
+      final params = <Object?>[];
+      var query =
+          'SELECT id, title, amount, received_at, source FROM incomes';
+      query += _dateWhere('received_at', startDate, endDate, params);
+      query += ' ORDER BY received_at DESC';
       chunks.add(await _buildChunk(
         name: 'incomes',
-        query:
-            'SELECT id, title, amount, received_at, source FROM incomes ORDER BY received_at DESC',
+        query: query,
         headers: const ['id', 'title', 'amount', 'received_at', 'source'],
+        params: params,
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.tasks) {
+      final params = <Object?>[];
+      var query =
+          'SELECT id, title, description, completed, due_at, priority FROM tasks';
+      query += _dateWhere('due_at', startDate, endDate, params);
+      query += ' ORDER BY id DESC';
       chunks.add(await _buildChunk(
         name: 'tasks',
-        query:
-            'SELECT id, title, description, completed, due_at, priority FROM tasks ORDER BY id DESC',
+        query: query,
         headers: const [
           'id',
           'title',
@@ -111,14 +133,20 @@ class ExportRepositoryImpl implements ExportRepository {
           'due_at',
           'priority'
         ],
+        params: params,
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.events) {
+      final params = <Object?>[];
+      var query =
+          'SELECT id, title, start_at, end_at, note FROM events';
+      query += _dateWhere('start_at', startDate, endDate, params);
+      query += ' ORDER BY start_at DESC';
       chunks.add(await _buildChunk(
         name: 'events',
-        query:
-            'SELECT id, title, start_at, end_at, note FROM events ORDER BY start_at DESC',
+        query: query,
         headers: const ['id', 'title', 'start_at', 'end_at', 'note'],
+        params: params,
       ));
     }
     if (scope == ExportScope.all || scope == ExportScope.budgets) {
@@ -151,12 +179,42 @@ class ExportRepositoryImpl implements ExportRepository {
     return chunks;
   }
 
+  String _dateWhere(
+      String column, DateTime? start, DateTime? end, List<Object?> params) {
+    final conditions = <String>[];
+    if (start != null) {
+      conditions.add('$column >= ?');
+      params.add(start.millisecondsSinceEpoch);
+    }
+    if (end != null) {
+      conditions.add('$column <= ?');
+      params.add(end.millisecondsSinceEpoch);
+    }
+    if (conditions.isEmpty) return '';
+    return ' WHERE ${conditions.join(' AND ')}';
+  }
+
+  String _dateTag({DateTime? startDate, DateTime? endDate}) {
+    final parts = <String>[];
+    if (startDate != null) {
+      parts.add(
+          '${startDate.year}${startDate.month.toString().padLeft(2, '0')}${startDate.day.toString().padLeft(2, '0')}');
+    }
+    if (endDate != null) {
+      parts.add(
+          '${endDate.year}${endDate.month.toString().padLeft(2, '0')}${endDate.day.toString().padLeft(2, '0')}');
+    }
+    if (parts.isEmpty) return '';
+    return '_${parts.join('_to_')}';
+  }
+
   Future<_ExportChunk> _buildChunk({
     required String name,
     required String query,
     required List<String> headers,
+    List<Object?> params = const [],
   }) async {
-    final rows = await _store.executor.runSelect(query, const []);
+    final rows = await _store.executor.runSelect(query, params);
     final values = rows
         .map((row) => headers.map((header) => row[header]).toList())
         .toList();

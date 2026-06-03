@@ -1,5 +1,6 @@
 import 'package:beltech/core/feature_flags/feature_flag.dart';
 import 'package:beltech/core/feature_flags/feature_flag_store.dart';
+import 'package:beltech/core/sync/cloud_sync_dispatcher.dart';
 import 'package:beltech/features/auth/domain/repositories/account_repository.dart';
 import 'package:beltech/core/sync/mpesa_historical_import_scanner.dart';
 import 'package:beltech/core/notifications/notification_insights_service.dart';
@@ -17,8 +18,9 @@ class BackgroundSyncCoordinator {
     this._notificationInsightsService,
     this._osBackgroundSyncScheduler,
     this._featureFlagStore,
-    this._accountRepository,
-  );
+    this._accountRepository, [
+    this._cloudSyncDispatcher,
+  ]);
 
   final SmsAutoImportService _smsAutoImportService;
   final MpesaHistoricalImportScanner _historicalImportScanner;
@@ -27,6 +29,7 @@ class BackgroundSyncCoordinator {
   final OsBackgroundSyncScheduler _osBackgroundSyncScheduler;
   final FeatureFlagStore _featureFlagStore;
   final AccountRepository _accountRepository;
+  final CloudSyncDispatcher? _cloudSyncDispatcher;
 
   BackgroundSyncStrategy get _strategy => BackgroundSyncStrategy.forPlatform();
 
@@ -44,6 +47,7 @@ class BackgroundSyncCoordinator {
       interval: _strategy.recurringInterval,
     );
     await _notificationInsightsService.runSweep();
+    await _cloudSyncDispatcher?.processQueue();
   }
 
   Future<void> stop() async {
@@ -56,6 +60,14 @@ class BackgroundSyncCoordinator {
       return;
     }
     await _smsAutoImportService.syncNow();
+    await _cloudSyncDispatcher?.processQueue();
+  }
+
+  Future<void> syncCloudNow() async {
+    if (!await _isEnabled(FeatureFlag.backgroundSync)) {
+      return;
+    }
+    await _cloudSyncDispatcher?.processQueue();
   }
 
   Future<void> materializeNow() async {
